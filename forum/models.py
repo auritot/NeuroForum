@@ -10,7 +10,7 @@ class UserAccount(models.Model):
     EmailVerificationCode = models.CharField(max_length=255)
 
     def __str__(self):
-        return f"{self.Username} ({self.Role})"
+        return self.Username
 
 
 class Post(models.Model):
