@@ -1,0 +1,139 @@
+{% extends 'html/base.html' %}
+
+{% block title %}NeuroForum{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
+
+{% block content %}
+<main>
+  <div class="container my-5">
+    <div class="row">
+      <!-- Left/Main Section -->
+      <div class="col-md-9">
+        <!-- Search bar -->
+        <form class="mb-3">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search posts..." />
+            <button class="btn btn-primary" type="submit">Search</button>
+          </div>
+        </form>
+
+        <!-- Filter bar -->
+        <form class="mb-4">
+          <div class="row g-2 align-items-center">
+            <div class="col-sm-4">
+              <select class="form-select">
+                <option selected disabled>Category</option>
+                <option>Technology</option>
+                <option>News</option>
+                <option>Entertainment</option>
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <select class="form-select">
+                <option selected disabled>Date</option>
+                <option>Newest First</option>
+                <option>Oldest First</option>
+              </select>
+            </div>
+            <div class="col-sm-4 d-grid">
+              <button class="btn btn-outline-secondary" type="submit">Apply Filters</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Posts -->
+        <div class="mb-4" id="postList">
+          <!-- Post 1 -->
+          <a class="text-decoration-none text-dark" href="#">
+            <div class="card mb-4">
+              <div class="card-body d-flex justify-content-between align-items-start">
+                <div>
+                  <h5 class="card-title mb-1">Post Title 1</h5>
+                  <p class="card-text mb-2">This is a short description or snippet of the
+                    post
+                    content.</p>
+                  <small class="text-muted">Posted on May 20, 2025 • 5 comments</small>
+                </div>
+
+                <!-- Dropdown menu -->
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    ⋮
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#">Edit</a></li>
+                    <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Post 2 -->
+          <div class="card mb-4">
+            <div class="card-body d-flex justify-content-between align-items-start">
+              <div>
+                <h5 class="card-title mb-1">Post Title 2</h5>
+                <p class="card-text mb-2">Another example of a post snippet showing on the list.
+                </p>
+                <small class="text-muted">Posted on May 19, 2025 • 3 comments</small>
+              </div>
+
+              <!-- Dropdown menu -->
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown"
+                  aria-expanded="false">
+                  ⋮
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="#">Edit</a></li>
+                  <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Post pagination">
+          <ul class="pagination justify-content-center">
+            <li class="page-item disabled"><a class="page-link">Previous</a></li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item"><a class="page-link" href="#">Next</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <!-- Right Sidebar (25%) -->
+      <div class="col-md-3">
+        <div class="card mb-4">
+          <div class="card-header">Sidebar Section</div>
+          <div class="card-body">
+            <p class="card-text">You can add widgets, trending posts, announcements, or anything else
+              here.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Another Widget</div>
+          <div class="card-body">
+            <ul class="list-unstyled">
+              <li><a href="#">Link One</a></li>
+              <li><a href="#">Link Two</a></li>
+              <li><a href="#">Link Three</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

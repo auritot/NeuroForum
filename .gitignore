@@ -1,1 +1,6 @@
 private/sqlConfig.py
+.env
+.dockerignore
+.DS_Store
+*.sh
+db/

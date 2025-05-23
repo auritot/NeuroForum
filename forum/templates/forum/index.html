@@ -1,14 +1,20 @@
 <!DOCTYPE html>
 <html>
-<head><title>NeuroForum</title></head>
+
+<head>
+  <title>NeuroForum Test!</title>
+</head>
+
 <body>
-<h1>User Accounts</h1>
-<ul>
-  {% for user in users %}
+  <h1>User Accounts</h1>
+  <h2>Changes have been made.</h2>
+  <ul>
+    {% for user in users %}
     <li>{{ user.Username }} - {{ user.Email }}</li>
-  {% empty %}
+    {% empty %}
     <li>No users found.</li>
-  {% endfor %}
-</ul>
+    {% endfor %}
+  </ul>
 </body>
+
 </html>

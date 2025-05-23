@@ -4,4 +4,4 @@ from .models import UserAccount
 # Create your views here.
 def index(request):
     users = UserAccount.objects.all()
-    return render(request, 'forum/index.html', {'users': users})
+    return render(request, 'html/index.html', {'users': users})

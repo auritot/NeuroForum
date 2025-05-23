@@ -10,30 +10,30 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
+
 from pathlib import Path
-import pymysql
-pymysql.install_as_MySQLdb()
+from dotenv import load_dotenv
 
 from private.sqlConfig import DATABASES
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv(dotenv_path=BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$tx&=f8&0tb%nrhjk@$x%(4=e_3*^xv=-n@&0h-ue&*1muuf_x'
+#SECRET_KEY = 'django-insecure-$tx&=f8&0tb%nrhjk@$x%(4=e_3*^xv=-n@&0h-ue&*1muuf_x'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 ALLOWED_HOSTS = ['18.216.113.147']
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'forum',
     'django.contrib.admin',
@@ -84,7 +84,20 @@ WSGI_APPLICATION = 'neuroforum_django.wsgi.application'
 #    }
 #}
 
-DATABASES = DATABASES
+# DATABASES = DATABASES
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('MYSQL_DATABASE'),
+        'USER': os.getenv('MYSQL_USER'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT', '3306'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -121,6 +134,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'forum/templates/static'),)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
