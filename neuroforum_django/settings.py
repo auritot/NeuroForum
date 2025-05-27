@@ -14,8 +14,10 @@ import os
 
 from pathlib import Path
 from dotenv import load_dotenv
+import os
 
-from private.sqlConfig import DATABASES
+# from private.sqlConfig import DATABASES
+from private.sqlConfig import create_ssh_tunnel
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,12 +27,12 @@ load_dotenv(dotenv_path=BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-#SECRET_KEY = 'django-insecure-$tx&=f8&0tb%nrhjk@$x%(4=e_3*^xv=-n@&0h-ue&*1muuf_x'
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+SECRET_KEY = 'django-insecure-$tx&=f8&0tb%nrhjk@$x%(4=e_3*^xv=-n@&0h-ue&*1muuf_x'
+# SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-ALLOWED_HOSTS = ['18.216.113.147']
+ALLOWED_HOSTS = ['18.216.113.147', '127.0.0.1']
 
 
 # Application definition
@@ -84,20 +86,35 @@ WSGI_APPLICATION = 'neuroforum_django.wsgi.application'
 #    }
 #}
 
-# DATABASES = DATABASES
+# Create the SSH tunnel
+tunnel = create_ssh_tunnel()
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQL_DATABASE'),
-        'USER': os.getenv('MYSQL_USER'),
-        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT', '3306'),
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        'NAME': 'neuroforum_database',
+        'USER': 'ict2216-sqldev',
+        'PASSWORD': '4e6ACmO.Dt!kQ[7-',
+        'HOST': '127.0.0.1',
+        'PORT': tunnel.local_bind_port,
     }
 }
+
+DATABASES = DATABASES
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': os.getenv('MYSQL_DATABASE'),
+#         'USER': os.getenv('MYSQL_USER'),
+#         'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+#         'HOST': os.getenv('DB_HOST'),
+#         'PORT': os.getenv('DB_PORT', '3306'),
+#         'OPTIONS': {
+#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+#         },
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
