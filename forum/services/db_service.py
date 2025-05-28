@@ -1,5 +1,6 @@
 from django.db import connection
 from django.contrib.auth.hashers import check_password, make_password
+from . import utilities
 
 
 # MARK: Login Authentication
@@ -11,15 +12,25 @@ def authenticate_user(email, password):
                 [email],
             )
 
-            row = cursor.fetchone()
-            if row is None:
-                return {"status": "NOTFOUND", "message": "User not found"}
-            if check_password(password, row[3]):
-                return {"status": "INVALID", "message": "User login was unsuccessfully"}
+            result = cursor.fetchone()
+            if result is None:
+                return utilities.response("NOT_FOUND", "User not found")
 
-        return {"status": "SUCCESS", "message": "User login was successfully"}
+            user_data = {
+                "UserID": result[0],
+                "Username": result[1],
+                "Email": result[2],
+                "Password": result[3],
+                "Role": result[4],
+            }
+
+            if not check_password(password, user_data["Password"]):
+                return utilities.response("INVALID", "User login was unsuccessfully")
+
+        return utilities.response("SUCCESS", "User login was successfully", user_data)
+
     except Exception as e:
-        return {"status": "FAILURE", "message": f"An unexpected error occurred: {e}"}
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 
 # MARK: User Registration
@@ -36,6 +47,7 @@ def insert_new_user(username, email, password, role, emailVerificationCode):
                 [username, email, hash_password, role, emailVerificationCode],
             )
 
-        return {"status": "SUCCESS", "message": "User account successfully created"}
+        return utilities.response("SUCCESS", "User account successfully created")
+
     except Exception as e:
-        return {"status": "FAILURE", "message": f"An unexpected error occurred: {e}"}
+        return utilities.response("FAILURE", f"An unexpected error occurred: {e}")
