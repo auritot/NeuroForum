@@ -1,0 +1,51 @@
+{% extends 'html/base.html' %}
+
+{% block title %}NeuroForum{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
+
+{% block content %}
+<main class="center-element">
+     <div class="container">
+          <div class="row justify-content-center">
+               <div class="col-md-8 col-lg-5">
+                    <div class="card shadow-sm">
+                         <div class="card-body">
+                              <h2 class="card-title text-center mb-3 mt-2">Login</h2>
+                              <form method="POST" action="">
+                                   {% if error %}<p id="loginError" class="text-danger text-center mb-3">
+                                        {{ error }} </p>
+                                   {% endif %}
+                                   {% csrf_token %}
+                                   <div class="mb-3">
+                                        <label for="email" class="form-label">Email address</label>
+                                        <input type="email" class="form-control" id="email" name="email"
+                                             placeholder="Enter email" required>
+                                   </div>
+                                   <div class="mb-3">
+                                        <label for="password" class="form-label">Password</label>
+                                        <input type="password" class="form-control" id="password" name="password"
+                                             placeholder="Password" required>
+                                   </div>
+                                   <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary">Login</button>
+                                   </div>
+                                   <div class="text-center mt-3">
+                                        <small>
+                                             Don't have an account? <a href={% url 'register_view' %}>Register
+                                                  here</a><br>
+                                             <a href="#">Forgot password?</a>
+                                        </small>
+                                   </div>
+                              </form>
+                         </div>
+                    </div>
+               </div>
+          </div>
+     </div>
+</main>
+{% endblock %}

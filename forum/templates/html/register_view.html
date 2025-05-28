@@ -1,0 +1,92 @@
+{% extends 'html/base.html' %}
+
+{% block title %}NeuroForum{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
+
+{% block content %}
+<main class="center-element">
+     <div class="container">
+          <div class="row justify-content-center">
+               <div class="col-md-8 col-lg-5">
+                    <div class="card shadow-sm">
+                         <div class="card-body">
+                              <h2 class="card-title text-center mb-4 mt-2">Register</h2>
+                              <form method="POST" action="">
+                                   {% csrf_token %}
+                                   <div class="mb-3">
+                                        <label for="username" class="form-label">Username</label>
+                                        <input type="text" class="form-control" id="username" name="username"
+                                             placeholder="Enter username" required>
+                                   </div>
+                                   <div class="mb-3">
+                                        <label for="email" class="form-label">Email address</label>
+                                        <input type="email" class="form-control" id="email" name="email"
+                                             placeholder="Enter email" required>
+                                   </div>
+                                   <div class="mb-3">
+                                        <label for="password" class="form-label">Password</label>
+                                        <input type="password" class="form-control" id="password" name="password"
+                                             placeholder="Enter password" required>
+                                   </div>
+                                   <div class="mb-3">
+                                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                                        <input type="password" class="form-control" id="confirmPassword"
+                                             name="confirmPassword" placeholder="Confirm password" required>
+                                   </div>
+
+                                   <div class="mb-3 text-center">
+                                        <div class="form-check d-inline-block">
+                                             <input type="checkbox" class="form-check-input" id="termsCheck" required>
+                                             <label class="form-check-label" for="termsCheck">
+                                                  I agree to the <a href="#" data-bs-toggle="modal"
+                                                       data-bs-target="#termsModal">Terms & Conditions</a>
+                                             </label>
+                                        </div>
+                                   </div>
+
+                                   <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary">Register</button>
+                                   </div>
+
+                                   <div class="text-center mt-3">
+                                        <small>Already have an account? <a href={% url 'login_view' %}>Login
+                                                  here</a></small>
+                                   </div>
+                              </form>
+                         </div>
+                    </div>
+               </div>
+          </div>
+     </div>
+
+     <!-- Terms & Conditions Modal -->
+     <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-scrollable">
+               <div class="modal-content">
+                    <div class="modal-header">
+                         <h5 class="modal-title" id="termsModalLabel">Terms & Conditions</h5>
+                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                         <p><strong>Welcome to our platform!</strong></p>
+                         <p>By registering, you agree to the following:</p>
+                         <ul>
+                              <li>You will provide accurate information.</li>
+                              <li>You will not use the platform for illegal activities.</li>
+                              <li>We may update our terms at any time with notice.</li>
+                         </ul>
+                         <p>Please read our full policy on data handling, security, and account responsibility.</p>
+                    </div>
+                    <div class="modal-footer">
+                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+               </div>
+          </div>
+     </div>
+</main>
+{% endblock %}
