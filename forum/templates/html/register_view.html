@@ -1,6 +1,7 @@
 {% extends 'html/base.html' %}
+{% load static %}
 
-{% block title %}NeuroForum{% endblock %}
+{% block title %}Register{% endblock %}
 
 {% block extra_css %}
 {% endblock %}
@@ -15,7 +16,7 @@
                <div class="col-md-8 col-lg-5">
                     <div class="card shadow-sm">
                          <div class="card-body">
-                              <h2 class="card-title text-center mb-4 mt-2">Register</h2>
+                              <h2 class="card-title text-center mb-3 mt-2">Register</h2>
                               <form method="POST" action="">
                                    {% csrf_token %}
                                    <div class="mb-3">

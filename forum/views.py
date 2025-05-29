@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
 from .models import UserAccount
 from .services import db_service, session_service
@@ -8,13 +8,39 @@ from .services import db_service, session_service
 # MARK: Index Page
 def index(request):
     session_response = session_service.check_session(request)
+    context = {}
 
     if session_response["status"] == "SUCCESS":
-        return render(
-            request, "html/index.html", {"user_info": session_response["data"]}
-        )
+        context["user_info"] = session_response["data"]
 
-    return render(request, "html/index.html")
+    per_page = 10
+    page_number = int(request.GET.get("page", 1))
+
+    count_result = db_service.get_total_post_count()
+    if count_result["status"] == "SUCCESS":
+        total_posts = count_result["data"]["total_post"]
+
+    start_index = (page_number - 1) * per_page
+    end_index = start_index + per_page
+
+    posts_result = db_service.get_posts_by_pages(start_index, per_page)
+    if posts_result["status"] == "SUCCESS":
+        posts = posts_result["data"]["posts"]
+
+    total_pages = (total_posts + per_page - 1) // per_page
+    page_range = range(1, total_pages + 1)
+
+    previous_page = page_number - 1 if page_number > 1 else None
+    next_page = page_number + 1 if page_number < total_pages else None
+
+    context["posts"] = posts
+    context["total_pages"] = total_pages
+    context["page_range"] = page_range
+    context["current_page"] = page_number
+    context["previous_page"] = previous_page
+    context["next_page"] = next_page
+
+    return render(request, "html/index.html", context)
 
 
 # MARK: Login Page
@@ -33,17 +59,18 @@ def login_view(request):
                 return redirect("login_view")
 
         if result["status"] == "NOTFOUND" or result["status"] == "INVALID":
-            return redirect("login_view")
+            return render(
+                request,
+                "html/login_view.html",
+                {"error": "Invalid email or password. Please try again."},
+            )
 
         else:
-            print(result["message"])
-
-    else:
-        return render(
-            request,
-            "html/login_view.html",
-            {"error": "Invalid email or password. Please try again."},
-        )
+            return render(
+                request,
+                "html/login_view.html",
+                {"error": "A problem has occurred. Please try again."},
+            )
 
     return render(request, "html/login_view.html")
 
@@ -67,3 +94,48 @@ def register_view(request):
             return render(request, "html/register_view.html")
 
     return render(request, "html/register_view.html")
+
+
+# MARK: Create Post View
+def create_post_view(request):
+    session_response = session_service.check_session(request)
+
+    if session_response["status"] == "SUCCESS":
+        context_data = session_response["data"]
+
+        if request.method == "POST":
+            postTitle = request.POST.get("postTitle")
+            postDescription = request.POST.get("postDescription")
+            allowComments = request.POST.get("allowComments") == "on"
+
+            response = db_service.insert_new_post(
+                postTitle, postDescription, allowComments, context_data["UserID"]
+            )
+
+            if response["status"] == "SUCCESS":
+                return redirect("index")
+            else:
+                print(response["message"])
+        else:
+            return render(
+                request,
+                "html/create_post_view.html",
+                {"user_info": session_response["data"]},
+            )
+
+    return render(request, "html/create_post_view.html")
+
+
+# MARK: Post View
+def post_view(request, post_id):
+    session_response = session_service.check_session(request)
+    context = {}
+
+    if session_response["status"] == "SUCCESS":
+        context["user_info"] = session_response["data"]
+
+    post_result = db_service.get_posts_by_id(post_id)
+    if post_result["status"] == "SUCCESS":
+        context["post"] = post_result["data"]["post"]
+
+    return render(request, "html/post_view.html", context)

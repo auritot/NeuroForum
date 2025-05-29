@@ -1,5 +1,8 @@
+from typing import Dict, Any
+
+
 def response(status, message, data=None):
-    response_data = {"status": status, "message": message}
+    response_data: Dict[str, Any] = {"status": status, "message": message}
 
     # If data is provided, add it to the response
     if data is not None:
