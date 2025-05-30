@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-$tx&=f8&0tb%nrhjk@$x%(4=e_3*^xv=-n@&0h-ue&*1muuf_x
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-ALLOWED_HOSTS = ['18.216.113.147', '127.0.0.1']
+ALLOWED_HOSTS = ['18.216.113.147', '127.0.0.1', 'neuroforum.ddns.net']
 
 
 # Application definition
