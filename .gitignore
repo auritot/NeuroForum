@@ -1,4 +1,6 @@
 private/sqlConfig.py
+neuroforum_django/settings.py
+private/ICT2216-student16.pem
 .env
 .dockerignore
 .DS_Store
