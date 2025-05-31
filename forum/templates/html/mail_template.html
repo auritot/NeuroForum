@@ -1,0 +1,35 @@
+{% extends 'html/base.html' %}
+{% load static %}
+
+{% block title %}NeuroForum{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
+
+{% block content %}
+
+<main class="container my-5">
+    <div>
+        <h1>Django Mail App</h1>
+
+        <form method="post">
+            {% csrf_token %}
+            <label for="address">To:</label>
+            <input id="address" type="email" name="address" />
+
+            <label for="subject">Subject:</label>
+            <input id="subject" name="subject" />
+
+            <label for="message">Message:</label><br>
+            <textarea id="message" name="message"></textarea>
+
+            <input type="submit">
+        </form>
+        <p>{{ result }}</p>
+    </div>
+
+</main>
+{% endblock %}

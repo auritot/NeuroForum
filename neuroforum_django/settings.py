@@ -34,6 +34,10 @@ SECRET_KEY = 'django-insecure-$tx&=f8&0tb%nrhjk@$x%(4=e_3*^xv=-n@&0h-ue&*1muuf_x
 DEBUG = True
 ALLOWED_HOSTS = ['18.216.113.147', '127.0.0.1', 'neuroforum.ddns.net']
 
+# CSRF_TRUST
+CSRF_TRUSTED_ORIGINS = [
+    "https://neuroforum.ddns.net"
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -79,12 +83,12 @@ WSGI_APPLICATION = 'neuroforum_django.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-#DATABASES = {
+# DATABASES = {
 #    'default': {
 #        'ENGINE': 'django.db.backends.sqlite3',
 #        'NAME': BASE_DIR / 'db.sqlite3',
 #    }
-#}
+# }
 
 # Create the SSH tunnel
 tunnel = create_ssh_tunnel()
@@ -115,6 +119,14 @@ DATABASES = DATABASES
 #         },
 #     }
 # }
+
+# Email configuration
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

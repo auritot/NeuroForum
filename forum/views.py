@@ -1,11 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
+from django.core.mail import send_mail
+from django.conf import settings
 
 from .models import UserAccount
 from .services import db_service, session_service
 
-
 # Create your views here.
+
 # MARK: Index Page
+
+
 def index(request):
     session_response = session_service.check_session(request)
     context = {}
@@ -52,7 +57,8 @@ def login_view(request):
         result = db_service.authenticate_user(email, password)
 
         if result["status"] == "SUCCESS":
-            session_response = session_service.setup_session(request, result["data"])
+            session_response = session_service.setup_session(
+                request, result["data"])
             if session_response["status"] == "SUCCESS":
                 return redirect("index")
             else:
@@ -139,3 +145,26 @@ def post_view(request, post_id):
         context["post"] = post_result["data"]["post"]
 
     return render(request, "html/post_view.html", context)
+
+# MARK: Mail Test
+
+
+def mail_template(request):
+    context = {}
+
+    if request.method == 'POST':
+        address = request.POST.get('address')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+
+        if address and subject and message:
+            try:
+                send_mail(subject, message,
+                          settings.EMAIL_HOST_USER, [address])
+                context['result'] = 'Email sent successfully'
+            except Exception as e:
+                context['result'] = f'Error sending email: {e}'
+        else:
+            context['result'] = 'All fields are required'
+
+    return render(request, "html/mail_template.html", context)
