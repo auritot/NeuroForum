@@ -14,10 +14,21 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
   web:
     build: .
     restart: unless-stopped
     # command: gunicorn --bind 0.0.0.0:8000 neuroforum_django.wsgi:application
+
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             daphne -b 0.0.0.0 -p 8000 neuroforum_django.asgi:application"
+
     volumes:
       - .:/app:cached
     ports:

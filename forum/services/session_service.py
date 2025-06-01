@@ -7,6 +7,7 @@ def setup_session(request, user_data):
     try:
         request.session["UserID"] = user_data["UserID"]
         request.session["Role"] = user_data["Role"]
+        request.session["Username"] = user_data["Username"]
         request.session.set_expiry(3600)
 
         return utilities.response("SUCCESS", "Session has been created")
@@ -22,6 +23,7 @@ def check_session(request):
             user_info = {
                 "UserID": request.session["UserID"],
                 "Role": request.session["Role"],
+                "Username": request.session["Username"],
             }
 
             return utilities.response("SUCCESS", "Session is active", user_info)

@@ -1,0 +1,85 @@
+{% extends 'html/base.html' %}
+{% load static %}
+
+{% block title %}Chat with {{ other_user }}{% endblock %}
+
+{% block content %}
+<main class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>Chat with {{ other_user }}</strong>
+                </div>
+                <div class="card-body" id="chat-box" style="height: 400px; overflow-y: auto;">
+                    <!-- Chat messages will appear here -->
+                </div>
+                <div class="card-footer">
+                    <form id="chat-form" class="d-flex gap-2">
+                        <input type="text" id="chat-input" class="form-control" placeholder="Type your message..." required>
+                        <button type="submit" class="btn btn-primary">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const chatForm = document.querySelector("#chat-form");
+    const chatInput = document.querySelector("#chat-input");
+    const chatLog = document.querySelector("#chat-box");
+
+    if (!chatForm || !chatInput || !chatLog) return;
+
+    const currentUser = "{{ user_info.Username|lower|default:'' }}";
+    const otherUser = "{{ other_user|lower }}";
+
+    // ✅ Debug: Print to browser console
+    console.log("currentUser:", currentUser);
+    console.log("otherUser:", otherUser);
+
+    const chatSocket = new WebSocket(
+        (window.location.protocol === "https:" ? "wss://" : "ws://") +
+        window.location.host +
+        "/ws/chat/" + otherUser + "/"
+    );
+
+    chatSocket.onopen = () => {
+        console.log("✅ WebSocket connected");
+    };
+
+    chatSocket.onerror = (err) => {
+        console.error("❌ WebSocket error:", err);
+    };
+
+    chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        const isSelf = data.sender.toLowerCase() === currentUser;
+        const msgHtml = `
+        <div class="d-flex ${isSelf ? 'justify-content-end' : 'justify-content-start'} mb-2">
+            <div class="p-2 rounded bg-${isSelf ? 'primary text-white' : 'light'}" style="max-width: 75%;">
+                <small><strong>${data.sender}</strong></small><br>
+                ${data.message}
+            </div>
+        </div>`;
+        chatLog.innerHTML += msgHtml;
+        chatLog.scrollTop = chatLog.scrollHeight;
+    };
+
+    chatForm.onsubmit = function (e) {
+        e.preventDefault();
+        const message = chatInput.value.trim();
+        console.log("📨 Sending:", message, "readyState:", chatSocket.readyState);
+        if (message && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ message }));
+            chatInput.value = "";
+        }
+    };
+});
+</script>
+{% endblock %}
+

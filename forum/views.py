@@ -168,3 +168,21 @@ def mail_template(request):
             context['result'] = 'All fields are required'
 
     return render(request, "html/mail_template.html", context)
+
+def chat_view(request, other_user):
+    session_response = session_service.check_session(request)
+
+    if session_response["status"] != "SUCCESS":
+        return redirect(f"/login/?next=/chat/{other_user}/")
+
+    user_info = session_response["data"]
+    username = user_info.get("Username", "").strip()
+
+    if not username:
+        print("[ERROR] Missing Username in session data:", user_info)
+        return redirect("/login")
+
+    return render(request, "html/chat_view.html", {
+        "other_user": other_user,
+        "user_info": user_info
+    })

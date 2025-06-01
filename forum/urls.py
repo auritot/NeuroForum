@@ -1,6 +1,6 @@
 from django.urls import path
-# from . import views
-from mailsender import views
+from . import views
+# from mailsender import views
 
 urlpatterns = [
     # MARK: To Views
@@ -10,4 +10,5 @@ urlpatterns = [
     path("create_post", views.create_post_view, name="create_post_view"),
     path("post/<int:post_id>", views.post_view, name="post_view"),
     path("mail_template", views.mail_template, name="mail_template"),
+    path("chat/<str:other_user>/", views.chat_view, name="chat_view"),
 ]
