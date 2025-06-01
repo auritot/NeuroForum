@@ -5,8 +5,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!chatForm || !chatInput || !chatLog) return;
 
-    const currentUser = window.currentUser?.toLowerCase() || "";
-    const otherUser = window.otherUser?.toLowerCase();
+    const mainEl = document.querySelector("main");
+    const currentUser = mainEl?.dataset.currentUser || "";
+    const otherUser = mainEl?.dataset.otherUser || "";
 
     console.log("currentUser:", currentUser);
     console.log("otherUser:", otherUser);
