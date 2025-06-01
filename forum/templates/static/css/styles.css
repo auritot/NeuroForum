@@ -16,3 +16,8 @@ main {
      overflow-x: hidden;
      min-height: 90vh;
 }
+
+#chat-box {
+    height: 400px;
+    overflow-y: auto;
+}
