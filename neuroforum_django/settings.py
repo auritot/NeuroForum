@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 import os
 
 # from private.sqlConfig import DATABASES
-from private.sqlConfig import create_ssh_tunnel
+# from private.sqlConfig import create_ssh_tunnel
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -103,34 +103,27 @@ WSGI_APPLICATION = 'neuroforum_django.wsgi.application'
 # }
 
 # Create the SSH tunnel
-tunnel = create_ssh_tunnel()
+# tunnel = create_ssh_tunnel()
+
+
+
+
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'neuroforum_database',
-        'USER': 'ict2216-sqldev',
-        'PASSWORD': '4e6ACmO.Dt!kQ[7-',
-        'HOST': '127.0.0.1',
-        'PORT': tunnel.local_bind_port,
+        'NAME': os.getenv('MYSQL_DATABASE'),
+        'USER': os.getenv('MYSQL_USER'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT', '3306'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
 
 DATABASES = DATABASES
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': os.getenv('MYSQL_DATABASE'),
-#         'USER': os.getenv('MYSQL_USER'),
-#         'PASSWORD': os.getenv('MYSQL_PASSWORD'),
-#         'HOST': os.getenv('DB_HOST'),
-#         'PORT': os.getenv('DB_PORT', '3306'),
-#         'OPTIONS': {
-#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-#         },
-#     }
-# }
 
 # Email configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
