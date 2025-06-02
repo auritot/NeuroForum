@@ -19,7 +19,7 @@
                     <div class="card shadow-sm">
                          <div class="card-body">
                               <h2 class="card-title text-center mb-3 mt-2">Login</h2>
-                              <form method="POST" action="">
+                              <form method="POST" action="{% url 'process_login' %}">
                                    {% if error %}<p id="loginError" class="text-danger text-center mb-3">
                                         {{ error }} </p>
                                    {% endif %}

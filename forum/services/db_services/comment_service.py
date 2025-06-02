@@ -25,12 +25,12 @@ def insert_new_comment(commentContents, postID, userID):
         return utilities.response("FAILURE", f"An unexpected error occurred: {e}")
 
 
-# MARK: Get Comments by ID
-def get_comments_by_id(post_id):
+# MARK: Get Comments by Post ID
+def get_comments_by_post_id(post_id):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                """SELECT * FROM forum_comment WHERE CommentID = %s;;""",
+                """SELECT * FROM forum_comment WHERE PostID_id = %s;;""",
                 [post_id],
             )
 

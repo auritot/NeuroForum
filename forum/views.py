@@ -5,14 +5,13 @@ from django.conf import settings
 
 from .models import UserAccount
 from .services import session_service
-from .services.db_services import user_service, post_service, comment_service
+from .services.db_services import post_service, comment_service
 
 
 # Create your views here.
 # MARK: Index Page
-def index(request):
+def index(request, context={}):
     session_response = session_service.check_session(request)
-    context = {}
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -48,86 +47,23 @@ def index(request):
 
 
 # MARK: Login Page
-def login_view(request):
-    if request.method == "POST":
-        email = request.POST.get("email")
-        password = request.POST.get("password")
-
-        result = user_service.authenticate_user(email, password)
-
-        if result["status"] == "SUCCESS":
-            session_response = session_service.setup_session(request, result["data"])
-            if session_response["status"] == "SUCCESS":
-                return redirect("index")
-            else:
-                return redirect("login_view")
-
-        if result["status"] == "NOTFOUND" or result["status"] == "INVALID":
-            return render(
-                request,
-                "html/login_view.html",
-                {"error": "Invalid email or password. Please try again."},
-            )
-
-        else:
-            return render(
-                request,
-                "html/login_view.html",
-                {"error": "A problem has occurred. Please try again."},
-            )
-
-    return render(request, "html/login_view.html")
+def login_view(request, context={}):
+    return render(request, "html/login_view.html", context)
 
 
 # MARK: Register Page
-def register_view(request):
-    if request.method == "POST":
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        password = request.POST.get("password")
-        confirmPassword = request.POST.get("confirmPassword")
-
-        response = user_service.insert_new_user(
-            username, email, password, "member", "test"
-        )
-
-        if response["status"] == "SUCCESS":
-            return redirect("login_view")
-
-        else:
-            return render(request, "html/register_view.html")
-
-    return render(request, "html/register_view.html")
+def register_view(request, context={}):
+    return render(request, "html/register_view.html", context)
 
 
 # MARK: Create Post View
-def create_post_view(request):
+def create_post_view(request, context={}):
     session_response = session_service.check_session(request)
 
     if session_response["status"] == "SUCCESS":
-        context_data = session_response["data"]
+        context["user_info"] = session_response["data"]
 
-        if request.method == "POST":
-            postTitle = request.POST.get("postTitle")
-            postDescription = request.POST.get("postDescription")
-            allowComments = request.POST.get("allowComments") == "on"
-
-            response = post_service.insert_new_post(
-                postTitle, postDescription, allowComments, context_data["UserID"]
-            )
-
-            if response["status"] == "SUCCESS":
-                return redirect("index")
-            else:
-                print(response["message"])
-        else:
-            return render(
-                request,
-                "html/create_post_view.html",
-                {"user_info": session_response["data"]},
-            )
-
-    return render(request, "html/create_post_view.html")
+    return render(request, "html/create_post_view.html", context)
 
 
 # MARK: Post View
@@ -138,34 +74,18 @@ def post_view(request, post_id):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
 
-    if request.method == "POST":
-        commentText = request.POST.get("commentText")
-        print(post_id)
+    post_result = post_service.get_posts_by_id(post_id)
+    if post_result["status"] == "SUCCESS":
+        context["post"] = post_result["data"]["post"]
 
-        response = comment_service.insert_new_comment(
-            commentText, post_id, context["user_info"]["UserID"]
-        )
-
-        if response["status"] == "SUCCESS":
-            return redirect("post_view", post_id=post_id)
-        else:
-            print(response["message"])
-
-    else:
-        post_result = post_service.get_posts_by_id(post_id)
-        if post_result["status"] == "SUCCESS":
-            context["post"] = post_result["data"]["post"]
-
-        comment_result = comment_service.get_comments_by_id(post_id)
-        if comment_result["status"] == "SUCCESS":
-            context["comments"] = comment_result["data"]["comments"]
+    comment_result = comment_service.get_comments_by_post_id(post_id)
+    if comment_result["status"] == "SUCCESS":
+        context["comments"] = comment_result["data"]["comments"]
 
     return render(request, "html/post_view.html", context)
 
 
 # MARK: Mail Test
-
-
 def mail_template(request):
     context = {}
 
