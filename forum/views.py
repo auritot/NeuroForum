@@ -6,7 +6,7 @@ from django.conf import settings
 from .models import UserAccount
 from .services import session_service
 from .services.db_services import post_service, comment_service
-
+from django.contrib.messages import get_messages
 
 # Create your views here.
 # MARK: Index Page
@@ -48,11 +48,19 @@ def index(request, context={}):
 
 # MARK: Login Page
 def login_view(request, context={}):
+    messages = get_messages(request)
+    for message in messages:
+        context["error"] = message
+
     return render(request, "html/login_view.html", context)
 
 
 # MARK: Register Page
 def register_view(request, context={}):
+    messages = get_messages(request)
+    for message in messages:
+        context["error"] = message
+        
     return render(request, "html/register_view.html", context)
 
 
@@ -67,9 +75,8 @@ def create_post_view(request, context={}):
 
 
 # MARK: Post View
-def post_view(request, post_id):
+def post_view(request, post_id, context={}):
     session_response = session_service.check_session(request)
-    context = {}
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]

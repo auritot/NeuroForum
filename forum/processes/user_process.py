@@ -1,7 +1,7 @@
 from ..services import session_service
 from ..services.db_services import user_service
-from .. import views
-
+from django.shortcuts import redirect
+from django.contrib import messages
 
 def process_login(request):
     email = request.POST.get("email")
@@ -12,14 +12,14 @@ def process_login(request):
     if result["status"] == "SUCCESS":
         session_response = session_service.setup_session(request, result["data"])
         if session_response["status"] == "SUCCESS":
-            return views.index(request)
+            return redirect("index")
 
     if result["status"] == "NOT_FOUND" or result["status"] == "INVALID":
-        context = {"error": "Invalid email or password. Please try again."}
-        return views.login_view(request, context)
+        messages.error(request, "Invalid email or password. Please try again.")
+        return redirect("login_view")
 
-    context = {"error": "A problem has occurred. Please try again."}
-    return views.login_view(request, context)
+    messages.error(request, "A problem has occurred. Please try again.")
+    return redirect("login_view")
 
 
 def process_register(request):
@@ -31,7 +31,7 @@ def process_register(request):
     response = user_service.insert_new_user(username, email, password, "member", "test")
 
     if response["status"] == "SUCCESS":
-        return views.login_view(request)
-
-    context = {"error": "A problem has occurred. Please try again."}
-    return views.register_view(request, context)
+        return redirect("login_view")
+    
+    messages.error(request, "A problem has occurred. Please try again.")
+    return redirect("register_view")

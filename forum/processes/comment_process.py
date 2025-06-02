@@ -1,6 +1,7 @@
 from ..services import session_service
 from ..services.db_services import comment_service
-from .. import views
+from django.shortcuts import redirect
+from django.contrib import messages
 
 
 def process_create_comment(request, post_id):
@@ -17,6 +18,6 @@ def process_create_comment(request, post_id):
     )
 
     if response["status"] == "SUCCESS":
-        return views.post_view(request, post_id)
+        return redirect('post_view', post_id=post_id)
 
-    return views.post_view(request, post_id)
+    return redirect('post_view', post_id=post_id)

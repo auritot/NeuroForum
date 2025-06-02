@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from .. import utilities
 from datetime import datetime
 
+comment_username_col = ["CommentID", "CommentContents", "Timestamp", "PostID_id", "UserID_id", "Username"]
 
 # MARK: Insert Comment
 def insert_new_comment(commentContents, postID, userID):
@@ -30,19 +31,17 @@ def get_comments_by_post_id(post_id):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                """SELECT * FROM forum_comment WHERE PostID_id = %s;;""",
+                """
+                SELECT c.*, u.Username FROM forum_comment c
+                JOIN forum_useraccount u ON c.UserID_id = u.UserID
+                WHERE c.PostID_id = %s
+                ORDER BY c.Timestamp DESC;
+                """,
                 [post_id],
             )
 
             results = cursor.fetchall()
-            columns = [
-                "CommentID",
-                "CommentContents",
-                "Timestamp",
-                "PostID_id",
-                "UserID_id",
-            ]
-            comments = [dict(zip(columns, row)) for row in results]
+            comments = [dict(zip(comment_username_col, row)) for row in results]
             comment_data = {"comments": comments}
 
         return utilities.response("SUCCESS", "Retrieved Post for pages", comment_data)

@@ -1,6 +1,7 @@
 from ..services import session_service
 from ..services.db_services import post_service
-from .. import views
+from django.shortcuts import redirect
+from django.contrib import messages
 
 
 def process_create_post(request):
@@ -18,6 +19,6 @@ def process_create_post(request):
     )
 
     if response["status"] == "SUCCESS":
-        return views.index(request)
+        return redirect("index")
 
-    return views.index(request)
+    return redirect("index")

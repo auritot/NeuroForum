@@ -17,14 +17,6 @@ urlpatterns = [
     # MARK: Process
     path("login/submit", user_process.process_login, name="process_login"),
     path("register/submit", user_process.process_register, name="process_register"),
-    path(
-        "create_post/submit_post",
-        post_process.process_create_post,
-        name="process_create_post",
-    ),
-    path(
-        "post/<int:post_id>/submit_comment",
-        comment_process.process_create_comment,
-        name="process_create_comment",
-    ),
+    path("create_post/submit_post", post_process.process_create_post, name="process_create_post"),
+    path("post/<int:post_id>/submit_comment", comment_process.process_create_comment, name="process_create_comment",),
 ]

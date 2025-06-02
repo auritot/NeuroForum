@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from .. import utilities
 from datetime import datetime
 
+post_username_comment_count = ["PostID", "Title", "PostContent", "Timestamp", "CommentStatus", "UserID_id", "Username", "CommentCount"]
 
 # MARK: Get Total Posts
 def get_total_post_count():
@@ -11,8 +12,8 @@ def get_total_post_count():
             cursor.execute("""SELECT COUNT(*) FROM forum_post""")
 
             result = cursor.fetchone()
-            total_posts = result[0] if result else 0
-            post_data = {"total_post": total_posts}
+            total_post = result[0] if result else 0
+            post_data = {"total_post": total_post}
 
         return utilities.response("SUCCESS", "Retrieved Total Post Count", post_data)
     except Exception as e:
@@ -24,19 +25,20 @@ def get_posts_by_pages(start_index, per_page):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                """SELECT * FROM forum_post LIMIT %s, %s;""", [start_index, per_page]
+                """
+                SELECT p.*, u.Username, COUNT(c.CommentID) AS CommentCount
+                FROM forum_post p
+                JOIN forum_useraccount u ON p.UserID_id = u.UserID
+                LEFT JOIN forum_comment c ON c.PostID_id = p.PostID
+                GROUP BY p.PostID, u.UserID
+                ORDER BY p.Timestamp DESC;
+                LIMIT %s, %s;
+                """, 
+                [start_index, per_page],
             )
 
             results = cursor.fetchall()
-            columns = [
-                "PostID",
-                "Title",
-                "PostContent",
-                "Timestamp",
-                "CommentStatus",
-                "UserID_id",
-            ]
-            posts = [dict(zip(columns, row)) for row in results]
+            posts = [dict(zip(post_username_comment_count, row)) for row in results]
             post_data = {"posts": posts}
 
         return utilities.response("SUCCESS", "Retrieved Post for pages", post_data)
@@ -48,22 +50,23 @@ def get_posts_by_pages(start_index, per_page):
 def get_posts_by_id(post_id):
     try:
         with connection.cursor() as cursor:
-            cursor.execute("""SELECT * FROM forum_post WHERE PostID = %s;""", [post_id])
+            cursor.execute(
+                """
+                SELECT p.*, u.Username, COUNT(c.CommentID) AS CommentCount
+                FROM forum_post p
+                JOIN forum_useraccount u ON p.UserID_id = u.UserID
+                LEFT JOIN forum_comment c ON c.PostID_id = p.PostID
+                WHERE PostID = %s;
+                GROUP BY p.PostID, u.UserID
+                """, 
+                [post_id],
+            )
 
             result = cursor.fetchone()
             if result is None:
                 return utilities.response("NOT_FOUND", "Post not found")
 
-            columns = [
-                "PostID",
-                "Title",
-                "PostContent",
-                "Timestamp",
-                "CommentStatus",
-                "UserID_id",
-            ]
-
-            post = dict(zip(columns, result))
+            post = dict(zip(post_username_comment_count, result))
             post_data = {"post": post}
 
         return utilities.response("SUCCESS", "Retrieved Post for pages", post_data)

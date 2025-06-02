@@ -14,8 +14,9 @@
 <main class="container my-5">
     <!-- Post Content -->
     {% if post %}
-    <div class="card mb-5 shadow-sm">
+    <div class="card mb-5 shadow-sm position-relative">
         <div class="card-body">
+            {% if post.UserID_id == user_info.UserID %}
             <div class="dropdown position-absolute top-0 end-0 m-2">
                 <button class="border-0 bg-transparent p-0 me-2" type="button" data-bs-toggle="dropdown"
                     aria-expanded="false">
@@ -26,9 +27,10 @@
                     <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
                 </ul>
             </div>
+            {% endif %}
 
             <h2 class="card-title mb-0"><b>{{ post.Title }}</b></h2>
-            <small class="text-muted">Posted on {{ post.Timestamp|date:"M d, Y H:i" }}</small>
+            <small class="text-muted">By {{ post.Username }} • Posted on {{ post.Timestamp|date:"M d, Y H:i" }}</small>
             <p class="card-text mt-3">{{ post.PostContent }}</p>
         </div>
     </div>
@@ -36,7 +38,7 @@
 
     <!-- Comments Section -->
     <div class="mb-5">
-        <h4 class="mb-3">Comments</h4>
+        <h4 class="mb-3">Comments ({{ post.CommentCount }})</h4>
 
         <!-- Comment Input Section -->
         {% if post.CommentStatus == 1 %}
@@ -65,13 +67,14 @@
 
         <!-- Comment -->
         {% for comment in comments %}
-        <div class="card mb-3 comment-card shadow-sm">
+        <div class="card mb-3 comment-card shadow-sm position-relative">
             <div class="card-body">
-                <strong class="d-block mb-1">@johndoe (John Doe)</strong>
+                <strong class="d-block mb-1">@{{ comment.Username }}</strong>
                 <p class="mb-2">{{ comment.CommentContents }}</p>
-                <small class="text-muted">{{ comment.Timestamp|date:"M d, Y H:i" }}</small>
+                <small class="text-muted">Commented on {{ comment.Timestamp|date:"M d, Y H:i" }}</small>
 
                 <!-- Menu Button -->
+                {% if post.UserID_id == user_info.UserID %}
                 <div class="dropdown position-absolute top-0 end-0 m-2">
                     <button class="border-0 bg-transparent p-0 me-2" type="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -82,10 +85,11 @@
                         <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
                     </ul>
                 </div>
+                {% endif %}
             </div>
         </div>
         {% empty %}
-        <div class="card text-center shadow-sm mb-4">
+        <div class="card text-center shadow-sm mb-4 position-relative">
             <div class="card-body">
                 <p class="mb-0 text-muted">No comments yet. Be the first to leave one!</p>
             </div>
@@ -113,7 +117,7 @@
             </ul>
         </nav>
         {% else %}
-        <div class="card text-center shadow-sm mb-4">
+        <div class="card text-center shadow-sm mb-4 position-relative">
             <div class="card-body">
                 <p class="mb-0 text-muted">Owner of the post have disable the comment feature for this post!</p>
             </div>

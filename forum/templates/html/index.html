@@ -53,14 +53,19 @@
         <div class="mb-4" id="postList">
           {% for post in posts %}
           <!-- Post Template-->
-          <div class="card mb-4">
+          <div class="card mb-4 position-relative">
             <a class="text-decoration-none text-dark" href="{% url 'post_view' post_id=post.PostID %}">
               <div class="card-body">
-                <h5 class="card-title mb-1"><b>{{ post.Title }}</b></h5>
-                <p class="card-text mb-2">{{ post.PostContent|truncatewords:20 }}</p>
-                <small class="text-muted">Posted on {{ post.Timestamp|date:"M d, Y H:i" }} • 0 comments</small>
+                <small class="text-muted mt-0">@{{ post.Username }}</small>
+                <h5 class="card-title mb-0"><b>{{ post.Title }}</b></h5>
+                <p class="card-text my-2">{{ post.PostContent|truncatewords:20 }}</p>
+                <small class="text-muted">
+                  Posted on {{ post.Timestamp|date:"M d, Y H:i" }} • {{ post.CommentCount }} comments
+                </small>
               </div>
-            </a><!-- Dropdown menu -->
+            </a>
+            <!-- Dropdown menu -->
+            {% if post.UserID_id == user_info.UserID %}
             <div class="dropdown position-absolute top-0 end-0 m-2">
               <button class="border-0 bg-transparent p-0 me-2" type="button" data-bs-toggle="dropdown"
                 aria-expanded="false">
@@ -71,6 +76,7 @@
                 <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
               </ul>
             </div>
+            {% endif %}
           </div>
           {% empty %}
           <p>No posts found.</p>
