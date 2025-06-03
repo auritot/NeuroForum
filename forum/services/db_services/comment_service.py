@@ -23,11 +23,11 @@ def insert_new_comment(commentContents, postID, userID):
         return utilities.response("SUCCESS", "Comment successfully created")
 
     except Exception as e:
-        return utilities.response("FAILURE", f"An unexpected error occurred: {e}")
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 
 # MARK: Get Comments by Post ID
-def get_comments_by_post_id(post_id):
+def get_comments_by_post_id(postID):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -37,7 +37,7 @@ def get_comments_by_post_id(post_id):
                 WHERE c.PostID_id = %s
                 ORDER BY c.Timestamp DESC;
                 """,
-                [post_id],
+                [postID],
             )
 
             results = cursor.fetchall()
@@ -45,5 +45,38 @@ def get_comments_by_post_id(post_id):
             comment_data = {"comments": comments}
 
         return utilities.response("SUCCESS", "Retrieved Post for pages", comment_data)
+    
     except Exception as e:
-        return utilities.response("FAILURE", f"An unexpected error occurred: {e}")
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+
+# MARK: Delete Comment by ID
+def delete_comment_by_id(commentID):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """ DELETE FROM forum_comment WHERE CommentID = %s; """,
+                [commentID],
+            )
+
+        return utilities.response("SUCCESS", "Comment deleted successfully")
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    
+# MARK: Update Comment by ID
+def update_comment_by_id(commentContents, commentID):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE forum_comment
+                SET CommentContents = %s
+                WHERE CommentID = %s;
+                """,
+                [commentContents, commentID],
+            )
+
+        return utilities.response("SUCCESS", "Comment updated successfully")
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")

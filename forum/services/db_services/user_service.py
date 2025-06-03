@@ -2,6 +2,7 @@ from django.db import connection
 from django.contrib.auth.hashers import check_password, make_password
 from .. import utilities
 
+user_col = ["UserID", "Username", "Email", "Password", "Role", "EmailVerificationCode"]
 
 # MARK: Login Authentication
 def authenticate_user(email, password):
@@ -16,13 +17,7 @@ def authenticate_user(email, password):
             if result is None:
                 return utilities.response("NOT_FOUND", "User not found")
 
-            user_data = {
-                "UserID": result[0],
-                "Username": result[1],
-                "Email": result[2],
-                "Password": result[3],
-                "Role": result[4],
-            }
+            user_data = dict(zip(user_col, result))
 
             if not check_password(password, user_data["Password"]):
                 return utilities.response("INVALID", "User login was unsuccessfully")
@@ -50,4 +45,4 @@ def insert_new_user(username, email, password, role, emailVerificationCode):
         return utilities.response("SUCCESS", "User account successfully created")
 
     except Exception as e:
-        return utilities.response("FAILURE", f"An unexpected error occurred: {e}")
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")

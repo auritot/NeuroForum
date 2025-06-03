@@ -3,21 +3,22 @@ from django.contrib.auth.hashers import check_password, make_password
 from .. import utilities
 from datetime import datetime
 
-post_username_comment_count = ["PostID", "Title", "PostContent", "Timestamp", "CommentStatus", "UserID_id", "Username", "CommentCount"]
+post_username_comment_count_col = ["PostID", "Title", "PostContent", "Timestamp", "CommentStatus", "UserID_id", "Username", "CommentCount"]
 
-# MARK: Get Total Posts
+# MARK: Get Total Post Count
 def get_total_post_count():
     try:
         with connection.cursor() as cursor:
-            cursor.execute("""SELECT COUNT(*) FROM forum_post""")
+            cursor.execute(""" SELECT COUNT(*) FROM forum_post; """)
 
             result = cursor.fetchone()
-            total_post = result[0] if result else 0
-            post_data = {"total_post": total_post}
+            total_post_count = result[0] if result else 0
+            post_data = {"total_post_count": total_post_count}
 
         return utilities.response("SUCCESS", "Retrieved Total Post Count", post_data)
+    
     except Exception as e:
-        return utilities.response("FAILURE", f"An unexpected error occurred: {e}")
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 
 # MARK: Get Posts for pages
@@ -38,16 +39,17 @@ def get_posts_by_pages(start_index, per_page):
             )
 
             results = cursor.fetchall()
-            posts = [dict(zip(post_username_comment_count, row)) for row in results]
+            posts = [dict(zip(post_username_comment_count_col, row)) for row in results]
             post_data = {"posts": posts}
 
         return utilities.response("SUCCESS", "Retrieved Post for pages", post_data)
+    
     except Exception as e:
-        return utilities.response("FAILURE", f"An unexpected error occurred: {e}")
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 
-# MARK: Get Posts by ID
-def get_posts_by_id(post_id):
+# MARK: Get Post by ID
+def get_post_by_id(postID):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -59,19 +61,20 @@ def get_posts_by_id(post_id):
                 WHERE PostID = %s;
                 GROUP BY p.PostID, u.UserID
                 """, 
-                [post_id],
+                [postID],
             )
 
             result = cursor.fetchone()
             if result is None:
                 return utilities.response("NOT_FOUND", "Post not found")
 
-            post = dict(zip(post_username_comment_count, result))
+            post = dict(zip(post_username_comment_count_col, result))
             post_data = {"post": post}
 
         return utilities.response("SUCCESS", "Retrieved Post for pages", post_data)
+    
     except Exception as e:
-        return utilities.response("FAILURE", f"An unexpected error occurred: {e}")
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 
 # MARK: Insert Post
@@ -93,4 +96,43 @@ def insert_new_post(postTitle, postDescription, allowComments, userID):
         return utilities.response("SUCCESS", "Post successfully created")
 
     except Exception as e:
-        return utilities.response("FAILURE", f"An unexpected error occurred: {e}")
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+
+# MARK: Delete Post by ID
+def delete_post_by_id(postID):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """ DELETE FROM forum_comment WHERE PostID_id = %s; """,
+                [postID],
+            )
+
+            cursor.execute(
+                """ DELETE FROM forum_post WHERE PostID = %s; """,
+                [postID],
+            )
+
+        return utilities.response("SUCCESS", "Post and Comments deleted successfully")
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    
+# MARK: Update Post by ID
+def update_post_by_id(postTitle, postDescription, allowComments, postID):
+    try:
+        commentStatus = 1 if allowComments else 0
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE forum_post
+                SET Title = %s, PostContent = %s, CommentStatus = %s 
+                WHERE PostID = %s;
+                """,
+                [postTitle, postDescription, commentStatus, postID],
+            )
+
+        return utilities.response("SUCCESS", "Post updated successfully")
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")

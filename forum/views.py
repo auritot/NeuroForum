@@ -12,16 +12,15 @@ from django.contrib.messages import get_messages
 # MARK: Index Page
 def index(request, context={}):
     session_response = session_service.check_session(request)
-
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
 
     per_page = 10
     page_number = int(request.GET.get("page", 1))
 
-    count_result = post_service.get_total_post_count()
-    if count_result["status"] == "SUCCESS":
-        total_posts = count_result["data"]["total_post"]
+    post_count_response = post_service.get_total_post_count()
+    if post_count_response["status"] == "SUCCESS":
+        total_post_count = post_count_response["data"]["total_post_count"]
 
     start_index = (page_number - 1) * per_page
     end_index = start_index + per_page
@@ -30,7 +29,7 @@ def index(request, context={}):
     if posts_result["status"] == "SUCCESS":
         posts = posts_result["data"]["posts"]
 
-    total_pages = (total_posts + per_page - 1) // per_page
+    total_pages = (total_post_count + per_page - 1) // per_page
     page_range = range(1, total_pages + 1)
 
     previous_page = page_number - 1 if page_number > 1 else None
@@ -47,7 +46,9 @@ def index(request, context={}):
 
 
 # MARK: Login Page
-def login_view(request, context={}):
+def login_view(request):
+    context = {}
+
     messages = get_messages(request)
     for message in messages:
         context["error"] = message
@@ -56,7 +57,9 @@ def login_view(request, context={}):
 
 
 # MARK: Register Page
-def register_view(request, context={}):
+def register_view(request):
+    context = {}
+
     messages = get_messages(request)
     for message in messages:
         context["error"] = message
@@ -64,24 +67,29 @@ def register_view(request, context={}):
     return render(request, "html/register_view.html", context)
 
 
-# MARK: Create Post View
-def create_post_view(request, context={}):
-    session_response = session_service.check_session(request)
+# MARK: Post Form View
+def post_form_view(request, post_id=None):
+    context = {}
 
+    session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
+    
+    if post_id != None:
+        post_response = post_service.get_post_by_id(post_id)
+        if post_response["status"] == "SUCCESS":
+            context["post"] = post_response["data"]["post"]
 
-    return render(request, "html/create_post_view.html", context)
+    return render(request, "html/post_form_view.html", context)
 
 
 # MARK: Post View
 def post_view(request, post_id, context={}):
     session_response = session_service.check_session(request)
-
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
 
-    post_result = post_service.get_posts_by_id(post_id)
+    post_result = post_service.get_post_by_id(post_id)
     if post_result["status"] == "SUCCESS":
         context["post"] = post_result["data"]["post"]
 

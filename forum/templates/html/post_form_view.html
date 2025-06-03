@@ -1,0 +1,81 @@
+{% extends 'html/base.html' %}
+{% load static %}
+
+{% block title %}Create New Post{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
+
+{% block content %}
+<main class="container my-5">
+    <div class="row justify-content-center">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                {% if post %}
+                <!-- # MARK: Edit Form -->
+                <h2 class="card-title text-center mb-3 mt-2">Edit Post</h2>
+                <form method="POST" action="{% url 'process_update_post' post_id=post.PostID %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="postTitle" class="form-label">Post Title</label>
+                        <input type="text" class="form-control" id="postTitle" name="postTitle"
+                            placeholder="Enter your post title" value="{% if post %}{{ post.Title }}{% endif %}"
+                            required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="postDescription" class="form-label">Post Description</label>
+                        <textarea class="form-control" id="postDescription" name="postDescription" rows="5"
+                            placeholder="Write your post here..."
+                            required>{% if post %}{{ post.PostContent }}{% endif %}</textarea>
+                    </div>
+
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <label class="form-label mb-0" for="allowComments">Allow comments on this post</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" {% if not post or post.CommentStatus %}checked{% endif %}
+                                id="allowComments" name="allowComments" type="checkbox">
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            {% if post %}Update{% else %}Post{% endif %}
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <!-- # MARK: Create Form -->
+                <h2 class="card-title text-center mb-3 mt-2">Create New Post</h2>
+                <form method="POST" action="{% url 'process_create_post' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="postTitle" class="form-label">Post Title</label>
+                        <input type="text" class="form-control" id="postTitle" name="postTitle"
+                            placeholder="Enter your post title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="postDescription" class="form-label">Post Description</label>
+                        <textarea class="form-control" id="postDescription" name="postDescription" rows="5"
+                            placeholder="Write your post here..." required></textarea>
+                    </div>
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <label class="form-label mb-0" for="allowComments">Allow comments on this post</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="allowComments" name="allowComments"
+                                checked>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Post</button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
