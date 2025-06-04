@@ -100,13 +100,6 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             )
 
     async def receive(self, text_data):
-        """
-        Called whenever the browser sends a message over the WebSocket.
-        We do two things:
-         1) rate‐limit (no more than 5 msgs/second per socket)
-         2) broadcast the sanitized message to everyone in the room (including sender)
-         3) persist to the database
-        """
         now = time.time()
         if now - self.last_message_time < self.rate_limit_interval:
             return
@@ -114,31 +107,31 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
         try:
             data = json.loads(text_data)
-        except json.JSONDecodeError:
-            return
+            raw_message = data.get("message", "")
+            if not isinstance(raw_message, str) or len(raw_message) > 2048:
+                return
 
-        raw_message = data.get("message", "")
-        if not isinstance(raw_message, str) or len(raw_message) > 2048:
-            return
+            safe_message = bleach.clean(raw_message)
+            timestamp_str = timezone.now().strftime("%H:%M %d/%m/%Y")
 
-        # Sanitize (strip any disallowed HTML, etc.)
-        safe_message = bleach.clean(raw_message)
-        timestamp_str = timezone.now().strftime("%H:%M %d/%m/%Y")
+            await self.channel_layer.group_send(
+                self.room_name,
+                {
+                    "type":      "chat.message",
+                    "message":   safe_message,
+                    "sender":    self.current_user,
+                    "history":   False,
+                    "timestamp": timestamp_str,
+                }
+            )
 
-        # 1) Broadcast to the entire group (all open WebSockets in this room)
-        await self.channel_layer.group_send(
-            self.room_name,
-            {
-                "type":      "chat.message",   # Channels will look for “chat_message” below
-                "message":   safe_message,
-                "sender":    self.current_user,
-                "history":   False,
-                "timestamp": timestamp_str
-            }
-        )
+            await self._save_message(self.session, self.scope["user"], safe_message)
 
-        # 2) Persist to the database (in the background, via database_sync_to_async)
-        await self._save_message(self.session, self.scope["user"], safe_message)
+        except Exception as e:
+            import traceback
+            logger.error("❌ WebSocket receive() crashed:\n" + traceback.format_exc())
+            await self.close(code=1011)
+
 
     async def chat_message(self, event):
         """
