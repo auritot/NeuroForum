@@ -41,26 +41,52 @@ class SessionAuthMiddleware(BaseMiddleware):
     3. Sets scope['user'] = DummyUser(username) if valid, or AnonymousUser otherwise.
     """
 
+    # async def __call__(self, scope, receive, send):
+    #     # 1. Extract cookies from the headers
+    #     headers = dict(scope.get("headers", []))
+    #     cookies = {}
+    #     if b"cookie" in headers:
+    #         raw_cookies = headers[b"cookie"].decode()  # e.g. "sessionid=abc123; csrftoken=..."
+    #         for part in raw_cookies.split(";"):
+    #             if "=" in part:
+    #                 key, val = part.strip().split("=", 1)
+    #                 cookies[key] = val
+
+    #     # 2. Get the "sessionid" cookie (default Django session name)
+    #     session_key = cookies.get("sessionid")
+    #     user = await fetch_user_from_session(session_key)
+
+    #     # 3. If we got a username, wrap it in DummyUser; otherwise, AnonymousUser
+    #     if user:
+    #         scope["user"] = user
+    #     else:
+    #         scope["user"] = AnonymousUser()
+
+    #     # 4. Proceed down the ASGI stack (to your consumer)
+    #     return await super().__call__(scope, receive, send)
+
     async def __call__(self, scope, receive, send):
-        # 1. Extract cookies from the headers
         headers = dict(scope.get("headers", []))
         cookies = {}
         if b"cookie" in headers:
-            raw_cookies = headers[b"cookie"].decode()  # e.g. "sessionid=abc123; csrftoken=..."
+            raw_cookies = headers[b"cookie"].decode()
+            print("🍪 Raw cookies:", raw_cookies)
             for part in raw_cookies.split(";"):
                 if "=" in part:
                     key, val = part.strip().split("=", 1)
                     cookies[key] = val
 
-        # 2. Get the "sessionid" cookie (default Django session name)
         session_key = cookies.get("sessionid")
+        print("🔑 sessionid from cookie:", session_key)
+
         user = await fetch_user_from_session(session_key)
 
-        # 3. If we got a username, wrap it in DummyUser; otherwise, AnonymousUser
         if user:
+            print("✅ User resolved:", user.username)
             scope["user"] = user
         else:
+            print("❌ Anonymous user assigned")
             scope["user"] = AnonymousUser()
 
-        # 4. Proceed down the ASGI stack (to your consumer)
         return await super().__call__(scope, receive, send)
+
