@@ -102,7 +102,7 @@ class ChatMessage(models.Model):
     When you’re in an active session, you only pull messages with session.ended_at == None.
     """
     session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name="messages")
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    sender = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
