@@ -8,6 +8,7 @@ import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
 from channels.db import database_sync_to_async
+from django.utils import timezone
 
 from .models import ChatRoom, ChatSession, ChatMessage
 
@@ -160,11 +161,11 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         """
         Mark this session as ended (set ended_at = now).
         """
-        session.ended_at = models.DateTimeField().now()  # or timezone.now()
+        session.ended_at = timezone.now()
         session.save()
 
     @database_sync_to_async
-    def save_message(self, session: ChatatSession, user, content: str):
+    def save_message(self, session: ChatSession, user, content: str):
         """
         Create a ChatMessage row under this session.
         """
