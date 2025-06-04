@@ -12,6 +12,7 @@ def fetch_user_from_session(session_key):
 
     try:
         session = SessionStore(session_key=session_key)
+        print("📦 WS session:", dict(session.items()))
         username = session.get("Username")
         if not username:
             return None

@@ -9,6 +9,7 @@ def setup_session(request, user_data):
         request.session["Role"] = user_data["Role"]
         request.session["Username"] = user_data["Username"]
         request.session.set_expiry(3600)
+        request.session.save()
 
         return utilities.response("SUCCESS", "Session has been created")
 

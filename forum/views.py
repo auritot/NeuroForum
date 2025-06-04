@@ -122,6 +122,7 @@ def mail_template(request):
 
 
 def chat_view(request, other_user):
+    print("🌐 HTTP session:", dict(request.session.items()))
     session_response = session_service.check_session(request)
 
     if session_response["status"] != "SUCCESS":
