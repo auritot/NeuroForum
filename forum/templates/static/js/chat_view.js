@@ -20,15 +20,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const wsUrl      = wsProtocol + window.location.host + "/ws/chat/" + otherUser + "/";
   const chatSocket = new WebSocket(wsUrl);
 
-  // Have we removed the "Loading previous chats" placeholder yet?
+  // Tracks whether we’ve removed the “Loading previous chats…” placeholder
   let sawPlaceholder = false;
 
-  // Helper to append a single chat bubble to #chat-box
+  // Helper to append a chat bubble
   function appendBubble(parentEl, data, isSelf) {
     const alignClass = isSelf ? "justify-content-end" : "justify-content-start";
     const bubbleType = isSelf ? "self" : "other";
 
-    // If the server provided a timestamp ("HH:MM dd/mm/yyyy"), show it
+    // Use the server-provided timestamp (format "HH:MM dd/mm/YYYY")
     const timeHtml = data.timestamp
       ? `<br><small class="text-muted">${data.timestamp}</small>`
       : "";
@@ -59,33 +59,34 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   chatSocket.addEventListener("message", (event) => {
+    console.log("⟵ WS frame received:", event.data);
     let data;
     try {
       data = JSON.parse(event.data);
     } catch (_e) {
-      console.error("Failed to parse WebSocket JSON:", event.data);
+      console.error("Failed to parse frame as JSON:", event.data);
       return;
     }
 
-    // Remove the "Loading previous chats…" placeholder on the very first incoming frame
+    // On the very first frame (whether placeholder or real), remove placeholder
     if (!sawPlaceholder) {
       const ph = document.querySelector("#chat-placeholder");
       if (ph) ph.remove();
       sawPlaceholder = true;
     }
 
-    // If there's no actual message text, do nothing further.
-    // (This covers the "{ history: true }" placeholder your consumer sent when no history existed.)
+    // If there is no data.message or no data.sender, it’s our “no history” placeholder.
+    // Just return silently.
     if (!data.message || !data.sender) {
       return;
     }
 
+    // Otherwise, append a real bubble. Use data.sender & data.timestamp from the server.
     const sender = data.sender.toLowerCase();
     const isSelf = (sender === currentUser);
     appendBubble(chatBox, data, isSelf);
   });
 
-  // On form submit: send to server, echo locally, and keep focus
   chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
@@ -95,40 +96,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (chatSocket.readyState !== WebSocket.OPEN) {
-      console.error("WebSocket is not open; cannot send message right now.");
+      console.error("WebSocket is not open; cannot send.");
       return;
     }
 
-    // Build a quick "optimistic" payload with client-side timestamp
-    const now    = new Date();
-    const hhmm   = now.toLocaleTimeString("en-GB", {
-      hour12: false,
-      hour:   "2-digit",
-      minute: "2-digit"
-    });
-    const ddmmyy = now.toLocaleDateString("en-GB"); // e.g. "dd/mm/yyyy"
+    // Before sending, log it so we can confirm in devtools what went out
+    const payload = { message: text };
+    console.log("⟶ WS send:", JSON.stringify(payload));
+    chatSocket.send(JSON.stringify(payload));
 
-    const fakePayload = {
-      message:   text,
-      sender:    currentUser,
-      timestamp: `${hhmm} ${ddmmyy}`,
-      history:   false
-    };
-
-    // If we haven't removed the placeholder yet (no frames), remove it now:
-    if (!sawPlaceholder) {
-      const ph = document.querySelector("#chat-placeholder");
-      if (ph) ph.remove();
-      sawPlaceholder = true;
-    }
-
-    // Immediately append Bob's bubble so he sees it right away
-    appendBubble(chatBox, fakePayload, /* isSelf= */ true);
-
-    // Actually send to the server. When the server broadcasts it back,
-    // the callback above will append a second identical bubble.
-    chatSocket.send(JSON.stringify({ message: text }));
-
+    // Clear and refocus the input. We’ll let the server echo back a single bubble
     chatInput.value = "";
     chatInput.focus();
   });
