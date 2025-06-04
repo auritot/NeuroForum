@@ -22,36 +22,62 @@ main {
     overflow-y: auto;
 }
 
-.chat-bubble {
-  padding: 0.5rem;
-  border-radius: 0.25rem;     
-  max-width: 75%;             
-  word-wrap: break-word;      
-}
-
-.chat-bubble.self {
-  background-color: #0d6efd;  
-  color: #fff;
-}
-
-.chat-bubble.other {
-  background-color: #f8f9fa;  
-  color: #212529;             
-}
-
 .history-box,
 .chat-box {
   border: 1px solid #dee2e6;   
   padding: 1rem;               
   margin-bottom: 1rem;         
-  height: 30vh;                
-  overflow-y: auto;            
-  background-color: #ffffff;   
+  height: 30vh;          
+  overflow-y: auto;          
+  background-color: #ffffff;  
+  position: relative;
 }
 
 #history-placeholder,
 #current-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #6c757d;           
   text-align: center;
-  color: #6c757d;              
-  padding-top: 1rem;
+}
+
+.chat-box {
+  border: 1px solid #dee2e6;   
+  padding: 1rem;             
+  margin-bottom: 1rem;        
+  height: 60vh;              
+  overflow-y: auto;          
+  background-color: #ffffff;   
+  position: relative;        
+}
+
+#chat-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #6c757d;            
+  text-align: center;
+}
+
+.chat-bubble {
+  padding: 0.5rem;           
+  border-radius: 0.25rem;    
+  max-width: 75%;         
+  word-wrap: break-word;   
+  margin-bottom: 0.5rem;
+}
+
+.chat-bubble.self {
+  background-color: #0d6efd; 
+  color: #fff;            
+  margin-left: auto;
+}         
+
+.chat-bubble.other {
+  background-color: #f8f9fa;  
+  color: #212529;           
+  margin-right: auto;       
 }
