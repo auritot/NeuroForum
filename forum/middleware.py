@@ -5,33 +5,33 @@ from channels.middleware import BaseMiddleware
 from django.contrib.auth.models import AnonymousUser
 from channels.db import database_sync_to_async
 from django.contrib.sessions.backends.db import SessionStore
+from django.contrib.auth import get_user_model
 
-class DummyUser:
-    def __init__(self, username):
-        self.username = username
-        self.is_authenticated = True
+User = get_user_model()
 
 @database_sync_to_async
 def fetch_user_from_session(session_key):
     """
     Given a session_key (cookie value), load the corresponding Django session.
-    If it contains "Username", return DummyUser(username). Otherwise, return None.
+    If it contains "Username", return the real User instance. Otherwise, return None.
     """
     if not session_key:
         return None
 
-    # Use Django's SessionStore to load the session data by key
     try:
         session = SessionStore(session_key=session_key)
     except Exception:
         return None
 
-    # The login view stored request.session["Username"]
     username = session.get("Username")
     if not username:
         return None
 
-    return DummyUser(username)
+    try:
+        return User.objects.get(username=username)
+    except User.DoesNotExist:
+        return None
+
 
 class SessionAuthMiddleware(BaseMiddleware):
     """
