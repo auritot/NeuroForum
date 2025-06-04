@@ -2,22 +2,31 @@ from channels.middleware import BaseMiddleware
 from django.contrib.auth.models import AnonymousUser
 from channels.db import database_sync_to_async
 from django.contrib.sessions.backends.db import SessionStore
-from forum.models import UserAccount
-
 
 @database_sync_to_async
 def fetch_user_from_session(session_key):
+    from forum.models import UserAccount
+
     if not session_key:
         return None
 
     try:
         session = SessionStore(session_key=session_key)
-        print("📦 WS session:", dict(session.items()))
-        username = session.get("Username").strip()
+        username = session.get("Username", "").strip()
+        print("🧠 Resolving user:", username)
+
         if not username:
             return None
-        return UserAccount.objects.get(username__iexact=username)
-    except Exception:
+
+        # Case-insensitive match
+        try:
+            return UserAccount.objects.get(username__iexact=username)
+        except UserAccount.DoesNotExist:
+            print("❌ User not found in DB:", username)
+            return None
+
+    except Exception as e:
+        print("❌ Session loading error:", e)
         return None
 
 class SessionAuthMiddleware(BaseMiddleware):
