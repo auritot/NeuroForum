@@ -20,7 +20,7 @@ def fetch_user_from_session(session_key):
 
         # Case-insensitive match
         try:
-            return UserAccount.objects.get(username__iexact=username)
+            return UserAccount.objects.get(Username__iexact=username)
         except UserAccount.DoesNotExist:
             print("❌ User not found in DB:", username)
             return None
