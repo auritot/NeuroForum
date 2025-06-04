@@ -121,6 +121,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
                 "message": safe_message,
                 "sender": self.current_user,
                 "history": False,   # indicates this message belongs to an open session
+                "timestamp": timezone.now().strftime("%H:%M %d/%m/%Y"),
             }
         )
 
