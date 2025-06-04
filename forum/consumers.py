@@ -28,8 +28,10 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         user = self.scope.get("user")
+        print("🔌 [connect] scope['user'] =", self.scope.get("user"))
         if not user or not getattr(user, "is_authenticated", False):
             # If not logged in, refuse connection
+            print("❌ User not authenticated, closing WS")
             await self.close(code=4001)
             return
 
@@ -49,6 +51,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         # Optionally: check if user is allowed to chat with <other_user>.
         # In this example, we simply allow everyone:
         if not await self._user_can_chat_with(self.scope["user"], self.other_user):
+            print(f"❌ Chat not allowed between {self.scope['user'].Username} and {self.other_user}")
             await self.close(code=4003)
             return
 

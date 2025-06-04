@@ -12,6 +12,10 @@ class UserAccount(models.Model):
 
     def __str__(self):
         return self.Username
+    
+    @property
+    def is_authenticated(self):
+        return True
 
 
 class Post(models.Model):
