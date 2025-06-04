@@ -15,26 +15,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentUser = (mainEl.dataset.currentUser || "").trim().toLowerCase();
   const otherUser   = (mainEl.dataset.otherUser   || "").trim().toLowerCase();
 
-  // Build the WS URL (use wss:// on HTTPS pages)
+  // Build the WebSocket URL
   const wsProtocol = (window.location.protocol === "https:") ? "wss://" : "ws://";
   const wsUrl      = wsProtocol + window.location.host + "/ws/chat/" + otherUser + "/";
   const chatSocket = new WebSocket(wsUrl);
 
-  // Flag to track whether we've removed the “Loading…” placeholder
-  let sawAnyMessage = false;
+  // Have we removed the "Loading previous chats" placeholder yet?
+  let sawPlaceholder = false;
 
-  // Helper: append a chat bubble to #chat-box
+  // Helper to append a single chat bubble to #chat-box
   function appendBubble(parentEl, data, isSelf) {
     const alignClass = isSelf ? "justify-content-end" : "justify-content-start";
     const bubbleType = isSelf ? "self" : "other";
 
-    // If the server provided a timestamp (formatted "HH:MM DD/MM/YYYY"), show it
+    // If the server provided a timestamp ("HH:MM dd/mm/yyyy"), show it
     const timeHtml = data.timestamp
       ? `<br><small class="text-muted">${data.timestamp}</small>`
       : "";
 
     const msgHtml = `
-      <div class="d-flex ${alignClass}">
+      <div class="d-flex ${alignClass} mb-2">
         <div class="chat-bubble ${bubbleType}">
           <small><strong>${data.sender}</strong></small><br>
           ${data.message}
@@ -59,25 +59,33 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   chatSocket.addEventListener("message", (event) => {
-    const data = JSON.parse(event.data);
-
-    // On the very first message (history or live), remove the placeholder
-    if (!sawAnyMessage) {
-      const ph = document.querySelector("#chat-placeholder");
-      if (ph) ph.remove();
-      sawAnyMessage = true;
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (_e) {
+      console.error("Failed to parse WebSocket JSON:", event.data);
+      return;
     }
 
-    // Determine if this was “history” or “current”—but in both cases,
-    // we just append to the same #chat-box.
-    const sender = (data.sender || "").toLowerCase();
-    const isSelf = (sender === currentUser);
+    // Remove the "Loading previous chats…" placeholder on the very first incoming frame
+    if (!sawPlaceholder) {
+      const ph = document.querySelector("#chat-placeholder");
+      if (ph) ph.remove();
+      sawPlaceholder = true;
+    }
 
-    // Append the bubble
+    // If there's no actual message text, do nothing further.
+    // (This covers the "{ history: true }" placeholder your consumer sent when no history existed.)
+    if (!data.message || !data.sender) {
+      return;
+    }
+
+    const sender = data.sender.toLowerCase();
+    const isSelf = (sender === currentUser);
     appendBubble(chatBox, data, isSelf);
   });
 
-  // On form submit: optimistically echo, send to server, and refocus
+  // On form submit: send to server, echo locally, and keep focus
   chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
@@ -87,34 +95,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (chatSocket.readyState !== WebSocket.OPEN) {
-      console.error("WebSocket is not open; cannot send.");
+      console.error("WebSocket is not open; cannot send message right now.");
       return;
     }
 
-    // Build a “fake” payload so the user sees their own bubble immediately
+    // Build a quick "optimistic" payload with client-side timestamp
     const now    = new Date();
-    const hhmm   = now.toLocaleTimeString("en-GB", { hour12: false, hour: "2-digit", minute: "2-digit" });
-    const ddmmyy = now.toLocaleDateString("en-GB");
+    const hhmm   = now.toLocaleTimeString("en-GB", {
+      hour12: false,
+      hour:   "2-digit",
+      minute: "2-digit"
+    });
+    const ddmmyy = now.toLocaleDateString("en-GB"); // e.g. "dd/mm/yyyy"
+
     const fakePayload = {
-      message: text,
-      sender: currentUser,
+      message:   text,
+      sender:    currentUser,
       timestamp: `${hhmm} ${ddmmyy}`,
-      history: false
+      history:   false
     };
 
-    // On first-ever live message, remove placeholder:
-    if (!sawAnyMessage) {
+    // If we haven't removed the placeholder yet (no frames), remove it now:
+    if (!sawPlaceholder) {
       const ph = document.querySelector("#chat-placeholder");
       if (ph) ph.remove();
-      sawAnyMessage = true;
+      sawPlaceholder = true;
     }
 
-    // Append right away:
+    // Immediately append Bob's bubble so he sees it right away
     appendBubble(chatBox, fakePayload, /* isSelf= */ true);
 
-    // Then actually send to the server. When the server broadcasts it back,
-    // our “message” listener will append it again (you can choose to filter duplicates
-    // if you want, but double‐rendering is harmless).
+    // Actually send to the server. When the server broadcasts it back,
+    // the callback above will append a second identical bubble.
     chatSocket.send(JSON.stringify({ message: text }));
 
     chatInput.value = "";
