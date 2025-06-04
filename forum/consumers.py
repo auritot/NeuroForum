@@ -35,7 +35,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
         # The “other party” is the <username> captured in the URL (lowercased)
         self.other_user = self.scope["url_route"]["kwargs"]["username"].lower()
-        self.current_user = user.username.lower()
+        self.current_user = user.Username.lower()
 
         # Build a canonical room_name (sorted so that “alice‐bob” and “bob‐alice” map
         # to the SAME room).  Prefix with “private_” to avoid collisions.
@@ -79,7 +79,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
                 await self.send(
                     text_data=json.dumps({
                         "message":        msg.content,
-                        "sender":         msg.sender.username,
+                        "sender":         msg.sender.Username,
                         "timestamp":      msg.timestamp.strftime("%H:%M %d/%m/%Y"),
                         "history":        True,
                         "session_range":  f"{msg.session.started_at.strftime('%H:%M %d/%m/%Y')} → "
@@ -93,7 +93,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             await self.send(
                 text_data=json.dumps({
                     "message":   msg.content,
-                    "sender":    msg.sender.username,
+                    "sender":    msg.sender.Username,
                     "timestamp": msg.timestamp.strftime("%H:%M %d/%m/%Y"),
                     "history":   False,
                 })

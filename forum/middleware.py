@@ -44,7 +44,7 @@ class SessionAuthMiddleware(BaseMiddleware):
         user = await fetch_user_from_session(session_key)
 
         if user:
-            print(f"✅ Real user resolved from session: {user.username}")
+            print(f"✅ Real user resolved from session: {user.Username}")
             scope["user"] = user
         else:
             print("❌ Anonymous user assigned (invalid session or no Username)")
