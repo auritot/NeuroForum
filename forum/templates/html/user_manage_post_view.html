@@ -44,7 +44,7 @@
                         <a class="text-decoration-none text-dark" href="{% url 'post_view' post_id=post.PostID %}">
                             <div class="card-body">
                                 <h5 class="card-title mb-0"><b>{{ post.Title }}</b></h5>
-                                <p class="card-text my-2">{{ post.PostContent|truncatewords:20 }}</p>
+                                <p class="card-text my-2">{{ post.PostContent|linebreaksbr }}</p>
                                 <small class="text-muted">
                                     Posted on {{ post.Timestamp|date:"M d, Y H:i" }} • {{ post.CommentCount }} comments
                                 </small>

@@ -9,9 +9,7 @@ from django.contrib.messages import get_messages
 
 # Create your views here.
 # MARK: Index View
-def index(request):
-    context = {}
-
+def index(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -35,9 +33,7 @@ def index(request):
 
 
 # MARK: Login View
-def login_view(request):
-    context = {}
-
+def login_view(request, context={}):
     messages = get_messages(request)
     for message in messages:
         context["error"] = message
@@ -46,9 +42,7 @@ def login_view(request):
 
 
 # MARK: Register View
-def register_view(request):
-    context = {}
-
+def register_view(request, context={}):
     messages = get_messages(request)
     for message in messages:
         context["error"] = message
@@ -57,9 +51,7 @@ def register_view(request):
 
 
 # MARK: Post Form View
-def post_form_view(request, post_id=None):
-    context = {}
-
+def post_form_view(request, context={}, post_id=None):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -82,14 +74,14 @@ def post_view(request, post_id, context={}):
     if post_response["status"] == "SUCCESS":
         context["post"] = post_response["data"]["post"]
 
-    per_page = 10
+    per_page = 2
     current_page = int(request.GET.get("page", 1))
 
     total_comment_count = context["post"]["CommentCount"]
 
     pagination_data = utilities.get_pagination_data(current_page, per_page, total_comment_count)
 
-    comments_response = comment_service.get_comments_for_page_by_post_id(post_id, pagination_data["start_index"], per_page)
+    comments_response = comment_service.get_comments_for_page(pagination_data["start_index"], per_page, postID=post_id)
     if comments_response["status"] == "SUCCESS":
         context["comments"] = comments_response["data"]["comments"]
 
@@ -99,9 +91,7 @@ def post_view(request, post_id, context={}):
 
 
 # MARK: User Profile View
-def user_profile_view(request):
-    context = {}
-
+def user_profile_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -109,9 +99,7 @@ def user_profile_view(request):
     return render(request, "html/user_profile_view.html", context)
 
 # MARK: User Manage Post View
-def user_manage_post_view(request):
-    context = {}
-
+def user_manage_post_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -119,13 +107,13 @@ def user_manage_post_view(request):
     per_page = 10
     current_page = int(request.GET.get("page", 1))
 
-    post_count_response = post_service.get_total_post_count_by_user_id(context["user_info"]["UserID"])
+    post_count_response = post_service.get_total_post_count(userID=context["user_info"]["UserID"])
     if post_count_response["status"] == "SUCCESS":
         total_post_count: int = post_count_response["data"]["total_post_count"]
 
     pagination_data = utilities.get_pagination_data(current_page, per_page, total_post_count)
     
-    posts_response = post_service.get_posts_for_page_by_user_id(pagination_data["start_index"], per_page, context["user_info"]["UserID"])
+    posts_response = post_service.get_posts_for_page(pagination_data["start_index"], per_page, userID=context["user_info"]["UserID"])
     if posts_response["status"] == "SUCCESS":
         context["posts"] = posts_response["data"]["posts"]
 
@@ -134,14 +122,12 @@ def user_manage_post_view(request):
     return render(request, "html/user_manage_post_view.html", context)
 
 # MARK: User Manage Comment View
-def user_manage_comment_view(request):
-    context = {}
-
+def user_manage_comment_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
 
-    per_page = 10
+    per_page = 2
     current_page = int(request.GET.get("page", 1))
 
     comment_count_response = comment_service.get_total_comment_count_by_user_id(context["user_info"]["UserID"])
@@ -150,7 +136,7 @@ def user_manage_comment_view(request):
 
     pagination_data = utilities.get_pagination_data(current_page, per_page, total_comment_count)
     
-    comments_response = comment_service.get_comments_for_page_by_user_id(pagination_data["start_index"], per_page, context["user_info"]["UserID"])
+    comments_response = comment_service.get_comments_for_page(pagination_data["start_index"], per_page, userID=context["user_info"]["UserID"])
     if comments_response["status"] == "SUCCESS":
         context["comments"] = comments_response["data"]["comments"]
 

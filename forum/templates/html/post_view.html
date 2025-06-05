@@ -36,7 +36,7 @@
 
             <h2 class="card-title mb-0"><b>{{ post.Title }}</b></h2>
             <small class="text-muted">By {{ post.Username }} • Posted on {{ post.Timestamp|date:"M d, Y H:i" }}</small>
-            <p class="card-text mt-3">{{ post.PostContent }}</p>
+            <p class="card-text mt-3">{{ post.PostContent|linebreaksbr }}</p>
         </div>
     </div>
     {% endif %}
@@ -70,7 +70,7 @@
 
         {% for comment in comments %}
         <!-- #MARK: Comments -->
-        <div class="card mb-3 comment-card shadow-sm position-relative">
+        <div class="card mb-3 comment-card shadow-sm position-relative" id="comment-{{ comment.CommentPosition }}">
             <div class="card-body">
                 <strong class="d-block mb-1">@{{ comment.Username }}</strong>
                 <!-- Comment Display -->

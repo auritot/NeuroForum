@@ -3,43 +3,57 @@ from django.contrib.auth.hashers import check_password, make_password
 from .. import utilities
 from datetime import datetime
 
-comment_username_col = ["CommentID", "CommentContents", "Timestamp", "PostID_id", "UserID_id", "Username"]
-
-# MARK: Insert Comment
-def insert_new_comment(commentContents, postID, userID):
-    try:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                INSERT INTO forum_comment
-                (CommentContents, Timestamp, PostID_id, UserID_id)
-                VALUES (%s, %s, %s, %s);
-                """,
-                [commentContents, timestamp, postID, userID],
-            )
-
-        return utilities.response("SUCCESS", "Comment successfully created")
-
-    except Exception as e:
-        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
-
+comment_username_col = ["CommentID", "CommentContents", "Timestamp", "PostID_id", "UserID_id", "Username", "CommentPosition"]
 
 # MARK: Get Comments for page by Post ID
-def get_comments_for_page_by_post_id(postID, start_index, per_page):
+def get_comments_for_page(start_index, per_page, postID=None, userID=None):
     try:
+        base_query = """
+                    SELECT c.*, u.Username,
+                    (
+                        SELECT COUNT(*) + 1 FROM forum_comment c2
+                        WHERE c2.PostID_id = c.PostID_id AND c2.Timestamp > c.Timestamp
+		                ORDER BY c.Timestamp DESC
+                    ) AS CommentPosition
+                    """
+        where_clauses = []
+        params = []
+
+        if userID:
+            base_query += """,
+                        CEIL((
+                            SELECT COUNT(*) + 1 FROM forum_comment c2
+                            WHERE c2.PostID_id = c.PostID_id AND c2.Timestamp > c.Timestamp
+		                    ORDER BY c.Timestamp DESC
+                        ) / %s) AS PageNumberInPost
+                        """
+            params.append(per_page)
+            comment_username_col.append("PageNumberInPost")
+            
+            where_clauses.append("c.UserID_id = %s")
+            params.append(userID)
+
+            
+        if postID:
+            where_clauses.append("c.PostID_id = %s")
+            params.append(postID)
+
+        base_query += """
+                    FROM forum_comment c
+                    JOIN forum_useraccount u ON c.UserID_id = u.UserID
+                    """
+
+        if where_clauses:
+            base_query += " WHERE " + " AND ".join(where_clauses)
+
+        base_query += """
+                    ORDER BY c.Timestamp DESC
+                    LIMIT %s, %s;
+                    """
+        params.extend([start_index, per_page])
+    
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT c.*, u.Username FROM forum_comment c
-                JOIN forum_useraccount u ON c.UserID_id = u.UserID
-                WHERE c.PostID_id = %s
-                ORDER BY c.Timestamp DESC
-                LIMIT %s, %s;
-                """,
-                [postID, start_index, per_page],
-            )
+            cursor.execute(base_query,params)
 
             results = cursor.fetchall()
             comments = [dict(zip(comment_username_col, row)) for row in results]
@@ -71,27 +85,23 @@ def get_total_comment_count_by_user_id(userID):
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
-# MARK: Get Comments for page by UserID
-def get_comments_for_page_by_user_id(start_index, per_page, userID):
+# MARK: Insert Comment
+def insert_new_comment(commentContents, postID, userID):
     try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT c.*, u.Username FROM forum_comment c
-                JOIN forum_useraccount u ON c.UserID_id = u.UserID
-                WHERE c.UserID_id = %s
-                ORDER BY c.Timestamp DESC
-                LIMIT %s, %s;
-                """, 
-                [userID, start_index, per_page],
+                INSERT INTO forum_comment
+                (CommentContents, Timestamp, PostID_id, UserID_id)
+                VALUES (%s, %s, %s, %s);
+                """,
+                [commentContents, timestamp, postID, userID],
             )
 
-            results = cursor.fetchall()
-            comments = [dict(zip(comment_username_col, row)) for row in results]
-            comment_data = {"comments": comments}
+        return utilities.response("SUCCESS", "Comment successfully created")
 
-        return utilities.response("SUCCESS", "Retrieved Post for pages", comment_data)
-    
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 

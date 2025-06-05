@@ -39,12 +39,15 @@
                 </div>
                 {% for comment in comments %}
                 <!-- #MARK: Comments -->
-                <div class="card mb-3 comment-card shadow-sm position-relative">
+                <div class="card mb-3 comment-card shadow-sm position-relative"
+                    id="comment-{{ comment.CommentPosition }}">
                     <div class="card-body">
                         <!-- Comment Display -->
-                        <p class="mb-2 comment-content">{{ comment.CommentContents|linebreaksbr }}</p>
-                        <!-- Edit Form (initially hidden) -->
-                        <form class="edit-comment-form d-none mt-2" method="POST" action="">
+                        <a class="text-decoration-none text-dark"
+                            href="{% url 'post_view' post_id=comment.PostID_id%}?page={{ comment.PageNumberInPost }}#comment-{{ comment.CommentPosition }}">
+                            <p class="mb-2 comment-content">{{ comment.CommentContents|linebreaksbr }}</p>
+                            <!-- Edit Form (initially hidden) -->
+                            <!-- <form class="edit-comment-form d-none mt-2" method="POST" action="">
                             {% csrf_token %}
                             <div class="mb-2">
                                 <textarea class="form-control auto-expand" id="editCommentText" name="editCommentText"
@@ -55,8 +58,9 @@
                                 <button type="button" class="btn btn-secondary btn-sm cancel-edit">Cancel</button>
                                 <button type="submit" class="btn btn-primary btn-sm">Save</button>
                             </div>
-                        </form>
-                        <small class="text-muted">Commented on {{ comment.Timestamp|date:"M d, Y H:i" }}</small>
+                        </form> -->
+                            <small class="text-muted">Commented on {{ comment.Timestamp|date:"M d, Y H:i" }}</small>
+                        </a>
 
 
                         {% if comment.UserID_id == user_info.UserID %}
