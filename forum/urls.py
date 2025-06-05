@@ -13,6 +13,10 @@ urlpatterns = [
     path("create_post", views.post_form_view, name="create_post_view"),
     path("edit_post/<int:post_id>", views.post_form_view, name="edit_post_view"),
     path("post/<int:post_id>", views.post_view, name="post_view"),
+    # User Related Pages
+    path("profile", views.user_profile_view, name="user_profile_view"),
+    path("manage_post", views.user_manage_post_view, name="user_manage_post_view"),
+    path("manage_comment", views.user_manage_comment_view, name="user_manage_comment_view"),
     path("mail_template", views.mail_template, name="mail_template"),
     path("chat/<str:other_user>/", views.chat_view, name="chat_view"),
     # MARK: Process

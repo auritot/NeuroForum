@@ -1,0 +1,151 @@
+{% extends 'html/base.html' %}
+{% load static %}
+
+{% block title %}Manage Posts{% endblock %}
+
+{% block extra_css %}{% endblock %}
+{% block extra_js %}{% endblock %}
+
+{% block content %}
+<main>
+    <div class="container my-5">
+        <div class="row">
+            <!-- #MARK: Sidebar on Left -->
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-body text-center">
+                        <strong>@{{ user_info.Username }}</strong>
+                    </div>
+                </div>
+                <div class="card mb-4">
+                    <div class="list-group list-group-flush text-center">
+                        <a href={% url 'user_profile_view' %} class="list-group-item list-group-item-action">
+                            Update Profile</a>
+                        <a href={% url 'user_manage_post_view' %} class="list-group-item list-group-item-action">
+                            Manage Posts</a>
+                        <a href={% url 'user_manage_comment_view' %} class="list-group-item list-group-item-action">
+                            Manage Comments</a>
+                        <a href="#" class=" list-group-item list-group-item-action text-danger">
+                            Logout</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <strong>Manage Your Posts</strong>
+                    </div>
+                </div>
+                <!-- #MARK: Posts -->
+                <div class="mb-4" id="postList">
+                    {% for post in posts %}
+                    <div class="card mb-4 position-relative">
+                        <a class="text-decoration-none text-dark" href="{% url 'post_view' post_id=post.PostID %}">
+                            <div class="card-body">
+                                <h5 class="card-title mb-0"><b>{{ post.Title }}</b></h5>
+                                <p class="card-text my-2">{{ post.PostContent|truncatewords:20 }}</p>
+                                <small class="text-muted">
+                                    Posted on {{ post.Timestamp|date:"M d, Y H:i" }} • {{ post.CommentCount }} comments
+                                </small>
+                            </div>
+                        </a>
+                        <!-- #MARK: Post Dropdown Menu -->
+                        {% if post.UserID_id == user_info.UserID %}
+                        <div class="dropdown position-absolute top-0 end-0 m-2">
+                            <button class="border-0 bg-transparent p-0 me-2" type="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <i class="bi bi-three-dots fs-5 text-secondary"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href={% url 'edit_post_view' post_id=post.PostID
+                                        %}>Edit</a></li>
+                                <li><a class="dropdown-item text-danger" href={% url 'process_delete_post'
+                                        post_id=post.PostID %}>Delete
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="card text-center shadow-sm mb-4 position-relative">
+                        <div class="card-body">
+                            <p class="mb-0 text-muted">No posts has been found.</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if posts %}
+                <!-- #MARK: Post Pagination -->
+                <div class="mt-3">
+                    <nav aria-label="Post pagination">
+                        <ul class="pagination justify-content-center">
+                            <!-- #MARK: Previous Page Link -->
+                            {% if previous_page %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1&search={{ search_query }}" aria-label="First">
+                                    <span aria-hidden="true">&#60;&#60;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ previous_page }}&search={{ search_query }}"
+                                    aria-label="Previous">
+                                    <span aria-hidden="true">&#60;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="First">
+                                    <span aria-hidden="true">&#60;&#60;</span>
+                                </a>
+                            </li>
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Previous">
+                                    <span aria-hidden="true">&#60;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            <!-- #MARK: Page Number Links -->
+                            {% for page_num in page_range %}
+                            <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                                <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                            </li>
+                            {% endfor %}
+
+                            <!-- #MARK: Next Page Link -->
+                            {% if next_page %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ next_page }}&search={{ search_query }}"
+                                    aria-label="Next">
+                                    <span aria-hidden="true">&#62;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ total_pages }}&search={{ search_query }}"
+                                    aria-label="Last">
+                                    <span aria-hidden="true">&#62;&#62;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Next">
+                                    <span aria-hidden="true">&#62;</span>
+                                </a>
+                            </li>
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Last">
+                                    <span aria-hidden="true">&#62;&#62;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

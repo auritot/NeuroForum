@@ -3,49 +3,38 @@ from django.http import HttpResponse
 from django.core.mail import send_mail
 from django.conf import settings
 
-from .models import UserAccount
-from .services import session_service
+from .services import session_service, utilities
 from .services.db_services import post_service, comment_service
 from django.contrib.messages import get_messages
 
 # Create your views here.
-# MARK: Index Page
-def index(request, context={}):
+# MARK: Index View
+def index(request):
+    context = {}
+
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
 
     per_page = 10
-    page_number = int(request.GET.get("page", 1))
+    current_page = int(request.GET.get("page", 1))
 
     post_count_response = post_service.get_total_post_count()
     if post_count_response["status"] == "SUCCESS":
-        total_post_count = post_count_response["data"]["total_post_count"]
+        total_post_count: int = post_count_response["data"]["total_post_count"]
 
-    start_index = (page_number - 1) * per_page
-    end_index = start_index + per_page
+    pagination_data = utilities.get_pagination_data(current_page, per_page, total_post_count)
 
-    posts_result = post_service.get_posts_by_pages(start_index, per_page)
-    if posts_result["status"] == "SUCCESS":
-        posts = posts_result["data"]["posts"]
+    posts_response = post_service.get_posts_for_page(pagination_data["start_index"], per_page)
+    if posts_response["status"] == "SUCCESS":
+        context["posts"] = posts_response["data"]["posts"]
 
-    total_pages = (total_post_count + per_page - 1) // per_page
-    page_range = range(1, total_pages + 1)
-
-    previous_page = page_number - 1 if page_number > 1 else None
-    next_page = page_number + 1 if page_number < total_pages else None
-
-    context["posts"] = posts
-    context["total_pages"] = total_pages
-    context["page_range"] = page_range
-    context["current_page"] = page_number
-    context["previous_page"] = previous_page
-    context["next_page"] = next_page
+    context.update(pagination_data)
 
     return render(request, "html/index.html", context)
 
 
-# MARK: Login Page
+# MARK: Login View
 def login_view(request):
     context = {}
 
@@ -56,7 +45,7 @@ def login_view(request):
     return render(request, "html/login_view.html", context)
 
 
-# MARK: Register Page
+# MARK: Register View
 def register_view(request):
     context = {}
 
@@ -89,16 +78,85 @@ def post_view(request, post_id, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
 
-    post_result = post_service.get_post_by_id(post_id)
-    if post_result["status"] == "SUCCESS":
-        context["post"] = post_result["data"]["post"]
+    post_response = post_service.get_post_by_id(post_id)
+    if post_response["status"] == "SUCCESS":
+        context["post"] = post_response["data"]["post"]
 
-    comment_result = comment_service.get_comments_by_post_id(post_id)
-    if comment_result["status"] == "SUCCESS":
-        context["comments"] = comment_result["data"]["comments"]
+    per_page = 10
+    current_page = int(request.GET.get("page", 1))
+
+    total_comment_count = context["post"]["CommentCount"]
+
+    pagination_data = utilities.get_pagination_data(current_page, per_page, total_comment_count)
+
+    comments_response = comment_service.get_comments_for_page_by_post_id(post_id, pagination_data["start_index"], per_page)
+    if comments_response["status"] == "SUCCESS":
+        context["comments"] = comments_response["data"]["comments"]
+
+    context.update(pagination_data)
 
     return render(request, "html/post_view.html", context)
 
+
+# MARK: User Profile View
+def user_profile_view(request):
+    context = {}
+
+    session_response = session_service.check_session(request)
+    if session_response["status"] == "SUCCESS":
+        context["user_info"] = session_response["data"]
+
+    return render(request, "html/user_profile_view.html", context)
+
+# MARK: User Manage Post View
+def user_manage_post_view(request):
+    context = {}
+
+    session_response = session_service.check_session(request)
+    if session_response["status"] == "SUCCESS":
+        context["user_info"] = session_response["data"]
+
+    per_page = 10
+    current_page = int(request.GET.get("page", 1))
+
+    post_count_response = post_service.get_total_post_count_by_user_id(context["user_info"]["UserID"])
+    if post_count_response["status"] == "SUCCESS":
+        total_post_count: int = post_count_response["data"]["total_post_count"]
+
+    pagination_data = utilities.get_pagination_data(current_page, per_page, total_post_count)
+    
+    posts_response = post_service.get_posts_for_page_by_user_id(pagination_data["start_index"], per_page, context["user_info"]["UserID"])
+    if posts_response["status"] == "SUCCESS":
+        context["posts"] = posts_response["data"]["posts"]
+
+    context.update(pagination_data)
+
+    return render(request, "html/user_manage_post_view.html", context)
+
+# MARK: User Manage Comment View
+def user_manage_comment_view(request):
+    context = {}
+
+    session_response = session_service.check_session(request)
+    if session_response["status"] == "SUCCESS":
+        context["user_info"] = session_response["data"]
+
+    per_page = 10
+    current_page = int(request.GET.get("page", 1))
+
+    comment_count_response = comment_service.get_total_comment_count_by_user_id(context["user_info"]["UserID"])
+    if comment_count_response["status"] == "SUCCESS":
+        total_comment_count: int = comment_count_response["data"]["total_comment_count"]
+
+    pagination_data = utilities.get_pagination_data(current_page, per_page, total_comment_count)
+    
+    comments_response = comment_service.get_comments_for_page_by_user_id(pagination_data["start_index"], per_page, context["user_info"]["UserID"])
+    if comments_response["status"] == "SUCCESS":
+        context["comments"] = comments_response["data"]["comments"]
+
+    context.update(pagination_data)
+
+    return render(request, "html/user_manage_comment_view.html", context)
 
 # MARK: Mail Test
 def mail_template(request):
@@ -120,7 +178,7 @@ def mail_template(request):
 
     return render(request, "html/mail_template.html", context)
 
-
+# MARK: Chat View
 def chat_view(request, other_user):
     print("🌐 HTTP session:", dict(request.session.items()))
     session_response = session_service.check_session(request)

@@ -46,3 +46,43 @@ def insert_new_user(username, email, password, role, emailVerificationCode):
 
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+
+# MARK: Get User by Email
+def get_user_by_email(email):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """ SELECT * FROM forum_useraccount WHERE Email = %s; """,
+                [email],
+            )
+
+            result = cursor.fetchone()
+            if result is None:
+                return utilities.response("NOT_FOUND", "User not found")
+            
+            user_data = dict(zip(user_col, result))
+            
+            return utilities.response("SUCCESS", "User was found", user_data)
+        
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    
+# MARK: Get User by Username
+def get_user_by_username(username):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """ SELECT * FROM forum_useraccount WHERE Username = %s; """,
+                [username],
+            )
+
+            result = cursor.fetchone()
+            if result is None:
+                return utilities.response("NOT_FOUND", "User not found")
+            
+            user_data = dict(zip(user_col, result))
+            
+            return utilities.response("SUCCESS", "User was found", user_data)
+        
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")

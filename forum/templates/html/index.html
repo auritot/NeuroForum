@@ -15,9 +15,9 @@
 <main>
   <div class="container my-5">
     <div class="row">
-      <!-- Left/Main Section -->
+      <!-- #MARK: Left Section -->
       <div class="col-md-9">
-        <!-- Search bar -->
+        <!-- #MARK: Search bar -->
         <form class="mb-3">
           <div class="input-group">
             <input type="text" class="form-control" placeholder="Search posts..." />
@@ -25,7 +25,7 @@
           </div>
         </form>
 
-        <!-- Filter bar -->
+        <!-- #MARK: Filter bar -->
         <form class="mb-4">
           <div class="row g-2 align-items-center">
             <div class="col-sm-4">
@@ -49,10 +49,9 @@
           </div>
         </form>
 
-        <!-- Posts -->
+        <!-- #MARK: Posts -->
         <div class="mb-4" id="postList">
           {% for post in posts %}
-          <!-- Post Template-->
           <div class="card mb-4 position-relative">
             <a class="text-decoration-none text-dark" href="{% url 'post_view' post_id=post.PostID %}">
               <div class="card-body">
@@ -64,7 +63,7 @@
                 </small>
               </div>
             </a>
-            <!-- Dropdown menu -->
+            <!-- #MARK: Post Dropdown Menu -->
             {% if post.UserID_id == user_info.UserID %}
             <div class="dropdown position-absolute top-0 end-0 m-2">
               <button class="border-0 bg-transparent p-0 me-2" type="button" data-bs-toggle="dropdown"
@@ -86,17 +85,19 @@
         </div>
       </div>
 
-      <!-- Right Sidebar (25%) -->
+      <!-- #MARK: Right Sidebar -->
       <div class="col-md-3">
         <div class="card mb-4">
-          <div class="card-header">Sidebar Section</div>
+          <div class="card-header">Welcome to NeuroForum!</div>
           <div class="card-body">
-            <p class="card-text">You can add widgets, trending posts, announcements, or anything else
-              here.</p>
+            <p class="card-text">
+              An open space for ideas, questions, and conversations—on any topic, from anyone. Jump in, share your
+              thoughts, and connect with a curious community.
+            </p>
           </div>
         </div>
 
-        <div class="card">
+        <!-- <div class="card">
           <div class="card-header">Another Widget</div>
           <div class="card-body">
             <ul class="list-unstyled">
@@ -105,15 +106,15 @@
               <li><a href="#">Link Three</a></li>
             </ul>
           </div>
-        </div>
+        </div> -->
       </div>
     </div>
 
-    <!-- Pagination -->
+    <!-- #MARK: Post Pagination -->
     <div class="mt-3">
       <nav aria-label="Post pagination">
         <ul class="pagination justify-content-center">
-          <!-- Previous Page Link -->
+          <!-- #MARK: Previous Page Link -->
           {% if previous_page %}
           <li class="page-item">
             <a class="page-link" href="?page=1&search={{ search_query }}" aria-label="First">
@@ -138,14 +139,14 @@
           </li>
           {% endif %}
 
-          <!-- Page Number Links -->
+          <!-- #MARK: Page Number Links -->
           {% for page_num in page_range %}
           <li class="page-item {% if page_num == current_page %}active{% endif %}">
             <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
           </li>
           {% endfor %}
 
-          <!-- Next Page Link -->
+          <!-- #MARK: Next Page Link -->
           {% if next_page %}
           <li class="page-item">
             <a class="page-link" href="?page={{ next_page }}&search={{ search_query }}" aria-label="Next">

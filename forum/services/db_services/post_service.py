@@ -20,9 +20,8 @@ def get_total_post_count():
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
-
-# MARK: Get Posts for pages
-def get_posts_by_pages(start_index, per_page):
+# MARK: Get Posts for page
+def get_posts_for_page(start_index, per_page):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -32,7 +31,7 @@ def get_posts_by_pages(start_index, per_page):
                 JOIN forum_useraccount u ON p.UserID_id = u.UserID
                 LEFT JOIN forum_comment c ON c.PostID_id = p.PostID
                 GROUP BY p.PostID, u.UserID
-                ORDER BY p.Timestamp DESC;
+                ORDER BY p.Timestamp DESC
                 LIMIT %s, %s;
                 """, 
                 [start_index, per_page],
@@ -46,7 +45,54 @@ def get_posts_by_pages(start_index, per_page):
     
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    
+# MARK: Get Total Post Count by UserID
+def get_total_post_count_by_user_id(userID):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """ 
+                SELECT COUNT(*) FROM forum_post
+                WHERE UserID_id = %s;
+                """, 
+                [userID]
+            )
 
+            result = cursor.fetchone()
+            total_post_count = result[0] if result else 0
+            post_data = {"total_post_count": total_post_count}
+
+        return utilities.response("SUCCESS", "Retrieved Total Post Count", post_data)
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    
+# MARK: Get Posts for page by UserID
+def get_posts_for_page_by_user_id(start_index, per_page, userID):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT p.*, u.Username, COUNT(c.CommentID) AS CommentCount
+                FROM forum_post p
+                JOIN forum_useraccount u ON p.UserID_id = u.UserID
+                LEFT JOIN forum_comment c ON c.PostID_id = p.PostID
+                WHERE p.UserID_id = %s
+                GROUP BY p.PostID, u.UserID
+                ORDER BY p.Timestamp DESC
+                LIMIT %s, %s;
+                """, 
+                [userID, start_index, per_page],
+            )
+
+            results = cursor.fetchall()
+            posts = [dict(zip(post_username_comment_count_col, row)) for row in results]
+            post_data = {"posts": posts}
+
+        return utilities.response("SUCCESS", "Retrieved Post for pages", post_data)
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Get Post by ID
 def get_post_by_id(postID):
@@ -76,7 +122,6 @@ def get_post_by_id(postID):
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
-
 # MARK: Insert Post
 def insert_new_post(postTitle, postDescription, allowComments, userID):
     try:
@@ -95,25 +140,6 @@ def insert_new_post(postTitle, postDescription, allowComments, userID):
 
         return utilities.response("SUCCESS", "Post successfully created")
 
-    except Exception as e:
-        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
-
-# MARK: Delete Post by ID
-def delete_post_by_id(postID):
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """ DELETE FROM forum_comment WHERE PostID_id = %s; """,
-                [postID],
-            )
-
-            cursor.execute(
-                """ DELETE FROM forum_post WHERE PostID = %s; """,
-                [postID],
-            )
-
-        return utilities.response("SUCCESS", "Post and Comments deleted successfully")
-    
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
@@ -136,3 +162,23 @@ def update_post_by_id(postTitle, postDescription, allowComments, postID):
     
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+
+# MARK: Delete Post by ID
+def delete_post_by_id(postID):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """ DELETE FROM forum_comment WHERE PostID_id = %s; """,
+                [postID],
+            )
+
+            cursor.execute(
+                """ DELETE FROM forum_post WHERE PostID = %s; """,
+                [postID],
+            )
+
+        return utilities.response("SUCCESS", "Post and Comments deleted successfully")
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    

@@ -1,0 +1,84 @@
+{% extends 'html/base.html' %}
+{% load static %}
+
+{% block title %}User Profile{% endblock %}
+
+{% block extra_css %}{% endblock %}
+{% block extra_js %}{% endblock %}
+
+{% block content %}
+<main>
+  <div class="container my-5">
+    <div class="row">
+      <!-- #MARK: Sidebar on Left -->
+      <div class="col-md-3">
+        <div class="card mb-4">
+          <div class="card-body text-center">
+            <strong>@{{ user_info.Username }}</strong>
+          </div>
+        </div>
+        <div class="card mb-4">
+          <div class="list-group list-group-flush text-center">
+            <a href={% url 'user_profile_view' %} class="list-group-item list-group-item-action">
+              Update Profile</a>
+            <a href={% url 'user_manage_post_view' %} class="list-group-item list-group-item-action">
+              Manage Posts</a>
+            <a href={% url 'user_manage_comment_view' %} class="list-group-item list-group-item-action">
+              Manage Comments</a>
+            <a href="#" class=" list-group-item list-group-item-action text-danger">
+              Logout</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-9">
+        <!-- #MARK: User Profile Form -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h4 class="card-title mb-4">Edit User Profile</h4>
+            <form method="POST" action="">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" value="{{ user_info.Username }}"
+                  required>
+              </div>
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ user_info.Email }}" required>
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Update Profile</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!-- #MARK: Change Password Form -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h4 class="card-title mb-4">Change Password</h4>
+            <form method="POST" action="">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="password" class="form-label">Old Password</label>
+                <input type="password" class="form-control" id="oldPassword" name="oldPassword">
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">New Password</label>
+                <input type="password" class="form-control" id="newPassword" name="newPassword">
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">Confirm New Password</label>
+                <input type="password" class="form-control" id="newConfirmPassword" name="newConfirmPassword">
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Change Password</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -12,11 +12,12 @@
 
 {% block content %}
 <main class="container my-5">
-    <!-- Post Content -->
     {% if post %}
+    <!-- MARK: Post Content -->
     <div class="card mb-5 shadow-sm position-relative">
         <div class="card-body">
             {% if post.UserID_id == user_info.UserID %}
+            <!-- MARK: Post Dropdown Menu -->
             <div class="dropdown position-absolute top-0 end-0 m-2">
                 <button class="border-0 bg-transparent p-0 me-2" type="button" data-bs-toggle="dropdown"
                     aria-expanded="false">
@@ -40,14 +41,13 @@
     </div>
     {% endif %}
 
-    <!-- Comments Section -->
+    <!-- #MARK: Comments Section -->
     <div class="mb-5">
         <h4 class="mb-3">Comments ({{ post.CommentCount }})</h4>
 
-        <!-- Comment Input Section -->
         {% if post.CommentStatus == 1 %}
+        <!-- #MARK: New Comment Form -->
         <div class="mb-3">
-            <!-- Placeholder Box -->
             <div id="commentPlaceholder" class="form-control text-muted" style="cursor: text;">
                 Write a comment...
             </div>
@@ -68,8 +68,8 @@
             </div>
         </div>
 
-        <!-- Comment -->
         {% for comment in comments %}
+        <!-- #MARK: Comments -->
         <div class="card mb-3 comment-card shadow-sm position-relative">
             <div class="card-body">
                 <strong class="d-block mb-1">@{{ comment.Username }}</strong>
@@ -91,8 +91,9 @@
                 </form>
                 <small class="text-muted">Commented on {{ comment.Timestamp|date:"M d, Y H:i" }}</small>
 
-                <!-- Menu Button -->
-                {% if post.UserID_id == user_info.UserID %}
+
+                {% if comment.UserID_id == user_info.UserID %}
+                <!-- MARK: Comment Dropdown Menu -->
                 <div class="dropdown position-absolute top-0 end-0 m-2">
                     <button class="border-0 bg-transparent p-0 me-2" type="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -118,26 +119,69 @@
         </div>
         {% endfor %}
 
-        <!-- Pagination for Comments -->
-        <nav aria-label="Comments pagination">
-            <ul class="pagination justify-content-center mt-4">
-                <li class="page-item disabled">
-                    <a class="page-link">Previous</a>
-                </li>
-                <li class="page-item active">
-                    <a class="page-link" href="#">1</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="#">2</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="#">3</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="#">Next</a>
-                </li>
-            </ul>
-        </nav>
+        <!-- #MARK: Comment Pagination -->
+        <div class="mt-3">
+            <nav aria-label="Comments pagination">
+                <ul class="pagination justify-content-center">
+                    <!-- #MARK: Previous Page Link -->
+                    {% if previous_page %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">
+                            <span aria-hidden="true">&#60;&#60;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ previous_page }}" aria-label="Previous">
+                            <span aria-hidden="true">&#60;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="First">
+                            <span aria-hidden="true">&#60;&#60;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <span aria-hidden="true">&#60;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- #MARK: Page Number Links -->
+                    {% for page_num in page_range %}
+                    <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                        <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                    </li>
+                    {% endfor %}
+
+                    <!-- #MARK: Next Page Link -->
+                    {% if next_page %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ next_page }}" aria-label="Next">
+                            <span aria-hidden="true">&#62;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ total_pages }}" aria-label="Last">
+                            <span aria-hidden="true">&#62;&#62;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <span aria-hidden="true">&#62;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Last">
+                            <span aria-hidden="true">&#62;&#62;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
         {% else %}
         <div class="card text-center shadow-sm mb-4 position-relative">
             <div class="card-body">

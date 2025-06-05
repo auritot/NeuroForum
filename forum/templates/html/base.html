@@ -21,7 +21,7 @@
 </head>
 
 <body>
-     <!-- #MARK:Navbar -->
+     <!-- #MARK: Navbar -->
      <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
           <div class="container p-1">
                <a class="navbar-brand fw-bold fs-2" href={% url 'index' %}>NeuroForum</a>
@@ -30,21 +30,21 @@
                </button>
 
                <div class="collapse navbar-collapse" id="navbarContent">
-                    <!-- Left links -->
+                    <!-- #MARK: Left links -->
                     <!-- <ul class="navbar-nav me-auto">
                          <li class="nav-item">
                               <a class="nav-link" href="about.html">About</a>
                          </li>
                     </ul> -->
 
-                    <!-- Right links -->
+                    <!-- #MARK: Right links -->
                     <ul class="navbar-nav ms-auto align-items-center">
                          {% if user_info %}
                          <li class="nav-item me-3">
                               <a href={% url 'create_post_view' %} class="btn btn-primary">Create Post</a>
                          </li>
                          <li class="nav-item me-2">
-                              <a href="#" class="d-flex align-items-center p-0">
+                              <a href={% url 'user_profile_view' %} class="d-flex align-items-center p-0">
                                    <i class="bi bi-person-square fs-1 text-muted"></i>
                               </a>
                          </li>

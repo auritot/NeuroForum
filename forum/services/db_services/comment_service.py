@@ -26,8 +26,8 @@ def insert_new_comment(commentContents, postID, userID):
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 
-# MARK: Get Comments by Post ID
-def get_comments_by_post_id(postID):
+# MARK: Get Comments for page by Post ID
+def get_comments_for_page_by_post_id(postID, start_index, per_page):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -35,9 +35,55 @@ def get_comments_by_post_id(postID):
                 SELECT c.*, u.Username FROM forum_comment c
                 JOIN forum_useraccount u ON c.UserID_id = u.UserID
                 WHERE c.PostID_id = %s
-                ORDER BY c.Timestamp DESC;
+                ORDER BY c.Timestamp DESC
+                LIMIT %s, %s;
                 """,
-                [postID],
+                [postID, start_index, per_page],
+            )
+
+            results = cursor.fetchall()
+            comments = [dict(zip(comment_username_col, row)) for row in results]
+            comment_data = {"comments": comments}
+
+        return utilities.response("SUCCESS", "Retrieved Post for pages", comment_data)
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    
+# MARK: Get Total Comment Count by UserID
+def get_total_comment_count_by_user_id(userID):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """ 
+                SELECT COUNT(*) FROM forum_comment
+                WHERE UserID_id = %s;
+                """, 
+                [userID]
+            )
+
+            result = cursor.fetchone()
+            total_comment_count = result[0] if result else 0
+            comment_data = {"total_comment_count": total_comment_count}
+
+        return utilities.response("SUCCESS", "Retrieved Total Post Count", comment_data)
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+
+# MARK: Get Comments for page by UserID
+def get_comments_for_page_by_user_id(start_index, per_page, userID):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT c.*, u.Username FROM forum_comment c
+                JOIN forum_useraccount u ON c.UserID_id = u.UserID
+                WHERE c.UserID_id = %s
+                ORDER BY c.Timestamp DESC
+                LIMIT %s, %s;
+                """, 
+                [userID, start_index, per_page],
             )
 
             results = cursor.fetchall()
