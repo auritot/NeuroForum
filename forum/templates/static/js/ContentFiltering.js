@@ -1,17 +1,17 @@
-// ContentFiltering.js
-
 let filteredWords = [];
 
 window.addEventListener('DOMContentLoaded', () => {
+    const submitButtons = document.querySelectorAll("button[type='submit']");
     const titleInput = document.getElementById('postTitle');
     const descInput = document.getElementById('postDescription');
-    const submitBtn = document.querySelector("button[type='submit']");
+    const commentInput = document.getElementById('commentText');
+    const editInputs = document.querySelectorAll('.edit-comment-form textarea');
 
-    // Fetch filtered words from the backend API
-    fetch('/api/filtered-words')
+    const allFields = [titleInput, descInput, commentInput, ...editInputs].filter(Boolean);
+
+    fetch('/api/filtered-words/')
         .then(response => response.json())
         .then(data => {
-            // Convert all words to lowercase for consistent comparison
             filteredWords = data.map(item => item.FilterContent.toLowerCase());
         })
         .catch(error => {
@@ -19,35 +19,31 @@ window.addEventListener('DOMContentLoaded', () => {
         });
 
     function containsFilteredWords(text) {
-        const content = text.toLowerCase();
-        return filteredWords.some(word => content.includes(word));
+        return filteredWords.some(word => text.toLowerCase().includes(word));
     }
 
     function containsInvalidSpecialChars(text) {
-        // Allow letters, numbers, spaces, and these symbols: . , ! ( ) @ ?
+        // Only allow characters, numbers, and certain special characters .,!?()@
         const allowed = /^[a-zA-Z0-9 .,!?()@]*$/;
         return !allowed.test(text);
     }
 
-    function validateForm() {
-        const title = titleInput.value;
-        const desc = descInput.value;
+    function validateField(input) {
+        const value = input.value || "";
+        const hasBadWord = containsFilteredWords(value);
+        const hasSpecialChar = containsInvalidSpecialChars(value);
+        const isInvalid = hasBadWord || hasSpecialChar;
 
-        const titleHasBadWord = containsFilteredWords(title);
-        const descHasBadWord = containsFilteredWords(desc);
-
-        const titleHasSpecialChar = containsInvalidSpecialChars(title);
-        const descHasSpecialChar = containsInvalidSpecialChars(desc);
-
-        const isInvalid = titleHasBadWord || descHasBadWord || titleHasSpecialChar || descHasSpecialChar;
-
-        titleInput.classList.toggle('is-invalid', titleHasBadWord || titleHasSpecialChar);
-        descInput.classList.toggle('is-invalid', descHasBadWord || descHasSpecialChar);
-
-        submitBtn.disabled = isInvalid;
+        input.classList.toggle('is-invalid', isInvalid);
+        return isInvalid;
     }
 
-    // Listen for changes
-    titleInput.addEventListener('input', validateForm);
-    descInput.addEventListener('input', validateForm);
+    function validateForm() {
+        const anyInvalid = allFields.some(input => validateField(input));
+        submitButtons.forEach(btn => btn.disabled = anyInvalid);
+    }
+
+    allFields.forEach(input => {
+        input.addEventListener('input', validateForm);
+    });
 });
