@@ -4,9 +4,20 @@
 {% block title %}Create New Post{% endblock %}
 
 {% block extra_css %}
+    <style>
+    .underline {
+        text-decoration: underline;
+        color: red;
+    }
+    .is-invalid {
+        border-color: red !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
+    <script src="{% static 'js/ContentFiltering.js' %}"></script>
 {% endblock %}
 
 {% block content %}

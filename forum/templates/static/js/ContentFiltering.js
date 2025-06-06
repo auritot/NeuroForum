@@ -1,41 +1,42 @@
+// ContentFiltering.js
+
 let filteredWords = [];
 
-fetch('/api/filtered-words')
-  .then(response => response.json())
-  .then(data => {
-    filteredWords = data;
-  });
+window.addEventListener('DOMContentLoaded', () => {
+    const titleInput = document.getElementById('postTitle');
+    const descInput = document.getElementById('postDescription');
+    const submitBtn = document.querySelector("button[type='submit']");
 
-function checkContentForFilter(input) {
-  let content = input.value.toLowerCase();
-  let found = false;
+    // Fetch filtered words from the backend API
+    fetch('/api/filtered-words')
+        .then(response => response.json())
+        .then(data => {
+            // Convert all words to lowercase for consistent comparison
+            filteredWords = data.map(item => item.FilterContent.toLowerCase());
+        })
+        .catch(error => {
+            console.error('Error fetching filtered words:', error);
+        });
 
-  filteredWords.forEach(word => {
-    if (content.includes(word)) {
-      found = true;
-      content = content.replace(new RegExp(`\\b(${word})\\b`, 'gi'), '<span class="text-danger underline">$1</span>');
+    function containsFilteredWords(text) {
+        const content = text.toLowerCase();
+        return filteredWords.some(word => content.includes(word));
     }
-  });
 
-  return found;
-}
+    function validateForm() {
+        const titleHasBadWord = containsFilteredWords(titleInput.value);
+        const descHasBadWord = containsFilteredWords(descInput.value);
+        const hasBadWord = titleHasBadWord || descHasBadWord;
 
-function validateForm() {
-  const titleInput = document.getElementById("postTitle");
-  const descInput = document.getElementById("postDescription");
-  const submitBtn = document.querySelector("button[type='submit']");
+        // Add or remove red outline
+        titleInput.classList.toggle('is-invalid', titleHasBadWord);
+        descInput.classList.toggle('is-invalid', descHasBadWord);
 
-  let titleFlag = checkContentForFilter(titleInput);
-  let descFlag = checkContentForFilter(descInput);
+        // Disable submit button if there's any invalid input
+        submitBtn.disabled = hasBadWord;
+    }
 
-  submitBtn.disabled = titleFlag || descFlag;
-}
-
-// Event bindings
-document.addEventListener("DOMContentLoaded", function () {
-  const titleInput = document.getElementById("postTitle");
-  const descInput = document.getElementById("postDescription");
-
-  titleInput.addEventListener("input", validateForm);
-  descInput.addEventListener("input", validateForm);
+    // Listen for changes
+    titleInput.addEventListener('input', validateForm);
+    descInput.addEventListener('input', validateForm);
 });

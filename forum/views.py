@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import JsonResponse, HttpResponse
 from django.core.mail import send_mail
 from django.conf import settings
 
 from .services import session_service, utilities
-from .services.db_services import post_service, comment_service
+from .services.db_services import post_service, comment_service, ContentFiltering_service
 from django.contrib.messages import get_messages
 
 # Create your views here.
@@ -63,6 +63,9 @@ def post_form_view(request, context={}, post_id=None):
 
     return render(request, "html/post_form_view.html", context)
 
+def filtered_words_api(request):
+    response = ContentFiltering_service.get_all_filtered_words()
+    return JsonResponse(response["data"], safe=False)
 
 # MARK: Post View
 def post_view(request, post_id, context={}):
