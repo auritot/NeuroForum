@@ -23,17 +23,28 @@ window.addEventListener('DOMContentLoaded', () => {
         return filteredWords.some(word => content.includes(word));
     }
 
+    function containsInvalidSpecialChars(text) {
+        // Allow letters, numbers, spaces, and these symbols: . , ! ( ) @ ?
+        const allowed = /^[a-zA-Z0-9 .,!?()@]*$/;
+        return !allowed.test(text);
+    }
+
     function validateForm() {
-        const titleHasBadWord = containsFilteredWords(titleInput.value);
-        const descHasBadWord = containsFilteredWords(descInput.value);
-        const hasBadWord = titleHasBadWord || descHasBadWord;
+        const title = titleInput.value;
+        const desc = descInput.value;
 
-        // Add or remove red outline
-        titleInput.classList.toggle('is-invalid', titleHasBadWord);
-        descInput.classList.toggle('is-invalid', descHasBadWord);
+        const titleHasBadWord = containsFilteredWords(title);
+        const descHasBadWord = containsFilteredWords(desc);
 
-        // Disable submit button if there's any invalid input
-        submitBtn.disabled = hasBadWord;
+        const titleHasSpecialChar = containsInvalidSpecialChars(title);
+        const descHasSpecialChar = containsInvalidSpecialChars(desc);
+
+        const isInvalid = titleHasBadWord || descHasBadWord || titleHasSpecialChar || descHasSpecialChar;
+
+        titleInput.classList.toggle('is-invalid', titleHasBadWord || titleHasSpecialChar);
+        descInput.classList.toggle('is-invalid', descHasBadWord || descHasSpecialChar);
+
+        submitBtn.disabled = isInvalid;
     }
 
     // Listen for changes
