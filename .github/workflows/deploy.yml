@@ -25,6 +25,7 @@ jobs:
           echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" > .env
           echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
           echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
+          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
           echo "DB_HOST=db" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
           echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" >> .env
