@@ -17,6 +17,8 @@ def index(request, context={}):
     per_page = 10
     current_page = int(request.GET.get("page", 1))
 
+    total_post_count = 0
+
     post_count_response = post_service.get_total_post_count()
     if post_count_response["status"] == "SUCCESS":
         total_post_count: int = post_count_response["data"]["total_post_count"]
