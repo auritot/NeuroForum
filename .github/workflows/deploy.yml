@@ -34,7 +34,7 @@ jobs:
           echo "SSH_PRIVATE_KEY=\"${{ secrets.SSH_PRIVATE_KEY }}\"" >> .env
           echo "DEBUG=False" >> .env
 
-          docker-compose down --remove-orphans --volumes
+          docker-compose down --remove-orphans
           docker-compose pull
           docker-compose build --no-cache
           docker-compose up -d
