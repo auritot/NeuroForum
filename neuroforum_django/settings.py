@@ -15,29 +15,66 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import os
-
-# from private.sqlConfig import DATABASES
-# from private.sqlConfig import create_ssh_tunnel
+from sshtunnel import SSHTunnelForwarder
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(dotenv_path=BASE_DIR / '.env')
 
+ssh_key_content = os.getenv('SSH_PRIVATE_KEY')
+pem_path = BASE_DIR / "id_rsa"
+
+if ssh_key_content:
+    with open(pem_path, "w") as pem_file:
+        pem_file.write(ssh_key_content.replace("\\n", "\n"))
+    os.chmod(pem_path, 0o600)
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$tx&=f8&0tb%nrhjk@$x%(4=e_3*^xv=-n@&0h-ue&*1muuf_x'
-# SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+# Load Django SECRET_KEY securely from environment
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("DJANGO_SECRET_KEY not set in environment variables.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "True") == "True"
+
 ALLOWED_HOSTS = ['18.216.113.147', '127.0.0.1', 'neuroforum.ddns.net']
 
 # CSRF_TRUST
 CSRF_TRUSTED_ORIGINS = [
     "https://neuroforum.ddns.net"
 ]
+
+def create_ssh_tunnel():
+    """
+    Creates an SSH tunnel to the remote MySQL server.
+    """
+    pem_path = BASE_DIR / "id_rsa"
+
+    if not pem_path.exists():
+        raise FileNotFoundError(f"SSH key not found at {pem_path}")
+
+    tunnel = SSHTunnelForwarder(
+        ('18.216.113.147', 22), 
+        ssh_username='student16',
+        ssh_pkey=str(pem_path),  # Convert Path to str for compatibility
+        remote_bind_address=('127.0.0.1', 3306),
+        local_bind_address=('127.0.0.1',)
+    )
+
+    tunnel.start()
+    print(f"[SSH TUNNEL] Running at {tunnel.local_bind_host}:{tunnel.local_bind_port}")
+    return tunnel
+
+if DEBUG:
+    tunnel = create_ssh_tunnel()
+    db_host = tunnel.local_bind_host
+    db_port = tunnel.local_bind_port
+else:
+    db_host = os.getenv('DB_HOST')
+    db_port = os.getenv('DB_PORT', '3306')
 
 # Application definition
 INSTALLED_APPS = [
@@ -91,23 +128,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'neuroforum_django.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-# DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': BASE_DIR / 'db.sqlite3',
-#    }
-# }
-
 # Create the SSH tunnel
-# tunnel = create_ssh_tunnel()
-
-
-
-
+if DEBUG:
+    tunnel = create_ssh_tunnel()
+    db_host = tunnel.local_bind_host
+    db_port = tunnel.local_bind_port
+else:
+    db_host = os.getenv('DB_HOST')
+    db_port = os.getenv('DB_PORT', '3306')
 
 DATABASES = {
     'default': {
@@ -115,13 +143,14 @@ DATABASES = {
         'NAME': os.getenv('MYSQL_DATABASE'),
         'USER': os.getenv('MYSQL_USER'),
         'PASSWORD': os.getenv('MYSQL_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT', '3306'),
+        'HOST': db_host,
+        'PORT': db_port,
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
     }
 }
+
 
 DATABASES = DATABASES
 
