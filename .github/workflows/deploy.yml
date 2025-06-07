@@ -22,6 +22,8 @@ jobs:
           set -e
           cd /var/www/neuroforum_django
 
+          git pull origin main
+
           echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" > .env
           echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
           echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
