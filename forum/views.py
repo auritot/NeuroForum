@@ -21,7 +21,8 @@ def index(request, context={}):
 
     post_count_response = post_service.get_total_post_count()
     if post_count_response["status"] == "SUCCESS":
-        total_post_count: int = post_count_response["data"]["total_post_count"]
+        # total_post_count: int = post_count_response["data"]["total_post_count"]
+        total_post_count = post_count_response["data"]["total_post_count"]
 
     pagination_data = utilities.get_pagination_data(current_page, per_page, total_post_count)
 
