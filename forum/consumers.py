@@ -8,6 +8,7 @@ import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.utils import timezone
+from pytz import timezone as pytz_timezone
 
 from django.contrib.auth import get_user_model
 from .models import ChatRoom, ChatSession, ChatMessage
@@ -122,7 +123,8 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
                 return
 
             safe_message = bleach.clean(raw_message)
-            timestamp_str = timezone.now().strftime("%H:%M %d/%m/%Y")
+            singapore_time = timezone.now().astimezone(pytz_timezone("Asia/Singapore"))
+            timestamp_str = singapore_time.strftime("%H:%M %d/%m/%Y")
 
             await self.channel_layer.group_send(
                 self.room_name,

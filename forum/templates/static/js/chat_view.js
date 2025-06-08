@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // We expect data.timestamp == "HH:MM dd/mm/YYYY"
     const timeHtml = data.timestamp
-      ? `<br><small class="text-muted">${data.timestamp}</small>`
+      ? `<br><small class="timestamp">${data.timestamp}</small>`
       : "";
 
     const msgHtml = `

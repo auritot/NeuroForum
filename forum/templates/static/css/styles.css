@@ -241,3 +241,30 @@ main {
   text-decoration: underline;
 }
 
+.timestamp {
+  color: white;
+  font-size: 0.75rem;
+  opacity: 0.75; /* Optional for subtle effect */
+}
+
+/* ---------------------- SCROLL BAR ---------------------- */
+
+.chat-box::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-box::-webkit-scrollbar-track {
+  background: #0e1621;
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+  background-color: #44546a;
+  border-radius: 10px;
+  border: 2px solid #0e1621;
+}
+
+.chat-box::-webkit-scrollbar-thumb:hover {
+  background-color: #5f738a;
+}
+
+/* ------------------- END OF SCROLL BAR ------------------- */
