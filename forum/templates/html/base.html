@@ -44,7 +44,13 @@
                               <a href={% url 'create_post_view' %} class="btn btn-primary">Create Post</a>
                          </li>
                          <li class="nav-item me-3">
-                              <img id="chat-btn" src="{% static 'icons/chat.png' %}" alt="Chat" class="chat-btn-img me-2" />
+                              <img
+                                   id="chat-btn"
+                                   src="{% static 'icons/chat.png' %}"
+                                   alt="Chat"
+                                   class="chat-btn-img me-2"
+                                   data-username="{{ user_info.Username|escapejs }}"
+                              />
                          </li>
                          <li class="nav-item me-2">
                               <a href={% url 'user_profile_view' %} class="d-flex align-items-center p-0">
@@ -102,10 +108,6 @@
                <iframe id="chat-frame" class="chat-frame loading"></iframe>
           </div>
      </div>
-
-<script>
-  window.currentUsername = {% if user_info and user_info.Username %}"{{ user_info.Username|escapejs }}"{% else %}null{% endif %};
-</script>
 <script src="{% static 'js/chat_init.js' %}"></script>
 
 </body>
