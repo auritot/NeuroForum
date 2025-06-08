@@ -1,0 +1,34 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat with {{ other_user }}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body class="chat-inner-frame">
+  <main data-current-user="{{ user_info.Username }}" data-other-user="{{ other_user }}" class="p-3">
+    <h6 class="text-center mb-3">Chat with {{ other_user }}</h6>
+
+    <div id="chat-box" class="chat-box">
+      <div id="chat-placeholder">Loading previous chats…</div>
+    </div>
+
+    <form id="chat-form" class="input-group mt-2">
+      <input id="chat-input" type="text" class="chat-input form-control" placeholder="Type your message…" autocomplete="off">
+      <button type="submit" class="chat-send-button btn">Send</button>
+    </form>
+  </main>
+
+  <script src="{% static 'js/chat_view.js' %}"></script>
+</body>
+
+<script>
+  if (window.top === window.self) {
+    // not in an iframe — redirect to full view
+    window.location.href = "/chat/{{ other_user }}/";
+  }
+</script>
+
+</html>

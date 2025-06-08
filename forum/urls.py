@@ -19,6 +19,9 @@ urlpatterns = [
     path("manage_post", views.user_manage_post_view, name="user_manage_post_view"),
     path("manage_comment", views.user_manage_comment_view, name="user_manage_comment_view"),
     path("mail_template", views.mail_template, name="mail_template"),
+    path("chat/", views.chat_home_view, name="chat_home_view"),
+    path("chat/start/", views.start_chat_view, name="start_chat"),
+    path("chat/landing/", views.chat_landing_or_redirect_view, name="chat_landing"),
     path("chat/<str:other_user>/", views.chat_view, name="chat_view"),
     # MARK: Process
     # User Related

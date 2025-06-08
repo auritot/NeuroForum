@@ -71,6 +71,34 @@ class ChatRoom(models.Model):
         room, _ = cls.objects.get_or_create(name=room_name)
         return room
     
+    @classmethod
+    def get_recent_partners_for_user(cls, username: str):
+        """
+        Return a list of usernames the given user has chatted with (excluding themselves),
+        ordered by most recent session.
+        """
+        from django.db.models import Q
+
+        # Find all sessions where user was the sender in any ChatMessage
+        sessions = ChatSession.objects.filter(
+            messages__sender__Username=username
+        ).select_related("room").distinct()
+
+        partner_usernames = set()
+
+        for session in sessions:
+            room_name = session.room.name  # e.g., "private_alice_bob"
+            try:
+                a, b = room_name.replace("private_", "").split("_")
+            except ValueError:
+                continue
+            if a != username:
+                partner_usernames.add(a)
+            if b != username:
+                partner_usernames.add(b)
+
+        return sorted(partner_usernames)
+
 class ChatSession(models.Model):
     """
     A ChatSession lives inside exactly one ChatRoom.

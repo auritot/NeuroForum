@@ -90,11 +90,13 @@ INSTALLED_APPS = [
 
 ASGI_APPLICATION = 'neuroforum_django.asgi.application'
 
+REDIS_HOST = "127.0.0.1" if DEBUG else "redis"
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],
+            "hosts": [(REDIS_HOST, 6379)],
         },
     },
 }

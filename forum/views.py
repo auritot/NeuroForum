@@ -1,11 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.core.mail import send_mail
+from django.contrib import messages
 from django.conf import settings
 
 from .services import session_service, utilities
 from .services.db_services import post_service, comment_service, ContentFiltering_service
 from django.contrib.messages import get_messages
+
+from django.views.decorators.clickjacking import xframe_options_exempt
+from .models import ChatRoom, UserAccount
 
 # Create your views here.
 # MARK: Index View
@@ -13,6 +17,9 @@ def index(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
+
+        username = context["user_info"]["Username"]
+        context["partners"] = ChatRoom.get_recent_partners_for_user(username)
 
     per_page = 10
     current_page = int(request.GET.get("page", 1))
@@ -171,22 +178,123 @@ def mail_template(request):
     return render(request, "html/mail_template.html", context)
 
 # MARK: Chat View
-def chat_view(request, other_user):
-    print("🌐 HTTP session:", dict(request.session.items()))
-    session_response = session_service.check_session(request)
+# @xframe_options_exempt
+# def chat_view(request, other_user):
+#     print("🌐 HTTP session:", dict(request.session.items()))
+#     session_response = session_service.check_session(request)
 
+#     if session_response["status"] != "SUCCESS":
+#         return redirect(f"/login/?next=/chat/{other_user}/")
+
+#     user_info = session_response["data"]
+#     username = user_info.get("Username", "").strip()
+
+#     if not username:
+#         print("[ERROR] Missing Username in session data:", user_info)
+#         return redirect("/login")
+    
+#     current_user = user_info.get("Username", "").strip().lower()
+#     target_user = other_user.strip().lower()
+    
+#     if not current_user or current_user == target_user:
+#         return redirect("/chat/")
+
+#     existing_partners = ChatRoom.get_recent_partners_for_user(username)
+#     return render(request, "html/chat_view.html", {
+#         "user_info": user_info,
+#         "other_user": other_user,
+#         "partners": existing_partners,
+#     })
+
+@xframe_options_exempt
+def chat_view(request, other_user):
+    session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
         return redirect(f"/login/?next=/chat/{other_user}/")
 
     user_info = session_response["data"]
     username = user_info.get("Username", "").strip()
 
-    if not username:
-        print("[ERROR] Missing Username in session data:", user_info)
+    is_iframe = request.GET.get("frame") == "1"
+
+    if not username or (username == other_user and not is_iframe):
+        return render(request, "html/chat_landing.html", {"user_info": user_info})
+
+    partners = ChatRoom.get_recent_partners_for_user(username)
+
+    if is_iframe:
+        return render(request, "html/chat_inner.html", {
+            "user_info": user_info,
+            "other_user": other_user,
+        })
+
+    return render(request, "html/chat_view.html", {
+        "user_info": user_info,
+        "other_user": other_user,
+        "partners": partners,
+    })
+
+
+
+@xframe_options_exempt
+def chat_landing_or_redirect_view(request):
+    session_response = session_service.check_session(request)
+    if session_response["status"] != "SUCCESS":
         return redirect("/login")
 
-    return render(
-        request,
-        "html/chat_view.html",
-        {"other_user": other_user, "user_info": user_info},
-    )
+    user_info = session_response["data"]
+    username = user_info["Username"]
+
+    # Query for chat partners
+    partners = ChatRoom.get_recent_partners_for_user(username)
+
+    if partners:
+        if request.GET.get("frame") == "1":
+            return redirect(f"/chat/{partners[0]}/?frame=1")
+        return redirect(f"/chat/{partners[0]}")
+
+    return render(request, "html/chat_landing.html", {"user_info": user_info})
+
+@xframe_options_exempt
+def chat_home_view(request):
+    session_response = session_service.check_session(request)
+    if session_response["status"] != "SUCCESS":
+        return redirect("/login")
+
+    user_info = session_response["data"]
+    username = user_info["Username"]
+
+    partners = ChatRoom.get_recent_partners_for_user(username)
+
+    if partners:
+        return redirect(f"/chat/{partners[0]}")
+
+    return render(request, "html/chat_landing.html", {
+        "user_info": user_info
+    })
+
+@xframe_options_exempt
+def start_chat_view(request):
+    session = session_service.check_session(request)
+    if session["status"] != "SUCCESS":
+        return redirect("/login")
+
+    user_info = session["data"]
+    username = request.GET.get("username", "").strip().lower()
+
+    if not username or username == user_info["Username"].lower():
+        return render(request, "html/chat_landing.html", {
+            "user_info": user_info,
+            "error": "Invalid",
+        })
+
+    if not UserAccount.objects.filter(Username__iexact=username).exists():
+        return render(request, "html/chat_landing.html", {
+            "user_info": user_info,
+            "error": "User does not exist.",
+        })
+
+    return redirect(f"/chat/{username}/")
+
+
+

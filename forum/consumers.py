@@ -3,6 +3,7 @@ import json
 import time
 import bleach
 import logging
+import asyncio
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -27,6 +28,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
     _session_participants = {}
 
     async def connect(self):
+
         user = self.scope.get("user")
         print("🔌 [connect] scope['user'] =", self.scope.get("user"))
         if not user or not getattr(user, "is_authenticated", False):
@@ -38,6 +40,11 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         # The “other party” is the <username> captured in the URL (lowercased)
         self.other_user = self.scope["url_route"]["kwargs"]["username"].lower()
         self.current_user = user.Username.lower()
+
+        if self.current_user == self.other_user:
+            print("❌ User tried to chat with themselves")
+            await self.close(code=4004)
+            return
 
         # Build a canonical room_name (sorted so that “alice‐bob” and “bob‐alice” map
         # to the SAME room).  Prefix with “private_” to avoid collisions.
@@ -151,19 +158,25 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def disconnect(self, close_code):
-        """
-        Called when the WebSocket closes for any reason.
-        We remove this channel from the group, then decrement the participant counter.
-        If we were the last participant, we mark the session as ended.
-        """
+        
         if hasattr(self, "room_name"):
-            await self.channel_layer.group_discard(self.room_name, self.channel_name)
+            try:
+                await asyncio.wait_for(
+                    self.channel_layer.group_discard(self.room_name, self.channel_name),
+                    timeout=1.0
+                )
+            except asyncio.TimeoutError:
+                logger.warning("Timeout while removing from group.")
+            except Exception as e:
+                logger.error(f"Error during disconnect: {e}")
 
-            remaining = await self._decrement_participant_count(self.session.id)
-            if remaining == 0:
-                # Last socket left: close out that ChatSession
-                await self._close_session(self.session)
-            logger.info(f"[DISCONNECT] user={self.current_user}, room={self.room_name}, remaining={remaining}")
+            try:
+                remaining = await self._decrement_participant_count(self.session.id)
+                if remaining == 0:
+                    await self._close_session(self.session)
+                logger.info(f"[DISCONNECT] user={self.current_user}, room={self.room_name}, remaining={remaining}")
+            except Exception as e:
+                logger.error(f"Error finalizing disconnect: {e}")
 
     #
     # ─── Database / ORM HELPER METHODS ───────────────────────────────────────────
