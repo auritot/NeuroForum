@@ -8,10 +8,10 @@
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body class="chat-inner-frame">
-  <main data-current-user="{{ user_info.Username }}" data-other-user="{{ other_user }}" class="p-3">
+  <main class="d-flex flex-column h-100 p-3" data-current-user="{{ user_info.Username }}" data-other-user="{{ other_user }}">
     <h6 class="text-center mb-3">Chat with {{ other_user }}</h6>
 
-    <div id="chat-box" class="chat-box">
+    <div id="chat-box" class="chat-box flex-grow-1">
       <div id="chat-placeholder">Loading previous chats…</div>
     </div>
 
@@ -20,9 +20,8 @@
       <button type="submit" class="chat-send-button btn">Send</button>
     </form>
   </main>
-
-  <script src="{% static 'js/chat_view.js' %}"></script>
 </body>
+
 
 <script>
   if (window.top === window.self) {

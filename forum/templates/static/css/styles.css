@@ -183,6 +183,7 @@ main {
   background-color: #0e1621;
   color: white;
   height: 100%;
+  flex-direction: column;
 }
 
 .chat-inner-frame .chat-input {
