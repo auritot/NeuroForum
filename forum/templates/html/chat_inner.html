@@ -22,12 +22,6 @@
   </main>
 </body>
 
-
-<script>
-  if (window.top === window.self) {
-    // not in an iframe — redirect to full view
-    window.location.href = "/chat/{{ other_user }}/";
-  }
-</script>
+<script src="{% static 'js/redirect.js' %}"></script>
 
 </html>
