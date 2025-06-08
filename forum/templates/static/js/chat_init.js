@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const closeChat = document.getElementById("close-chat");
   const chatFrame = document.getElementById("chat-frame");
 
-  const username = window.currentUsername;
+  const username = chatBtn?.dataset.username || null;
 
   if (chatBtn) {
     chatBtn.addEventListener("click", () => {
@@ -17,12 +17,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  closeChat.addEventListener("click", () => {
+  closeChat?.addEventListener("click", () => {
     chatBox.classList.add("d-none");
     chatFrame.src = "";
   });
 
-  chatFrame.addEventListener("load", () => {
+  chatFrame?.addEventListener("load", () => {
     chatFrame.classList.remove("loading");
   });
 });
