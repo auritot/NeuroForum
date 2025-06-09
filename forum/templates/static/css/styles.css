@@ -231,6 +231,11 @@ main {
   width: 28px;
   height: 28px;
   cursor: pointer;
+  transition: filter 0.3s ease;
+}
+
+.chat-btn-img:hover {
+  filter: brightness(125%);
 }
 
 #chat-partner-list a {
@@ -269,3 +274,8 @@ main {
 }
 
 /* ------------------- END OF SCROLL BAR ------------------- */
+
+.is-invalid {
+  border: 1px solid red !important;
+  background-color: #ffd6d6 !important;
+}

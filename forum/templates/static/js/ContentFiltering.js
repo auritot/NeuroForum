@@ -1,13 +1,14 @@
 let filteredWords = [];
 
 window.addEventListener('DOMContentLoaded', () => {
-    const submitButtons = document.querySelectorAll("button[type='submit']");
+    const submitButtons = document.querySelectorAll("button[type='submit'], .chat-send-button");
     const titleInput = document.getElementById('postTitle');
     const descInput = document.getElementById('postDescription');
     const commentInput = document.getElementById('commentText');
+    const chatInput = document.getElementById('chat-input');
     const editInputs = document.querySelectorAll('.edit-comment-form textarea');
 
-    const allFields = [titleInput, descInput, commentInput, ...editInputs].filter(Boolean);
+    const allFields = [titleInput, descInput, commentInput, chatInput, ...editInputs].filter(Boolean);
 
     fetch('/api/filtered-words/')
         .then(response => response.json())
@@ -46,4 +47,13 @@ window.addEventListener('DOMContentLoaded', () => {
     allFields.forEach(input => {
         input.addEventListener('input', validateForm);
     });
+    
+    const chatForm = document.querySelector("#chat-form");
+    if (chatForm && chatInput) {
+        chatForm.addEventListener("submit", function (e) {
+            if (validateField(chatInput)) {
+                e.preventDefault(); // Prevent sending
+            }
+        });
+    }
 });

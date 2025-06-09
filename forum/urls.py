@@ -2,13 +2,15 @@ from django.urls import path
 from . import views
 
 from .processes import user_process, post_process, comment_process
+from django.views.generic.base import RedirectView
 
 # from mailsender import views
 
 urlpatterns = [
     # MARK: To Views
     path("", views.index, name="index"),
-    path("login", views.login_view, name="login_view"),
+    path("login/", views.login_view, name="login_view"),
+    path("login", RedirectView.as_view(url="/login/", permanent=True)),
     path("register", views.register_view, name="register_view"),
     path("create_post", views.post_form_view, name="create_post_view"),
     path("api/filtered-words/", views.filtered_words_api, name="filtered_words_api"),
