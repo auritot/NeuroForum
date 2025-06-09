@@ -6,11 +6,13 @@ window.addEventListener('DOMContentLoaded', () => {
     const descInput = document.getElementById('postDescription');
     const commentInput = document.getElementById('commentText');
     const chatInput = document.getElementById('chat-input');
-    const chatSidebar = document.getElementById('sidebarUsername');
-    const sidebarFindBtn = document.getElementById('sidebarFindBtn');
+    const chatSidebarMain = document.getElementById('sidebarUsernameMain');
+    const sidebarFindBtnMain = document.getElementById('sidebarFindBtnMain');
+    const chatSidebarIframe = document.getElementById('sidebarUsernameIframe');
+    const sidebarFindBtnIframe = document.getElementById('sidebarFindBtnIframe');
     const editInputs = document.querySelectorAll('.edit-comment-form textarea');
 
-    const allFields = [titleInput, descInput, commentInput, chatInput, chatSidebar, sidebarFindBtn, ...editInputs].filter(Boolean);
+    const allFields = [titleInput, descInput, commentInput, chatInput, chatSidebarMain, sidebarFindBtnMain, chatSidebarIframe, sidebarFindBtnIframe, ...editInputs].filter(Boolean);
 
     fetch('/api/filtered-words/')
         .then(response => response.json())
@@ -50,15 +52,23 @@ window.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('input', validateForm);
     });
 
-    if (sidebarInput && sidebarFindBtn) {
-        sidebarInput.addEventListener('input', () => {
-            const isInvalid = validateField(sidebarInput);
-            sidebarFindBtn.disabled = isInvalid;
+    // Sidebar MAIN validation
+    if (chatSidebarMain && sidebarFindBtnMain) {
+        chatSidebarMain.addEventListener('input', () => {
+            const isInvalid = validateField(chatSidebarMain);
+            sidebarFindBtnMain.disabled = isInvalid;
         });
+        sidebarFindBtnMain.disabled = validateField(chatSidebarMain);
+    }
 
-    // Initial state check
-    sidebarFindBtn.disabled = validateField(sidebarInput);
-    }   
+    // Sidebar IFRAME validation
+    if (chatSidebarIframe && sidebarFindBtnIframe) {
+        chatSidebarIframe.addEventListener('input', () => {
+            const isInvalid = validateField(chatSidebarIframe);
+            sidebarFindBtnIframe.disabled = isInvalid;
+        });
+        sidebarFindBtnIframe.disabled = validateField(chatSidebarIframe);
+    } 
 
     const chatForm = document.querySelector("#chat-form");
     if (chatForm && chatInput) {

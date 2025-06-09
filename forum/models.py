@@ -79,23 +79,36 @@ class ChatRoom(models.Model):
         """
         from django.db.models import Q
 
-        # Find all sessions where user was the sender in any ChatMessage
+        username = username.lower()
+        prefix = "private_"
+        exact_match = f"{prefix}{username}_"
+        exact_reverse = f"{prefix}*_{username}"
+
+        # Optimized: filter by room names that include the user as exact match
         sessions = ChatSession.objects.filter(
-            messages__sender__Username=username
+            Q(messages__sender__Username__iexact=username) |
+            Q(room__name__iexact=f"{prefix}{username}_") |
+            Q(room__name__iexact=f"{prefix}_{username}") |
+            Q(room__name__startswith=f"{prefix}{username}_") |
+            Q(room__name__endswith=f"_{username}")
         ).select_related("room").distinct()
 
         partner_usernames = set()
 
         for session in sessions:
-            room_name = session.room.name  # e.g., "private_alice_bob"
+            room_name = session.room.name
+            if not room_name.startswith("private_"):
+                continue
             try:
                 a, b = room_name.replace("private_", "").split("_")
             except ValueError:
                 continue
-            if a != username:
-                partner_usernames.add(a)
-            if b != username:
+            a = a.lower()
+            b = b.lower()
+            if a == username and b != username:
                 partner_usernames.add(b)
+            elif b == username and a != username:
+                partner_usernames.add(a)
 
         return sorted(partner_usernames)
 

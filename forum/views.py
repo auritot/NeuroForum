@@ -211,6 +211,9 @@ def mail_template(request):
 def chat_view(request, other_user):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
+        if request.GET.get("frame") == "1":
+            # Return a minimal message for iframe context
+            return render(request, "html/chat_not_logged_in.html", status=401)
         return redirect(f"/login/?next=/chat/{other_user}/")
 
     user_info = session_response["data"]
