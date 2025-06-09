@@ -235,7 +235,7 @@ main {
 }
 
 .chat-btn-img:hover {
-  filter: brightness(125%);
+  filter: brightness(150%);
 }
 
 #chat-partner-list a {

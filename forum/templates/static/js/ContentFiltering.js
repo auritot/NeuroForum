@@ -6,9 +6,11 @@ window.addEventListener('DOMContentLoaded', () => {
     const descInput = document.getElementById('postDescription');
     const commentInput = document.getElementById('commentText');
     const chatInput = document.getElementById('chat-input');
+    const chatSidebar = document.getElementById('sidebarUsername');
+    const sidebarFindBtn = document.getElementById('sidebarFindBtn');
     const editInputs = document.querySelectorAll('.edit-comment-form textarea');
 
-    const allFields = [titleInput, descInput, commentInput, chatInput, ...editInputs].filter(Boolean);
+    const allFields = [titleInput, descInput, commentInput, chatInput, chatSidebar, sidebarFindBtn, ...editInputs].filter(Boolean);
 
     fetch('/api/filtered-words/')
         .then(response => response.json())
@@ -47,7 +49,17 @@ window.addEventListener('DOMContentLoaded', () => {
     allFields.forEach(input => {
         input.addEventListener('input', validateForm);
     });
-    
+
+    if (sidebarInput && sidebarFindBtn) {
+        sidebarInput.addEventListener('input', () => {
+            const isInvalid = validateField(sidebarInput);
+            sidebarFindBtn.disabled = isInvalid;
+        });
+
+    // Initial state check
+    sidebarFindBtn.disabled = validateField(sidebarInput);
+    }   
+
     const chatForm = document.querySelector("#chat-form");
     if (chatForm && chatInput) {
         chatForm.addEventListener("submit", function (e) {

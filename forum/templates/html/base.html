@@ -92,8 +92,8 @@
                <div id="chat-sidebar" class="chat-sidebar p-3">
                     <h6 class="mb-2">Start New Chat</h6>
                     <form method="get" action="{% url 'start_chat' %}">
-                         <input type="text" name="username" placeholder="Enter username" required class="form-control mb-2">
-                         <button type="submit" class="btn btn-find w-100">Find!</button>
+                         <input id="sidebarUsername" type="text" name="username" placeholder="Enter username" required class="form-control mb-2">
+                         <button id="sidebarFindBtn" type="submit" class="btn btn-find w-100">Find!</button>
                     </form>
                     <h6 class="mt-3">Existing Chats</h6>
                     <hr class="my-2" />
