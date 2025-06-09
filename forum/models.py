@@ -73,36 +73,25 @@ class ChatRoom(models.Model):
     
     @classmethod
     def get_recent_partners_for_user(cls, username: str):
-        """
-        Return a list of usernames the given user has chatted with (excluding themselves),
-        ordered by most recent session.
-        """
         from django.db.models import Q
 
         username = username.lower()
-        prefix = "private_"
-        exact_match = f"{prefix}{username}_"
-        exact_reverse = f"{prefix}*_{username}"
-
-        # Optimized: filter by room names that include the user as exact match
-        sessions = ChatSession.objects.filter(
-            Q(messages__sender__Username__iexact=username) |
-            Q(room__name__iexact=f"{prefix}{username}_") |
-            Q(room__name__iexact=f"{prefix}_{username}") |
-            Q(room__name__startswith=f"{prefix}{username}_") |
-            Q(room__name__endswith=f"_{username}")
+        all_sessions = ChatSession.objects.filter(
+            Q(messages__sender__Username__iexact=username)
         ).select_related("room").distinct()
 
         partner_usernames = set()
 
-        for session in sessions:
+        for session in all_sessions:
             room_name = session.room.name
             if not room_name.startswith("private_"):
                 continue
             try:
                 a, b = room_name.replace("private_", "").split("_")
             except ValueError:
-                continue
+                continue  # skip malformed names like "private_landing"
+
+            # filter only valid chat partners
             a = a.lower()
             b = b.lower()
             if a == username and b != username:
@@ -111,6 +100,7 @@ class ChatRoom(models.Model):
                 partner_usernames.add(a)
 
         return sorted(partner_usernames)
+
 
 class ChatSession(models.Model):
     """
