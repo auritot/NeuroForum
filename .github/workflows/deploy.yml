@@ -33,6 +33,8 @@ jobs:
           echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" >> .env
           echo "SSH_PRIVATE_KEY=\"${{ secrets.SSH_PRIVATE_KEY }}\"" >> .env
           echo "DEBUG=False" >> .env
+          echo "RECAPTCHA_PUBLIC_KEY='${{ secrets.RECAPTCHA_PUBLIC_KEY }}'" >> .env
+          echo "RECAPTCHA_PRIVATE_KEY='${{ secrets.RECAPTCHA_PRIVATE_KEY }}'" >> .env
 
           docker-compose down --remove-orphans
           docker-compose pull
