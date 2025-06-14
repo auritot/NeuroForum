@@ -40,12 +40,14 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = ['18.216.113.147', '127.0.0.1', 'neuroforum.ddns.net']
+ALLOWED_HOSTS = ['18.216.113.147', '127.0.0.1',
+                 'neuroforum.ddns.net']
 
 # CSRF_TRUST
 CSRF_TRUSTED_ORIGINS = [
     "https://neuroforum.ddns.net"
 ]
+
 
 def create_ssh_tunnel():
     """
@@ -57,7 +59,7 @@ def create_ssh_tunnel():
         raise FileNotFoundError(f"SSH key not found at {pem_path}")
 
     tunnel = SSHTunnelForwarder(
-        ('18.216.113.147', 22), 
+        ('18.216.113.147', 22),
         ssh_username='student16',
         ssh_pkey=str(pem_path),  # Convert Path to str for compatibility
         remote_bind_address=('127.0.0.1', 3306),
@@ -65,8 +67,10 @@ def create_ssh_tunnel():
     )
 
     tunnel.start()
-    print(f"[SSH TUNNEL] Running at {tunnel.local_bind_host}:{tunnel.local_bind_port}")
+    print(
+        f"[SSH TUNNEL] Running at {tunnel.local_bind_host}:{tunnel.local_bind_port}")
     return tunnel
+
 
 if DEBUG:
     tunnel = create_ssh_tunnel()
@@ -79,6 +83,7 @@ else:
 # Application definition
 INSTALLED_APPS = [
     'forum',
+    'django_recaptcha',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -211,3 +216,7 @@ LOGIN_URL = "/login/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ReCaptcha settings
+RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_PUBLIC_KEY')
+RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_PRIVATE_KEY')
