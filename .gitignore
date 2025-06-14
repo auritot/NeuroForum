@@ -6,3 +6,6 @@ private/ICT2216-student16.pem
 .DS_Store
 *.sh
 db/
+forum/__pycache__/*
+forum/migrations/__pycache__/*
+neuroforum_django/__pycache__/*

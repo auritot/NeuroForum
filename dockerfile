@@ -19,8 +19,6 @@ COPY . /app
 # COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-
-
 # Copy and set executable permission on entrypoint
 # COPY startup.sh /app/startup.sh
 # RUN chmod +x /app/startup.sh
