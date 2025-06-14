@@ -37,4 +37,7 @@ urlpatterns = [
     path("comment/create/<int:post_id>", comment_process.process_create_comment, name="process_create_comment"),
     path("comment/delete/<int:post_id>/<int:comment_id>", comment_process.process_delete_comment, name="process_delete_comment"),
     path("comment/update/<int:post_id>/<int:comment_id>", comment_process.process_update_comment, name="process_update_comment"),
+    # Word Filter Related
+    path("wordfilter/manage", views.manage_filtered_words_view, name="manage_wordfilter"),
+
 ]

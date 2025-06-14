@@ -16,6 +16,43 @@
 
      <link href="{% static 'css/styles.css' %}" rel="stylesheet">
 
+     <style>
+        .alert-animated {
+            animation-duration: 0.5s;
+            animation-fill-mode: both;
+        }
+
+        .fade-in {
+            animation-name: fadeIn;
+        }
+
+        .fade-out {
+            animation-name: fadeOut;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+    </style>
+
      {% block extra_css %}{% endblock %}
      {% block extra_js %}{% endblock %}
 </head>
@@ -43,6 +80,11 @@
                          <li class="nav-item me-3">
                               <a href={% url 'create_post_view' %} class="btn btn-primary">Create Post</a>
                          </li>
+                         {% if user_info.Role == "admin" %}
+                         <li class="nav-item me-3">
+                            <a href="{% url 'manage_wordfilter' %}" class="btn btn-danger">Manage Filters</a>
+                         </li>
+                         {% endif %}
                          <li class="nav-item me-3">
                               <img
                                    id="chat-btn"
@@ -68,8 +110,18 @@
           </div>
      </nav>
 
-     <!-- #MARK:Main Content -->
-     {% block content %}{% endblock %}
+     <div class="container mt-4">
+          {% if messages %}
+          {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show alert-animated fade-in" role="alert" id="flash-message-{{ forloop.counter }}">
+               {{ message }}
+               <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          {% endfor %}
+          {% endif %}
+          <!-- #MARK:Main Content -->
+          {% block content %}{% endblock %}
+     </div>
 
      <!-- #MARK:Footer -->
      <footer class="bg-light py-1 mt-auto shadow-sm text-center">
@@ -110,6 +162,28 @@
      </div>
 <script src="{% static 'js/chat_init.js' %}"></script>
 <script src="{% static 'js/ContentFiltering.js' %}"></script>
+<script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const alerts = document.querySelectorAll('.alert-animated.fade-in');
+            alerts.forEach((alert) => {
+                // Add fade-in class (already added in template for initial effect)
+                // alert.classList.add('fade-in');
+
+                // Set timeout to add fade-out class and then remove the element
+                setTimeout(() => {
+                    alert.classList.remove('fade-in');
+                    alert.classList.add('fade-out');
+                    // Remove the alert after the animation completes
+                    alert.addEventListener('animationend', () => {
+                        if (alert.classList.contains('fade-out')) {
+                            alert.remove();
+                        }
+                    });
+                }, 5000); // Adjust delay as needed (5000ms = 5 seconds)
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
 </body>
 
 </html>

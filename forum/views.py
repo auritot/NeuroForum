@@ -3,11 +3,36 @@ from django.http import JsonResponse, HttpResponse
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.conf import settings
+from django.contrib.auth.decorators import user_passes_test
+from django.urls import reverse # Added for reversing URLs
+from urllib.parse import urlencode # Added for encoding query parameters
+import re
 
 from .services import session_service, utilities
 from .services.db_services import post_service, comment_service, ContentFiltering_service
 from django.contrib.messages import get_messages
 
+# Constants for validation
+FILTER_CONTENT_REGEX = r"^[\w '.@*-]+$"
+FILTER_CONTENT_MAX_LENGTH = 255
+
+def validate_filter_content(content):
+    """
+    Validate filter content against our rules.
+    Returns (is_valid, error_message)
+    """
+    if not content or not content.strip():
+        return False, "Content cannot be empty."
+    
+    content = content.strip()
+    
+    if len(content) > FILTER_CONTENT_MAX_LENGTH:
+        return False, f"Content is too long (max {FILTER_CONTENT_MAX_LENGTH} characters)."
+    
+    if not re.match(FILTER_CONTENT_REGEX, content):
+        return False, "Invalid characters. Allowed: letters, numbers, underscores, spaces, hyphens, apostrophes, periods, '@', '*'."
+    
+    return True, ""
 
 from django.views.decorators.clickjacking import xframe_options_exempt
 from .models import ChatRoom, UserAccount
@@ -76,7 +101,8 @@ def post_form_view(request, context={}, post_id=None):
 
 def filtered_words_api(request):
     response = ContentFiltering_service.get_all_filtered_words()
-    return JsonResponse(response["data"], safe=False)
+    # Return full response (status, message, data) as JSON
+    return JsonResponse(response)
 
 # MARK: Post View
 def post_view(request, post_id, context={}):
@@ -299,6 +325,293 @@ def start_chat_view(request):
         })
 
     return redirect(f"/chat/{username}/")
+
+# MARK: Manage Filtered Words View
+def manage_filtered_words_view(request):
+    from .services.db_services import ContentFiltering_service
+    session_resp = session_service.check_session(request)
+    
+    if session_resp.get("status") != "SUCCESS":
+        messages.error(request, "You must be logged in to access this page.")
+        return redirect('login_view')
+
+    user_data = session_resp.get("data", {})
+    actual_role_in_session = user_data.get("Role")
+    
+    # Check if the user's Role is 'admin'
+    if actual_role_in_session != "admin": 
+        messages.error(request, "You do not have permission to access this page. Administrator access required.") # UPDATED MESSAGE
+        return redirect('index')
+    
+    context = {}
+    # Add user_info to the context if the session is valid and user is authorized
+    # This ensures the base template can correctly render the toolbar
+    if session_resp.get("status") == "SUCCESS":
+        context["user_info"] = user_data # user_data comes from session_resp.get("data", {})
+
+    per_page = 10
+    current_page = int(request.GET.get("page", 1))
+    search_term = request.GET.get("search", "").strip()
+    sort_by = request.GET.get("sort_by", "FilterContent")
+    sort_order = request.GET.get("sort_order", "ASC")
+
+    context['search_term'] = search_term
+    context['sort_by'] = sort_by
+    context['sort_order'] = sort_order
+    context['current_page'] = current_page
+
+    edit_id = request.GET.get("edit")
+    if edit_id and edit_id.isdigit():
+        edit_response = ContentFiltering_service.get_filtered_word_by_id(edit_id)
+        if edit_response["status"] == "SUCCESS":
+            context["edit_word"] = edit_response["data"]
+        else:
+            messages.error(request, f"Could not find word with ID {edit_id} to edit.")
+            # Build query params for redirect without edit_id
+            base_redirect_url_no_edit = reverse('manage_wordfilter')
+            query_params_no_edit = {k: v for k, v in context.items() if k in ['page', 'search', 'sort_by', 'sort_order'] and v}
+            redirect_url_no_edit = f"{base_redirect_url_no_edit}?{urlencode(query_params_no_edit)}" if query_params_no_edit else base_redirect_url_no_edit
+            return redirect(redirect_url_no_edit)
+
+    base_redirect_url = reverse('manage_wordfilter')
+    query_params_for_redirect = {
+        'page': current_page,
+        'search': search_term,
+        'sort_by': sort_by,
+        'sort_order': sort_order
+    }
+    cleaned_query_params = {k: v for k, v in query_params_for_redirect.items() if v is not None and str(v).strip() != ''}
+    redirect_url_with_params = f"{base_redirect_url}?{urlencode(cleaned_query_params)}" if cleaned_query_params else base_redirect_url
+
+    if request.method == "POST":
+        action_taken = False # Flag to indicate if a POST action was processed        # --- Action: Bulk Delete ---
+        if request.POST.get("bulk_action") == "delete_selected":
+            selected_ids = request.POST.getlist("selected_words")
+            filter_ids_to_delete = [fid for fid in selected_ids if fid and fid.isdigit()]
+            
+            # Get pagination params from POST (hidden form fields)
+            page_from_form = request.POST.get("page", current_page)
+            search_from_form = request.POST.get("search", search_term)
+            sort_by_from_form = request.POST.get("sort_by", sort_by)
+            sort_order_from_form = request.POST.get("sort_order", sort_order)
+
+            if not filter_ids_to_delete:
+                messages.warning(request, "No words selected for deletion.")
+            else:
+                resp = ContentFiltering_service.delete_filtered_words_by_ids(filter_ids_to_delete)
+                if resp.get("status") == "SUCCESS":
+                    messages.success(request, resp.get("message")) # Service message includes count
+                elif resp.get("status") == "NOT_FOUND":
+                    messages.warning(request, resp.get("message"))
+                else: # ERROR
+                    messages.error(request, resp.get("message", "An error occurred during bulk deletion."))
+            
+            # Redirect back to list with form parameters
+            base_url = reverse('manage_wordfilter')
+            delete_params = {
+                'page': page_from_form,
+                'search': search_from_form,
+                'sort_by': sort_by_from_form,
+                'sort_order': sort_order_from_form
+            }
+            cleaned_params = {k: v for k, v in delete_params.items() if v is not None and str(v).strip() != ''}
+            return redirect(f"{base_url}?{urlencode(cleaned_params)}")
+        
+        # --- Action: Single Delete ---
+        # This will only be checked if not a bulk_action.
+        elif "delete_id" in request.POST:
+            filter_id = request.POST.get("delete_id")
+            
+            # Get pagination params from POST (hidden form fields)
+            page_from_form = request.POST.get("page", current_page)
+            search_from_form = request.POST.get("search", search_term)
+            sort_by_from_form = request.POST.get("sort_by", sort_by)
+            sort_order_from_form = request.POST.get("sort_order", sort_order)
+            
+            if filter_id and filter_id.isdigit():
+                resp = ContentFiltering_service.delete_filtered_word_by_id(filter_id)
+                if resp.get("status") == "SUCCESS":
+                    messages.success(request, f"Successfully deleted word ID {filter_id} from the filter list.")
+                else:
+                    messages.error(request, resp.get("message", f"An error occurred while deleting word ID {filter_id}."))
+            else:
+                messages.error(request, "Invalid or missing ID for single deletion.")
+            
+            # Redirect back to list with form parameters
+            base_url = reverse('manage_wordfilter')
+            delete_params = {
+                'page': page_from_form,
+                'search': search_from_form,
+                'sort_by': sort_by_from_form,
+                'sort_order': sort_order_from_form
+            }
+            cleaned_params = {k: v for k, v in delete_params.items() if v is not None and str(v).strip() != ''}
+            return redirect(f"{base_url}?{urlencode(cleaned_params)}")# --- Action: Add Word(s) ---
+        # Ensure it's not an edit form submission and not a delete action (already handled above).
+        elif "filter_content" in request.POST and not request.GET.get("edit"):
+            content_input = request.POST.get("filter_content", "").strip()
+            
+            # Get pagination params from POST (hidden form fields)
+            page_from_form = request.POST.get("page", current_page)
+            search_from_form = request.POST.get("search", search_term)
+            sort_by_from_form = request.POST.get("sort_by", sort_by)
+            sort_order_from_form = request.POST.get("sort_order", sort_order)
+            
+            # Split by newline, strip each line, and filter out empty lines
+            words_to_add = [word.strip() for word in content_input.splitlines() if word.strip()]
+
+            if not words_to_add:
+                messages.error(request, "No words provided to add. Please enter words in the textarea, one per line.")
+            else:
+                valid_words = []
+                invalid_word_entries = [] # Store original invalid entries for feedback
+                all_entries_valid = True
+
+                for original_word_entry in words_to_add:
+                    # Validate each word individually using centralized validation
+                    is_valid, error_msg = validate_filter_content(original_word_entry)
+                    if is_valid:
+                        valid_words.append(original_word_entry) # Keep original case for potential display, service will lowercase
+                    else:
+                        all_entries_valid = False
+                        if len(invalid_word_entries) < 5: # Show a few examples
+                            invalid_word_entries.append(original_word_entry)
+                
+                if not all_entries_valid:
+                    error_msg = f"One or more words are invalid. Allowed: letters, numbers, underscores, spaces, hyphens, apostrophes, periods, '@', '*'. Max {FILTER_CONTENT_MAX_LENGTH} characters per word."
+                    if invalid_word_entries:
+                        error_msg += f" Examples of invalid entries: '{', '.join(invalid_word_entries[:3])}'."
+                    messages.error(request, error_msg)
+                else: # All words intended for addition are valid
+                    if len(valid_words) == 1:
+                        resp = ContentFiltering_service.insert_filtered_word(valid_words[0])
+                        if resp.get("status") == "SUCCESS":
+                            messages.success(request, f'Successfully added "{valid_words[0]}" to the filter list.')
+                        else:
+                            messages.error(request, resp.get("message", "An error occurred while adding the word."))
+                    elif len(valid_words) > 1:
+                        resp = ContentFiltering_service.insert_multiple_filtered_words(valid_words)
+                        # The service's response message for insert_multiple_filtered_words is already detailed
+                        if resp.get("status") == "SUCCESS" or resp.get("status") == "INFO":
+                            added_count = resp.get("data", {}).get("added_count", 0)
+                            if added_count > 0:
+                                messages.success(request, resp.get("message"))
+                            else: # Only skipped or no valid words processed by service
+                                messages.warning(request, resp.get("message"))
+                        else: # ERROR case from service
+                            messages.error(request, resp.get("message", "An error occurred during bulk add."))
+            
+            # Redirect back to list with form parameters
+            base_url = reverse('manage_wordfilter')
+            add_params = {
+                'page': page_from_form,
+                'search': search_from_form,
+                'sort_by': sort_by_from_form,
+                'sort_order': sort_order_from_form
+            }
+            cleaned_params = {k: v for k, v in add_params.items() if v is not None and str(v).strip() != ''}
+            return redirect(f"{base_url}?{urlencode(cleaned_params)}")
+            # --- Action: Update Word ---
+        # Ensure it's an edit form submission (check POST params for edit_id and edit_filter_content)
+        elif "edit_filter_content" in request.POST and "edit_id" in request.POST:
+            edit_id_from_form = request.POST.get("edit_id")
+            content = request.POST.get("edit_filter_content", "").strip()
+            
+            # Get pagination params from POST (hidden form fields)
+            page_from_form = request.POST.get("page", current_page)
+            search_from_form = request.POST.get("search", search_term)
+            sort_by_from_form = request.POST.get("sort_by", sort_by)
+            sort_order_from_form = request.POST.get("sort_order", sort_order)
+            
+            if not edit_id_from_form or not edit_id_from_form.isdigit():
+                messages.error(request, "Invalid ID for editing.")
+                # Stay in edit mode for error
+                base_url = reverse('manage_wordfilter')
+                error_params = {
+                    'edit': edit_id_from_form,
+                    'page': page_from_form,
+                    'search': search_from_form,
+                    'sort_by': sort_by_from_form,
+                    'sort_order': sort_order_from_form
+                }
+                cleaned_params = {k: v for k, v in error_params.items() if v is not None and str(v).strip() != ''}
+                return redirect(f"{base_url}?{urlencode(cleaned_params)}")
+            else:
+                is_valid, error_msg = validate_filter_content(content)
+                if is_valid:
+                    resp = ContentFiltering_service.update_filtered_word_by_id(edit_id_from_form, content)
+                    if resp.get("status") == "SUCCESS":
+                        messages.success(request, f'Successfully updated word ID {edit_id_from_form} to "{content}".')
+                        # Success: redirect to list without edit parameter
+                        base_url = reverse('manage_wordfilter')
+                        success_params = {
+                            'page': page_from_form,
+                            'search': search_from_form,
+                            'sort_by': sort_by_from_form,
+                            'sort_order': sort_order_from_form
+                        }
+                        cleaned_params = {k: v for k, v in success_params.items() if v is not None and str(v).strip() != ''}
+                        return redirect(f"{base_url}?{urlencode(cleaned_params)}")
+                    else:
+                        messages.error(request, resp.get("message", "An error occurred while updating the word."))
+                        # Service error: stay in edit mode
+                        base_url = reverse('manage_wordfilter')
+                        error_params = {
+                            'edit': edit_id_from_form,
+                            'page': page_from_form,
+                            'search': search_from_form,
+                            'sort_by': sort_by_from_form,
+                            'sort_order': sort_order_from_form
+                        }
+                        cleaned_params = {k: v for k, v in error_params.items() if v is not None and str(v).strip() != ''}
+                        return redirect(f"{base_url}?{urlencode(cleaned_params)}")
+                else:
+                    messages.error(request, f"Invalid word for update. {error_msg}")
+                    # Validation error: stay in edit mode
+                    base_url = reverse('manage_wordfilter')
+                    error_params = {
+                        'edit': edit_id_from_form,
+                        'page': page_from_form,
+                        'search': search_from_form,
+                        'sort_by': sort_by_from_form,
+                        'sort_order': sort_order_from_form
+                    }
+                    cleaned_params = {k: v for k, v in error_params.items() if v is not None and str(v).strip() != ''}
+                    return redirect(f"{base_url}?{urlencode(cleaned_params)}")
+            action_taken = True
+        
+        if action_taken:
+            return redirect(redirect_url_with_params)
+        # else:
+            # If a POST request was made but didn't match any known action,
+            # it might be an empty form submission or something unexpected.
+            # Redirecting is generally safe to prevent resubmission issues.
+            # messages.info(request, "No action performed.") # Optional: for debugging
+            # return redirect(redirect_url_with_params)
+
+
+    # GET request or after POST redirect: Fetch data for display
+    count_response = ContentFiltering_service.get_total_filtered_words_count(search_term=search_term)
+    total_filtered_words = 0
+    if count_response["status"] == "SUCCESS":
+        total_filtered_words = count_response["data"]["total_filtered_words_count"]
+    
+    pagination_data = utilities.get_pagination_data(current_page, per_page, total_filtered_words)
+    context.update(pagination_data)
+
+    response = ContentFiltering_service.get_filtered_words_paginated(
+        start_index=pagination_data["start_index"],
+        per_page=per_page,
+        search_term=search_term,
+        sort_by=sort_by,        sort_order=sort_order
+    )
+    context["filtered_words"] = response["data"] if response["status"] == "SUCCESS" else []
+    
+    # Add validation constants to context for template
+    context['FILTER_CONTENT_REGEX'] = FILTER_CONTENT_REGEX.replace('^', '').replace('$', '')  # Remove anchors for HTML pattern
+    context['FILTER_CONTENT_MAX_LENGTH'] = FILTER_CONTENT_MAX_LENGTH
+    
+    return render(request, "html/filtered_words_manage.html", context)
 
 
 
