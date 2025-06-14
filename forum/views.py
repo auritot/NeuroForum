@@ -48,6 +48,9 @@ def index(request, context={}):
 
         username = context["user_info"]["Username"]
         context["partners"] = ChatRoom.get_recent_partners_for_user(username)
+    else:
+        context["user_info"] = None
+        context["partners"] = []
 
     per_page = 10
     current_page = int(request.GET.get("page", 1))
@@ -81,9 +84,11 @@ def login_view(request, context={}):
     return render(request, "html/login_view.html", context)
 
 
-def logout_view(request):
+def logout_view(request, context={}):
     if request.method == 'POST':
         logout(request)
+        session_service.clear_session(request)
+
         messages.success(request, "You have been successfully logged out.")
         return redirect('index')
 
@@ -159,6 +164,8 @@ def user_profile_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
+    else:
+        return redirect('index')
 
     return render(request, "html/user_profile_view.html", context)
 
@@ -169,6 +176,8 @@ def user_manage_post_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
+    else:
+        return redirect('index')
 
     per_page = 10
     current_page = int(request.GET.get("page", 1))
@@ -197,6 +206,8 @@ def user_manage_comment_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
+    else:
+        return redirect('index')
 
     per_page = 2
     current_page = int(request.GET.get("page", 1))
