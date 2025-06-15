@@ -1,85 +1,128 @@
 // static/js/chat_view.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  const chatForm        = document.querySelector("#chat-form");
-  const chatInput       = document.querySelector("#chat-input");
-  const chatBox         = document.querySelector("#chat-box");
-  const chatPlaceholder = document.getElementById("chat-placeholder");
+  const chatForm  = document.querySelector("#chat-form");
+  const chatInput = document.querySelector("#chat-input");
+  const chatBox   = document.querySelector("#chat-box");
+
   if (!chatForm || !chatInput || !chatBox) {
     console.error("Missing #chat-form, #chat-input, or #chat-box!");
     return;
   }
 
-  const mainEl      = document.querySelector("main");
+  // Pull <main data-...> attributes
+  const mainEl     = document.querySelector("main");
   const currentUser = (mainEl.dataset.currentUser || "").trim().toLowerCase();
   const otherUser   = (mainEl.dataset.otherUser   || "").trim().toLowerCase();
 
-  // build WS URL
-  const protocol   = window.location.protocol === "https:" ? "wss" : "ws";
-  const wsUrl      = `${protocol}://${window.location.host}/ws/chat/${otherUser}/`;
+  window.parent.postMessage({
+  type: "chat-read",
+  from: otherUser
+  }, "*");
+
+  // Build the proper WSS/WS URL.  If the page is HTTPS, use wss://, otherwise ws://
+  const wsProtocol = (window.location.protocol === "https:") ? "wss://" : "ws://";
+  const wsUrl      = wsProtocol + window.location.host + "/ws/chat/" + otherUser + "/";
+
   const chatSocket = new WebSocket(wsUrl);
 
-  // once open, tell the parent “this thread is active → mark-read”
+  // This flag tells us whether we've already removed the “Loading previous chats…” placeholder
+  let sawPlaceholder = false;
+
+  // Helper to append a message bubble into #chat-box
+  function appendBubble(parentEl, data, isSelf) {
+    const alignClass = isSelf ? "justify-content-end" : "justify-content-start";
+    const bubbleType = isSelf ? "self" : "other";
+
+    // We expect data.timestamp == "HH:MM dd/mm/YYYY"
+    const timeHtml = data.timestamp
+      ? `<br><small class="timestamp">${data.timestamp}</small>`
+      : "";
+
+    const msgHtml = `
+      <div class="d-flex ${alignClass} mb-2">
+        <div class="chat-bubble ${bubbleType}">
+          <small><strong>${data.sender}</strong></small><br>
+          ${data.message}
+          ${timeHtml}
+        </div>
+      </div>`;
+
+    parentEl.insertAdjacentHTML("beforeend", msgHtml);
+    parentEl.scrollTop = parentEl.scrollHeight;
+  }
+
   chatSocket.addEventListener("open", () => {
-    window.parent.postMessage({ type: "chat-read", from: otherUser }, "*");
+    console.log("✅ WebSocket connected to " + wsUrl);
   });
 
-  // helper to append a single message bubble
-  let sawPlaceholder = false;
-  function appendBubble({ message, sender, timestamp }) {
-    // remove placeholder on first real message
-    if (!sawPlaceholder && chatPlaceholder) {
-      chatBox.removeChild(chatPlaceholder);
+  chatSocket.addEventListener("error", (err) => {
+    console.error("❌ WebSocket error:", err);
+  });
+
+  chatSocket.addEventListener("close", (e) => {
+    console.warn("⚠️ WebSocket closed:", e);
+  });
+
+  chatSocket.addEventListener("message", (event) => {
+    console.log("⟵ WS frame received:", event.data);
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (_e) {
+      console.error("Failed to parse frame as JSON:", event.data);
+      return;
+    }
+
+    // On the very first incoming frame, remove the “Loading…” placeholder
+    if (!sawPlaceholder) {
+      const ph = document.querySelector("#chat-placeholder");
+      if (ph) ph.remove();
       sawPlaceholder = true;
     }
 
-    const isSelf  = sender.toLowerCase() === currentUser;
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("d-flex", isSelf ? "justify-content-end" : "justify-content-start", "mb-2");
-
-    const bubble = document.createElement("div");
-    bubble.classList.add("p-2", isSelf ? "bg-light text-dark" : "bg-primary text-white", "rounded");
-    bubble.textContent = message;
-
-    const ts = document.createElement("div");
-    ts.classList.add("small", "text-muted", "mt-1");
-    ts.textContent = timestamp;
-
-    bubble.appendChild(ts);
-    wrapper.appendChild(bubble);
-    chatBox.appendChild(wrapper);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-
-  chatSocket.addEventListener("message", e => {
-    const data = JSON.parse(e.data);
-
-    // 1) pure history-boundary marker: {"history":true} → ignore
-    if (data.history === true && typeof data.message === "undefined") {
+    // If the server deliberately sent { history: true } with NO message/sender,
+    // that is just our “no history” placeholder.  We silently ignore it.
+    if (!data.message || !data.sender) {
       return;
     }
 
-    // 2) any frame with a `message` is a chat bubble (past or live)
-    if (data.message) {
-      appendBubble(data);
-      return;
-    }
+    // Otherwise, we have a real bubble.  Lowercase the sender to check if it was from us
+    const sender = data.sender.toLowerCase();
+    const isSelf = (sender === currentUser);
 
-    // 3) unread-ping for other threads
-    if (data.type === "notify") {
-      window.parent.postMessage({ type: "new-message", from: data.from }, "*");
+    appendBubble(chatBox, data, isSelf);
+
+    // After parsing message
+    if (!isSelf) {
+      // Notify parent window (outer chat box)
+      console.log("📤 Sending postMessage to parent", { sender, currentUser, isSelf });
+      window.parent.postMessage({
+        type: "new-message",
+        from: sender,
+      }, "*");
     }
   });
 
-  // sending a new message
-  chatForm.addEventListener("submit", e => {
+  chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
-    if (!text || chatSocket.readyState !== WebSocket.OPEN) {
+    if (!text) {
       chatInput.focus();
       return;
     }
-    chatSocket.send(JSON.stringify({ message: text }));
+
+    if (chatSocket.readyState !== WebSocket.OPEN) {
+      console.error("WebSocket is not open; cannot send.");
+      return;
+    }
+
+    // Build our JSON payload
+    const payload = { message: text };
+    console.log("⟶ WS send:", JSON.stringify(payload));
+    chatSocket.send(JSON.stringify(payload));
+
+    // Clear & refocus
     chatInput.value = "";
     chatInput.focus();
   });

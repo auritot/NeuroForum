@@ -1,110 +1,121 @@
-// static/js/chat_init.js
+document.addEventListener("DOMContentLoaded", function () {
+  const chatBtn = document.getElementById("chat-btn");
+  const chatBox = document.getElementById("chat-box-floating");
+  const chatFrame = document.getElementById("chat-frame");
+  const chatOverlay = document.getElementById("chat-overlay");
+  const closeBtn = document.getElementById("close-chat");
+  const threadLinks = document.querySelectorAll(".chat-thread-link");
 
-// —————————————
-// helper to pull CSRF token from cookies
-// —————————————
-function getCookie(name) {
-  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-  return match ? decodeURIComponent(match[2]) : null;
-}
+  if (!chatBtn || !chatBox || !chatFrame || !closeBtn || !chatOverlay) return;
 
-document.addEventListener("DOMContentLoaded", () => {
-  const chatBtn     = document.getElementById("chat-btn");
-  const chatBox     = document.getElementById("chat-box-floating");
-  const closeBtn    = document.getElementById("close-chat");
-  const chatFrame   = document.getElementById("chat-frame");
-  const threadLinks = Array.from(document.querySelectorAll(".chat-thread-link"));
+  function openChat() {
+    chatBox.classList.add("open");
+    chatBox.classList.remove("d-none");
+    chatOverlay.classList.add("show");
+  }
 
-  // —————————————
-  // listen for messages FROM the iframe
-  // —————————————
-  window.addEventListener("message", event => {
-    const { type, from } = event.data || {};
-    const who = (from || "").toLowerCase();
-    const link = threadLinks.find(l => (l.dataset.user || "").toLowerCase() === who);
-    if (!link) return;
+  function closeChat() {
+    chatBox.classList.remove("open");
+    chatBox.classList.add("d-none");
+    chatOverlay.classList.remove("show");
+    chatFrame.src = "";
+    threadLinks.forEach((el) => el.classList.remove("active-thread"));
+  }
 
-    if (type === "chat-read") {
-      // clear the badge on that link
-      const badge = link.querySelector(".unread-count");
-      if (badge) {
-        badge.textContent = "0";
-        badge.classList.add("d-none");
-      }
-      link.classList.remove("has-unread");
-
-      // if none left, kill the glow
-      if (!threadLinks.some(l => l.classList.contains("has-unread"))) {
-        chatBtn.classList.remove("has-notification");
-      }
-
-      // tell server to zero out unread
-      fetch(`/chat/${who}/mark-read/`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Content-Type": "application/json",
-        },
-      });
-    }
-    else if (type === "new-message") {
-      // bump the badge
-      const badge = link.querySelector(".unread-count");
-      const count = (parseInt(badge.textContent, 10) || 0) + 1;
-      badge.textContent = count;
-      badge.classList.remove("d-none");
-      link.classList.add("has-unread");
-      chatBtn.classList.add("has-notification");
+  chatBtn.addEventListener("click", function () {
+    openChat();
+    if (chatFrame.src === "" || chatFrame.src.endsWith("landing/?frame=1")) {
+      chatFrame.src = "/chat/landing/?frame=1";
     }
   });
 
-  // —————————————
-  // when you click on a thread in the sidebar
-  // —————————————
-  threadLinks.forEach(link => {
-    link.addEventListener("click", () => {
-      const who = link.dataset.user;              // <-- was dataset.threadUser
+  closeBtn.addEventListener("click", closeChat);
+  chatOverlay.addEventListener("click", closeChat);
 
-      // 1) clear UI badge
-      const badge = link.querySelector(".unread-count");
-      if (badge) {
-        badge.textContent = "0";
-        badge.classList.add("d-none");
-      }
-      link.classList.remove("has-unread");
-      if (!threadLinks.some(l => l.classList.contains("has-unread"))) {
+  threadLinks.forEach((el) => {
+    el.addEventListener("click", function (e) {
+      e.preventDefault();
+      const user = el.dataset.user;
+      if (user) {
+        chatFrame.src = `/chat/${user}/?frame=1`;
+        threadLinks.forEach((link) => link.classList.remove("active-thread"));
+        el.classList.add("active-thread");
+        el.classList.remove("has-unread");
+        const countSpan = el.querySelector(".unread-count");
+        if (countSpan) {
+          countSpan.textContent = "0";
+          countSpan.classList.add("d-none");
+        }
         chatBtn.classList.remove("has-notification");
+        openChat();
       }
-
-      // 2) clear server-side unread
-      fetch(`/chat/${who}/mark-read/`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Content-Type": "application/json",
-        },
-      });
-
-      // 3) highlight active link
-      threadLinks.forEach(l => l.classList.remove("active-thread"));
-      link.classList.add("active-thread");
-
-      // 4) load the iframe — build URL yourself
-      chatFrame.src = `/chat/${who}/?frame=1`;
-      chatBox.classList.remove("d-none");
     });
   });
 
-  // —————————————
-  // open/close the floating panel
-  // —————————————
-  closeBtn.addEventListener("click", () => {
-    chatBox.classList.add("d-none");
-    chatFrame.src = "";
+  window.addEventListener("message", function (event) {
+    if (event.data.type === "new-message") {
+      const fromUser = event.data.from;
+      const threadLink = document.querySelector(`.chat-thread-link[data-user="${fromUser}"]`);
+      const isChatOpen = chatBox.classList.contains("open") && chatFrame.src.includes(`/chat/${fromUser}/`);
+
+      if (threadLink) {
+        if (!isChatOpen) {
+          const countSpan = threadLink.querySelector(".unread-count");
+          let count = parseInt(countSpan?.textContent || "0", 10) + 1;
+          countSpan.textContent = count;
+          countSpan.classList.remove("d-none");
+          threadLink.classList.add("has-unread");
+          chatBtn.classList.add("has-notification");
+        } else {
+          threadLink.classList.add("active-thread");
+        }
+      }
+    }
+
+    if (event.data.type === "chat-read") {
+      const fromUser = event.data.from;
+      threadLinks.forEach(el => {
+        if (el.dataset.user === fromUser) {
+          el.classList.remove("has-unread");
+          el.classList.add("active-thread");
+          const countSpan = el.querySelector(".unread-count");
+          if (countSpan) {
+            countSpan.textContent = "0";
+            countSpan.classList.add("d-none");
+          }
+        }
+      });
+      chatBtn.classList.remove("has-notification");
+    }
+
+    if (event.data.type === "notify") {
+      const fromUser   = event.data.from;
+      const threadLink = document.querySelector(
+        `.chat-thread-link[data-user="${fromUser}"]`
+      );
+      // are we currently chatting with them?
+      const isChatOpen = chatBox.classList.contains("open") &&
+                        chatFrame.src.includes(`/chat/${fromUser}/`);
+      if (threadLink && !isChatOpen) {
+        const countSpan = threadLink.querySelector(".unread-count");
+        let count = parseInt(countSpan.textContent || "0", 10) + 1;
+        countSpan.textContent        = count;
+        countSpan.classList.remove("d-none");
+        threadLink.classList.add("has-unread");
+        chatBtn.classList.add("has-notification");
+      }
+    }
   });
-  chatBtn.addEventListener("click", () => {
-    chatBox.classList.toggle("d-none");
+
+  chatFrame?.addEventListener("load", () => {
+    chatFrame.classList.remove("loading");
+    const src = chatFrame.src;
+    const userMatch = src.match(/\/chat\/([^/]+)\//);
+    if (userMatch) {
+      const activeUser = userMatch[1];
+      document.querySelectorAll(".chat-thread-link").forEach(el => {
+        el.classList.toggle("active-thread", el.dataset.user === activeUser);
+      });
+    }
   });
 });
