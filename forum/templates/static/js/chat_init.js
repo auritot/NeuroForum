@@ -29,19 +29,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
 window.addEventListener("message", (event) => {
   if (event.data?.type === "new-message") {
-    const fromUser = event.data.from;
+    const chatBtn = document.getElementById("chat-btn");
+    const chatFrame = document.getElementById("chat-frame");
 
-    // Only notify if the chat iframe is not focused on that user
-    const isAlreadyChatting = chatFrame.src.includes(`/chat/${fromUser}/`);
-    if (!isAlreadyChatting) {
-      const chatBtn = document.getElementById("chat-btn");
-      if (chatBtn) {
-        // chatBtn.src = "/static/icons/notification_icon.png"; // Replace with actual path
+    if (chatBtn && chatFrame) {
+      const isChatOpen = !chatFrame.classList.contains("loading") && !chatBox.classList.contains("d-none");
+
+      // Global badge logic: if chat box isn't open, show the glow
+      if (!isChatOpen) {
+        console.log("🔔 Showing global chat notification");
         chatBtn.classList.add("has-notification");
       }
     }
   }
 });
+
 
 chatBtn.addEventListener("click", () => {
   chatFrame.src = "/chat/landing/?frame=1";
