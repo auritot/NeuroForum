@@ -1,10 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const chatBtn    = document.getElementById("chat-btn");
-  const chatBox    = document.getElementById("chat-box-floating");
-  const chatFrame  = document.getElementById("chat-frame");
-  const chatOverlay= document.getElementById("chat-overlay");
-  const closeBtn   = document.getElementById("close-chat");
-  const threadLinks= document.querySelectorAll(".chat-thread-link");
+  const chatBtn = document.getElementById("chat-btn");
+  const chatBox = document.getElementById("chat-box-floating");
+  const chatFrame = document.getElementById("chat-frame");
+  const chatOverlay = document.getElementById("chat-overlay");
+  const closeBtn = document.getElementById("close-chat");
+  const threadLinks = document.querySelectorAll(".chat-thread-link");
 
   if (!chatBtn || !chatBox || !chatFrame || !closeBtn || !chatOverlay) return;
 
@@ -22,67 +22,71 @@ document.addEventListener("DOMContentLoaded", function () {
     threadLinks.forEach((el) => el.classList.remove("active-thread"));
   }
 
-  // Toggle panel when you click the chat icon
-  chatBtn.addEventListener("click", () => {
+  chatBtn.addEventListener("click", function () {
     openChat();
-    // if we've never loaded anything (or we're on landing), default to landing
-    if (!chatFrame.src || chatFrame.src.endsWith("landing/?frame=1")) {
+    if (chatFrame.src === "" || chatFrame.src.endsWith("landing/?frame=1")) {
       chatFrame.src = "/chat/landing/?frame=1";
     }
   });
 
-  // Close panel on “X” or overlay click
-  closeBtn.addEventListener("click",   closeChat);
+  closeBtn.addEventListener("click", closeChat);
   chatOverlay.addEventListener("click", closeChat);
 
-  // Clicking an existing thread
   threadLinks.forEach((el) => {
-    el.addEventListener("click", (e) => {
+    el.addEventListener("click", function (e) {
       e.preventDefault();
       const user = el.dataset.user;
-      if (!user) return;
-      chatFrame.src = `/chat/${user}/?frame=1`;
-      threadLinks.forEach((l) => l.classList.remove("active-thread"));
-      el.classList.add("active-thread");
-      openChat();
+      if (user) {
+        chatFrame.src = `/chat/${user}/?frame=1`;
+        threadLinks.forEach((link) => link.classList.remove("active-thread"));
+        el.classList.add("active-thread");
+        el.classList.remove("has-unread");
+        const countSpan = el.querySelector(".unread-count");
+        if (countSpan) {
+          countSpan.textContent = "0";
+          countSpan.classList.add("d-none");
+        }
+        chatBtn.classList.remove("has-notification");
+        openChat();
+      }
     });
   });
 
-  // ──────────────────────────────────────────────────────────
-  // Hijack “Start New Chat” form so it loads in the iframe
+    // hijack the “Start New Chat” form so it loads inside the iframe
   const sidebarForm = document.querySelector("#chat-sidebar form");
   if (sidebarForm) {
     sidebarForm.addEventListener("submit", function (e) {
       e.preventDefault();    // stop full-page navigation
 
+      // grab & normalize the username
       const input = document.getElementById("sidebarUsernameIframe");
       const user  = input.value.trim().toLowerCase();
-      if (!user) return;     // nothing to do
+      if (!user) return;
 
-      // Clear any prior active‐thread styling
+      // clear any previously-active thread styling
       threadLinks.forEach((l) => l.classList.remove("active-thread"));
 
-      // If they already chatted, highlight it
+      // if that user already exists in the list, mark it active
       const match = Array.from(threadLinks).find((l) => l.dataset.user === user);
       if (match) match.classList.add("active-thread");
 
-      // Load that chat in the iframe
+      // point the iframe at the new chat
       chatFrame.src = `/chat/${user}/?frame=1`;
 
-      // Open the panel
+      // open the panel (just like a thread-link click does)
       openChat();
     });
   }
 
-  // Once the iframe finishes loading, remove its spinner
-  chatFrame.addEventListener("load", () => {
+  chatFrame?.addEventListener("load", () => {
     chatFrame.classList.remove("loading");
-    const m = chatFrame.src.match(/\/chat\/([^/]+)\//);
-    if (m) {
-      const active = m[1];
-      threadLinks.forEach((el) =>
-        el.classList.toggle("active-thread", el.dataset.user === active)
-      );
+    const src = chatFrame.src;
+    const userMatch = src.match(/\/chat\/([^/]+)\//);
+    if (userMatch) {
+      const activeUser = userMatch[1];
+      document.querySelectorAll(".chat-thread-link").forEach(el => {
+        el.classList.toggle("active-thread", el.dataset.user === activeUser);
+      });
     }
   });
 });
