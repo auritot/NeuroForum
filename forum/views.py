@@ -276,6 +276,13 @@ def chat_view(request, other_user):
         return redirect(f"/login/?next=/chat/{other_user}/")
 
     user_info = session_response["data"]
+
+    if not UserAccount.objects.filter(Username__iexact=other_user).exists():
+        return render(request, "html/chat_landing.html", {
+            "user_info": user_info,
+            "error":     "User does not exist."
+        })
+
     username = user_info.get("Username", "").strip()
 
     if request.GET.get("frame") != "1":
