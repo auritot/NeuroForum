@@ -1,5 +1,5 @@
 from django.views.decorators.clickjacking import xframe_options_exempt
-from .models import ChatRoom, UserAccount, ChatUnread
+from .models import ChatRoom, UserAccount
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.core.mail import send_mail
@@ -286,17 +286,17 @@ def chat_view(request, other_user):
     a, b = sorted([username.lower(), other_user.lower()])
     room_name = f"private_{a}_{b}"
 
-    unread_count = 0
-    try:
-        unread_obj = ChatUnread.objects.get(user__Username__iexact=username, room__name=room_name)
-        unread_count = unread_obj.unread_count
-    except ChatUnread.DoesNotExist:
-        pass
+    # unread_count = 0
+    # try:
+    #     unread_obj = ChatUnread.objects.get(user__Username__iexact=username, room__name=room_name)
+    #     unread_count = unread_obj.unread_count
+    # except ChatUnread.DoesNotExist:
+    #     pass
 
     return render(request, "html/chat_inner.html", {
         "user_info": user_info,
         "other_user": other_user,
-        "unread_count": unread_count,
+        # "unread_count": unread_count,
     })
 
 
