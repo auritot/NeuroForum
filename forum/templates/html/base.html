@@ -153,10 +153,10 @@
                          {% for partner in chat_partners %}
                               <li>
                                    <a href="#"
-                                        class="text-decoration-none chat-thread-link"
+                                        class="chat-thread-link"
                                         data-user="{{ partner|lower }}">
                                         {{ partner|title }}
-                                        <span class="unread-count badge bg-warning text-dark ms-2 d-none">0</span>
+                                        <span class="unread-count d-none">0</span>
                                    </a>
                               </li>
                          {% empty %}

@@ -1,115 +1,101 @@
 document.addEventListener("DOMContentLoaded", function () {
   const chatBtn = document.getElementById("chat-btn");
-  const chatBox = document.getElementById("chat-box-floating");
-  const closeChat = document.getElementById("close-chat");
+  const chatBox = document.getElementById("chat-box");
   const chatFrame = document.getElementById("chat-frame");
-
-  const username = chatBtn?.dataset.username || null;
-
-  if (chatBtn) {
-    chatBtn.addEventListener("click", () => {
-      if (username) {
-        chatFrame.src = "/chat/landing/?frame=1";
-        chatBox.classList.remove("d-none");
-      } else {
-        alert("Please log in to use chat.");
-      }
-
-      // Reset notification class when opening
-      chatBtn.classList.remove("has-notification");
-    });
-  }
-
-  closeChat?.addEventListener("click", () => {
-    chatBox.classList.add("d-none");
-    chatFrame.src = "";
-  });
-
-  chatFrame?.addEventListener("load", () => {
-    chatFrame.classList.remove("loading");
-  });
-});
-
-
-window.addEventListener("message", (event) => {
-  if (!event.data?.type || !event.data?.from) return;
-
-  const fromUser = event.data.from.toLowerCase();
-  const chatBtn = document.getElementById("chat-btn");
-  const chatFrame = document.getElementById("chat-frame");
-  const chatBox = document.getElementById("chat-box-floating");
+  const chatOverlay = document.getElementById("chat-overlay");
+  const closeBtn = document.getElementById("close-chat");
   const threadLinks = document.querySelectorAll(".chat-thread-link");
-  const threadLink = document.querySelector(`.chat-thread-link[data-user="${fromUser}"]`);
 
-  const chatSrc = chatFrame?.getAttribute("src") || "";
-  const isChatVisible = !chatBox.classList.contains("d-none");
-  const isChatOpen = isChatVisible && chatSrc.includes(`/chat/${fromUser}/`);
+  if (!chatBtn || !chatBox || !chatFrame || !closeBtn || !chatOverlay) return;
 
-  // Clear all highlights
-  threadLinks.forEach(el => el.classList.remove("active-thread"));
-
-  // Highlight current thread if open
-  if (isChatOpen && threadLink) {
-    threadLink.classList.add("active-thread");
+  function openChat() {
+    chatBox.classList.add("open");
+    chatOverlay.classList.add("show");
   }
 
-  if (event.data.type === "new-message") {
-    if (!isChatOpen && threadLink) {
-      const countSpan = threadLink.querySelector(".unread-count");
-      let count = parseInt(countSpan.textContent || "0", 10) + 1;
-      countSpan.textContent = count;
-      countSpan.classList.remove("d-none");
-      threadLink.classList.add("has-unread");
-      chatBtn.classList.add("has-notification");
+  function closeChat() {
+    chatBox.classList.remove("open");
+    chatOverlay.classList.remove("show");
+    chatFrame.src = "";
+    threadLinks.forEach((el) => el.classList.remove("active-thread"));
+  }
+
+  chatBtn.addEventListener("click", function () {
+    openChat();
+    if (chatFrame.src === "" || chatFrame.src.endsWith("landing/?frame=1")) {
+      chatFrame.src = "/chat/landing/?frame=1";
     }
-  }
+  });
 
-  if (event.data.type === "chat-read") {
-    // Find the right thread
-    threadLinks.forEach(el => {
-      if (el.dataset.user === fromUser) {
-        el.classList.remove("has-unread");
+  closeBtn.addEventListener("click", closeChat);
+  chatOverlay.addEventListener("click", closeChat);
+
+  threadLinks.forEach((el) => {
+    el.addEventListener("click", function (e) {
+      e.preventDefault();
+      const user = el.dataset.user;
+      if (user) {
+        chatFrame.src = `/chat/${user}/?frame=1`;
+        threadLinks.forEach((link) => link.classList.remove("active-thread"));
         el.classList.add("active-thread");
+        el.classList.remove("has-unread");
         const countSpan = el.querySelector(".unread-count");
         if (countSpan) {
           countSpan.textContent = "0";
           countSpan.classList.add("d-none");
         }
+        chatBtn.classList.remove("has-notification");
+        openChat();
       }
     });
+  });
 
-    // Always clear main icon too
-    chatBtn.classList.remove("has-notification");
-  }
-});
+  window.addEventListener("message", function (event) {
+    if (event.data.type === "new-message") {
+      const fromUser = event.data.from;
+      const threadLink = document.querySelector(`.chat-thread-link[data-user="${fromUser}"]`);
+      const isChatOpen = chatBox.classList.contains("open") && chatFrame.src.includes(`/chat/${fromUser}/`);
 
-document.querySelectorAll(".chat-thread-link").forEach(link => {
-  link.addEventListener("click", (e) => {
-    e.preventDefault();
+      if (threadLink) {
+        if (!isChatOpen) {
+          const countSpan = threadLink.querySelector(".unread-count");
+          let count = parseInt(countSpan?.textContent || "0", 10) + 1;
+          countSpan.textContent = count;
+          countSpan.classList.remove("d-none");
+          threadLink.classList.add("has-unread");
+          chatBtn.classList.add("has-notification");
+        } else {
+          threadLink.classList.add("active-thread");
+        }
+      }
+    }
 
-    const username = link.dataset.user;
-    const chatBox = document.getElementById("chat-box-floating");
-    const chatFrame = document.getElementById("chat-frame");
+    if (event.data.type === "chat-read") {
+      const fromUser = event.data.from;
+      threadLinks.forEach(el => {
+        if (el.dataset.user === fromUser) {
+          el.classList.remove("has-unread");
+          el.classList.add("active-thread");
+          const countSpan = el.querySelector(".unread-count");
+          if (countSpan) {
+            countSpan.textContent = "0";
+            countSpan.classList.add("d-none");
+          }
+        }
+      });
+      chatBtn.classList.remove("has-notification");
+    }
+  });
 
-    if (!username || !chatBox || !chatFrame) return;
-
-    // Load the chat in iframe
-    chatFrame.src = `/chat/${username}/?frame=1`;
-    chatBox.classList.remove("d-none");
-
-    // Visually mark active thread
-    document.querySelectorAll(".chat-thread-link").forEach(el => el.classList.remove("active-thread"));
-    link.classList.add("active-thread");
-
-    // Remove notification highlight
-    link.classList.remove("has-unread");
-    const countSpan = link.querySelector(".unread-count");
-    if (countSpan) {
-      countSpan.textContent = "0";
-      countSpan.classList.add("d-none");
+  chatFrame?.addEventListener("load", () => {
+    chatFrame.classList.remove("loading");
+    const src = chatFrame.src;
+    const userMatch = src.match(/\/chat\/([^/]+)\//);
+    if (userMatch) {
+      const activeUser = userMatch[1];
+      document.querySelectorAll(".chat-thread-link").forEach(el => {
+        el.classList.toggle("active-thread", el.dataset.user === activeUser);
+      });
     }
   });
 });
-
-
-
