@@ -177,6 +177,16 @@ main {
   background-color: #0e1621;
 }
 
+.chat-thread-link.has-unread .unread-count {
+  display: inline-block !important;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
 /* ------------------- INNER FRAME ------------------- */
 
 .chat-inner-frame {
