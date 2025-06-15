@@ -65,10 +65,6 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
         await self._mark_as_read(self.scope["user"], self.chatroom)
 
-        @database_sync_to_async
-        def _mark_as_read(self, user, room):
-            ChatUnread.objects.filter(user=user, room=room).update(unread_count=0)
-
         # VERY IMPORTANT: accept() before you group_add(), or some browsers reject you.
         await self.accept()
         await self.channel_layer.group_add(self.room_name, self.channel_name)
@@ -256,3 +252,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             return 0
         PrivateChatConsumer._session_participants[session_id] = cnt
         return cnt
+    
+    @database_sync_to_async
+    def _mark_as_read(self, user, room):
+        ChatUnread.objects.filter(user=user, room=room).update(unread_count=0)
