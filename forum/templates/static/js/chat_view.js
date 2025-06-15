@@ -1,9 +1,9 @@
 // static/js/chat_view.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  const chatForm       = document.querySelector("#chat-form");
-  const chatInput      = document.querySelector("#chat-input");
-  const chatBox        = document.querySelector("#chat-box");
+  const chatForm        = document.querySelector("#chat-form");
+  const chatInput       = document.querySelector("#chat-input");
+  const chatBox         = document.querySelector("#chat-box");
   const chatPlaceholder = document.getElementById("chat-placeholder");
   if (!chatForm || !chatInput || !chatBox) {
     console.error("Missing #chat-form, #chat-input, or #chat-box!");
@@ -19,22 +19,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const wsUrl      = `${protocol}://${window.location.host}/ws/chat/${otherUser}/`;
   const chatSocket = new WebSocket(wsUrl);
 
-  // on open, notify parent that this thread is active (mark it read)
+  // once open, tell the parent “this thread is active → mark-read”
   chatSocket.addEventListener("open", () => {
     window.parent.postMessage({ type: "chat-read", from: otherUser }, "*");
   });
 
+  // helper to append a single message bubble
   let sawPlaceholder = false;
   function appendBubble({ message, sender, timestamp }) {
-    const isSelf    = sender.toLowerCase() === currentUser;
-    const wrapper   = document.createElement("div");
+    // remove placeholder on first real message
+    if (!sawPlaceholder && chatPlaceholder) {
+      chatBox.removeChild(chatPlaceholder);
+      sawPlaceholder = true;
+    }
+
+    const isSelf  = sender.toLowerCase() === currentUser;
+    const wrapper = document.createElement("div");
     wrapper.classList.add("d-flex", isSelf ? "justify-content-end" : "justify-content-start", "mb-2");
 
-    const bubble    = document.createElement("div");
+    const bubble = document.createElement("div");
     bubble.classList.add("p-2", isSelf ? "bg-light text-dark" : "bg-primary text-white", "rounded");
     bubble.textContent = message;
 
-    const ts        = document.createElement("div");
+    const ts = document.createElement("div");
     ts.classList.add("small", "text-muted", "mt-1");
     ts.textContent = timestamp;
 
@@ -47,24 +54,24 @@ document.addEventListener("DOMContentLoaded", () => {
   chatSocket.addEventListener("message", e => {
     const data = JSON.parse(e.data);
 
-    if (data.history) {
-      // initial backlog
-      data.history.forEach(msg => appendBubble(msg));
+    // 1) pure history-boundary marker: {"history":true} → ignore
+    if (data.history === true && typeof data.message === "undefined") {
+      return;
     }
-    else if (data.message) {
-      // a live message in THIS thread
-      if (!sawPlaceholder && chatPlaceholder) {
-        chatBox.removeChild(chatPlaceholder);
-        sawPlaceholder = true;
-      }
+
+    // 2) any frame with a `message` is a chat bubble (past or live)
+    if (data.message) {
       appendBubble(data);
+      return;
     }
-    else if (data.type === "notify") {
-      // an unread‐badge ping for other threads
+
+    // 3) unread-ping for other threads
+    if (data.type === "notify") {
       window.parent.postMessage({ type: "new-message", from: data.from }, "*");
     }
   });
 
+  // sending a new message
   chatForm.addEventListener("submit", e => {
     e.preventDefault();
     const text = chatInput.value.trim();
