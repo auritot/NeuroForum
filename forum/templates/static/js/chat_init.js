@@ -50,36 +50,36 @@ function getCookie(name) {
   return v ? v.pop() : '';
 }
 
-document.querySelectorAll(".delete-chat").forEach(btn => {
-  btn.addEventListener("click", e => {
-    e.preventDefault();
-    const user = btn.dataset.user;
-    if (!confirm(`Delete chat with ${user}? This cannot be undone.`)) return;
+// document.querySelectorAll(".delete-chat").forEach(btn => {
+//   btn.addEventListener("click", e => {
+//     e.preventDefault();
+//     const user = btn.dataset.user;
+//     if (!confirm(`Delete chat with ${user}? This cannot be undone.`)) return;
 
-    fetch(`/delete_chat/${user}/`, {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "X-Requested-With": "XMLHttpRequest",
-        "Content-Type": "application/json"
-      },
-    })
-    .then(res => res.json())
-    .then(json => {
-      if (json.success) {
-        // remove that <li> from the sidebar
-        btn.closest("li").remove();
-        // if they were the active thread, also clear the iframe
-        if (btn.closest("li").querySelector(".active-thread")) {
-          document.getElementById("chat-frame").src = "";
-        }
-      } else {
-        alert(json.error || "Could not delete chat");
-      }
-    })
-    .catch(() => alert("Network error deleting chat"));
-  });
-});
+//     fetch(`/delete_chat/${user}/`, {
+//       method: "POST",
+//       headers: {
+//         "X-CSRFToken": getCookie("csrftoken"),
+//         "X-Requested-With": "XMLHttpRequest",
+//         "Content-Type": "application/json"
+//       },
+//     })
+//     .then(res => res.json())
+//     .then(json => {
+//       if (json.success) {
+//         // remove that <li> from the sidebar
+//         btn.closest("li").remove();
+//         // if they were the active thread, also clear the iframe
+//         if (btn.closest("li").querySelector(".active-thread")) {
+//           document.getElementById("chat-frame").src = "";
+//         }
+//       } else {
+//         alert(json.error || "Could not delete chat");
+//       }
+//     })
+//     .catch(() => alert("Network error deleting chat"));
+//   });
+// });
 
   // hijack “Start New Chat” form
   const sidebarForm = document.querySelector("#chat-sidebar form");
