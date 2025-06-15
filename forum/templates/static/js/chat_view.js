@@ -87,6 +87,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const isSelf = (sender === currentUser);
 
     appendBubble(chatBox, data, isSelf);
+
+    // After parsing message
+    if (!isSelf) {
+      // Notify parent window (outer chat box)
+      window.parent.postMessage({
+        type: "new-message",
+        from: sender,
+      }, "*");
+    }
   });
 
   chatForm.addEventListener("submit", (e) => {

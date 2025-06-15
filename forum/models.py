@@ -76,8 +76,10 @@ class ChatRoom(models.Model):
         from django.db.models import Q
 
         username = username.lower()
+
         all_sessions = ChatSession.objects.filter(
-            Q(messages__sender__Username__iexact=username)
+            Q(messages__sender__Username__iexact=username) |
+            Q(room__name__icontains=f"_{username}")  # include any private chatroom involving user
         ).select_related("room").distinct()
 
         partner_usernames = set()
@@ -89,9 +91,8 @@ class ChatRoom(models.Model):
             try:
                 a, b = room_name.replace("private_", "").split("_")
             except ValueError:
-                continue  # skip malformed names like "private_landing"
+                continue
 
-            # filter only valid chat partners
             a = a.lower()
             b = b.lower()
             if a == username and b != username:
@@ -100,6 +101,7 @@ class ChatRoom(models.Model):
                 partner_usernames.add(a)
 
         return sorted(partner_usernames)
+
 
 
 class ChatSession(models.Model):

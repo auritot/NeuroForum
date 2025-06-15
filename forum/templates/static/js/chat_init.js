@@ -26,3 +26,28 @@ document.addEventListener("DOMContentLoaded", function () {
     chatFrame.classList.remove("loading");
   });
 });
+
+window.addEventListener("message", (event) => {
+  if (event.data?.type === "new-message") {
+    const fromUser = event.data.from;
+
+    // Only notify if the chat iframe is not focused on that user
+    const isAlreadyChatting = chatFrame.src.includes(`/chat/${fromUser}/`);
+    if (!isAlreadyChatting) {
+      const chatBtn = document.getElementById("chat-btn");
+      if (chatBtn) {
+        chatBtn.src = "/static/icons/notification_icon.png"; // Replace with actual path
+        chatBtn.classList.add("has-notification");
+      }
+    }
+  }
+});
+
+chatBtn.addEventListener("click", () => {
+  chatFrame.src = "/chat/landing/?frame=1";
+  chatBox.classList.remove("d-none");
+
+  // Reset chat icon
+  chatBtn.src = "/static/icons/chat.png"; // back to default
+  chatBtn.classList.remove("has-notification");
+});
