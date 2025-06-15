@@ -36,6 +36,10 @@ jobs:
           echo "RECAPTCHA_PUBLIC_KEY='${{ secrets.RECAPTCHA_PUBLIC_KEY }}'" >> .env
           echo "RECAPTCHA_PRIVATE_KEY='${{ secrets.RECAPTCHA_PRIVATE_KEY }}'" >> .env
 
+          docker system prune -af
+          docker volume prune -f
+          docker builder prune -af
+
           docker-compose down --remove-orphans
           docker-compose pull
           docker-compose build --no-cache
