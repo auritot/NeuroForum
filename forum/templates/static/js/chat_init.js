@@ -36,7 +36,7 @@ window.addEventListener("message", (event) => {
     if (!isAlreadyChatting) {
       const chatBtn = document.getElementById("chat-btn");
       if (chatBtn) {
-        chatBtn.src = "/static/icons/notification_icon.png"; // Replace with actual path
+        // chatBtn.src = "/static/icons/notification_icon.png"; // Replace with actual path
         chatBtn.classList.add("has-notification");
       }
     }
@@ -48,6 +48,6 @@ chatBtn.addEventListener("click", () => {
   chatBox.classList.remove("d-none");
 
   // Reset chat icon
-  chatBtn.src = "/static/icons/chat.png"; // back to default
+  // chatBtn.src = "/static/icons/chat.png"; // back to default
   chatBtn.classList.remove("has-notification");
 });

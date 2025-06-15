@@ -223,23 +223,21 @@ main {
   background-color: #5f7382;
 }
 
+/* ----------------------- CHAT BUTTON ----------------------- */
+
 .chat-frame.loading {
   background-color: #0e1621; 
 }
 
-/* --------------------- CHAT BUTTON --------------------- */
-
 .chat-btn-img {
   cursor: pointer;
-  transition: filter 0.3s ease, transform 0.3s ease;
-  position: relative;
+  transition: filter 0.3s ease;
 }
 
 .chat-btn-img:hover {
   filter: brightness(150%);
 }
 
-/* Notification state */
 .chat-btn-img.has-notification {
   animation: pulse 1s infinite;
   filter: brightness(170%) drop-shadow(0 0 4px #ffc107);
@@ -257,8 +255,7 @@ main {
   }
 }
 
-/* ------------------- END OF CHAT BUTTON ------------------- */
-
+/* --------------------- END OF CHAT BUTTON --------------------- */
 
 #chat-partner-list a {
   color: white !important;
