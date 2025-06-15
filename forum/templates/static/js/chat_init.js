@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
       link.classList.add("active-thread");
 
       // 4) load the iframe — build URL yourself
-      chatFrame.src = `/chat/${who}/`;
+      chatFrame.src = `/chat/${who}/?frame=1`;
       chatBox.classList.remove("d-none");
     });
   });
