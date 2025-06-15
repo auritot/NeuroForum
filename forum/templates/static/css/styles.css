@@ -17,33 +17,36 @@ main {
      min-height: 90vh;
 }
 
-/* ────────────────────────────────────────────────────────── */
-/* Chat button (host page) */
+/* ─── Chat button (host page) ───────────────────────────────── */
 .chat-btn {
   position: fixed;
   bottom: 1rem;
   right: 1rem;
-  background: #5288c1;
   border: none;
   border-radius: 50%;
-  width: 3.5rem;
-  height: 3.5rem;
-  font-size: 1.5rem;
-  color: white;
-  z-index: 10000;
-  cursor: pointer;
+  background-color: #fff;    /* circle behind the icon */
+  background-image: url("/static/icons/chat.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 28px 28px;/* size of your icon */
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+  z-index: 10000;
 }
+
 .chat-btn:hover { background: #4170a2; }
+
+/* notification dot */
 .chat-btn.has-notification::after {
   content: "";
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 0.75rem;
-  height: 0.75rem;
+  top: 6px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
   background: #e74c3c;
   border-radius: 50%;
+  border: 2px solid #fff; /* optional white border around the red dot */
 }
 
 /* ────────────────────────────────────────────────────────── */
