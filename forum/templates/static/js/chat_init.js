@@ -40,9 +40,11 @@ window.addEventListener("message", (event) => {
   const chatBox = document.getElementById("chat-box-floating");
   const threadLink = document.querySelector(`.chat-thread-link[data-user="${fromUser}"]`);
 
-  const chatSrc = chatFrame.getAttribute("src") || "";
-  const isChatOpen = !chatBox.classList.contains("d-none") &&
-                     chatSrc.includes(`/chat/${fromUser}/`);
+  const chatSrc = chatFrame?.getAttribute("src") || "";
+  const isChatLoaded = chatSrc !== "";
+  const isChatVisible = !chatBox.classList.contains("d-none");
+  const isChatOpen = isChatVisible && chatSrc.includes(`/chat/${fromUser}/`);
+
 
   if (event.data.type === "new-message") {
     // Only increase count if not already chatting with them
@@ -53,10 +55,6 @@ window.addEventListener("message", (event) => {
       countSpan.classList.remove("d-none");
       threadLink.classList.add("has-unread");
       chatBtn.classList.add("has-notification");
-    }
-
-    if (!isChatOpen) {
-      console.log("🔔 Showing global chat notification");
     }
   }
 
