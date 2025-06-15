@@ -1,6 +1,8 @@
 // static/js/chat_init.js
 
-// Helper to pull CSRF token from cookies (if you don’t already have one)
+// —————————————
+// helper to pull CSRF token from cookies
+// —————————————
 function getCookie(name) {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
   return match ? decodeURIComponent(match[2]) : null;
@@ -13,15 +15,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatFrame   = document.getElementById("chat-frame");
   const threadLinks = Array.from(document.querySelectorAll(".chat-thread-link"));
 
-  // 1) Listen for postMessage events from the inner chat iframe
+  // —————————————
+  // listen for messages FROM the iframe
+  // —————————————
   window.addEventListener("message", event => {
     const { type, from } = event.data || {};
-    if (type === "chat-read") {
-      const who = (from || "").toLowerCase();
-      const link = threadLinks.find(l => (l.dataset.threadUser||"").toLowerCase() === who);
-      if (!link) return;
+    const who = (from || "").toLowerCase();
+    const link = threadLinks.find(l => (l.dataset.user || "").toLowerCase() === who);
+    if (!link) return;
 
-      // hide badge & clear count
+    if (type === "chat-read") {
+      // clear the badge on that link
       const badge = link.querySelector(".unread-count");
       if (badge) {
         badge.textContent = "0";
@@ -29,12 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       link.classList.remove("has-unread");
 
-      // if no threads left unread, kill the glow
+      // if none left, kill the glow
       if (!threadLinks.some(l => l.classList.contains("has-unread"))) {
         chatBtn.classList.remove("has-notification");
       }
 
-      // fire a quick AJAX to clear on the server
+      // tell server to zero out unread
       fetch(`/chat/${who}/mark-read/`, {
         method: "POST",
         credentials: "same-origin",
@@ -45,12 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
     else if (type === "new-message") {
-      const who = (from || "").toLowerCase();
-      const link = threadLinks.find(l => (l.dataset.threadUser||"").toLowerCase() === who);
-      if (!link) return;
-
+      // bump the badge
       const badge = link.querySelector(".unread-count");
-      const count = parseInt(badge.textContent || "0", 10) + 1;
+      const count = (parseInt(badge.textContent, 10) || 0) + 1;
       badge.textContent = count;
       badge.classList.remove("d-none");
       link.classList.add("has-unread");
@@ -58,12 +59,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 2) When you click a thread: open it AND clear its unread immediately
+  // —————————————
+  // when you click on a thread in the sidebar
+  // —————————————
   threadLinks.forEach(link => {
     link.addEventListener("click", () => {
-      const who = link.dataset.threadUser;
+      const who = link.dataset.user;              // <-- was dataset.threadUser
 
-      // clear UI
+      // 1) clear UI badge
       const badge = link.querySelector(".unread-count");
       if (badge) {
         badge.textContent = "0";
@@ -74,8 +77,8 @@ document.addEventListener("DOMContentLoaded", () => {
         chatBtn.classList.remove("has-notification");
       }
 
-      // mark server‐side read
-      fetch(`/chat/${who.toLowerCase()}/mark-read/`, {
+      // 2) clear server-side unread
+      fetch(`/chat/${who}/mark-read/`, {
         method: "POST",
         credentials: "same-origin",
         headers: {
@@ -84,16 +87,19 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       });
 
-      // activate thread visually
+      // 3) highlight active link
       threadLinks.forEach(l => l.classList.remove("active-thread"));
       link.classList.add("active-thread");
 
-      // load the iframe
-      chatFrame.src = link.dataset.url;
+      // 4) load the iframe — build URL yourself
+      chatFrame.src = `/chat/${who}/`;
       chatBox.classList.remove("d-none");
     });
   });
 
+  // —————————————
+  // open/close the floating panel
+  // —————————————
   closeBtn.addEventListener("click", () => {
     chatBox.classList.add("d-none");
     chatFrame.src = "";
