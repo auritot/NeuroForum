@@ -115,6 +115,10 @@ def post_form_view(request, context={}, post_id=None):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
+    else:
+        messages.error(request, "Session Expired! Please login.")
+        return redirect("login_view")
+    
 
     if post_id != None:
         post_response = post_service.get_post_by_id(post_id)
@@ -165,7 +169,10 @@ def user_profile_view(request, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        return redirect('index')
+        messages.error(request, "Session Expired! Please login.")
+        return redirect("login_view")
+    # else:
+    #     return redirect('index')
 
     return render(request, "html/user_profile_view.html", context)
 
@@ -177,7 +184,10 @@ def user_manage_post_view(request, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        return redirect('index')
+        messages.error(request, "Session Expired! Please login.")
+        return redirect("login_view")
+    # else:
+    #     return redirect('index')
 
     per_page = 10
     current_page = int(request.GET.get("page", 1))
@@ -207,7 +217,10 @@ def user_manage_comment_view(request, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        return redirect('index')
+        messages.error(request, "Session Expired! Please login.")
+        return redirect("login_view")
+    # else:
+    #     return redirect('index')
 
     per_page = 2
     current_page = int(request.GET.get("page", 1))
