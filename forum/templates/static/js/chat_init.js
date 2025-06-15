@@ -65,13 +65,20 @@ window.addEventListener("message", (event) => {
   }
 
   if (event.data.type === "chat-read") {
-    if (threadLink) {
-      const countSpan = threadLink.querySelector(".unread-count");
-      countSpan.textContent = "0";
-      countSpan.classList.add("d-none");
-      threadLink.classList.remove("has-unread");
-    }
+    // Find the right thread
+    threadLinks.forEach(el => {
+      if (el.dataset.user === fromUser) {
+        el.classList.remove("has-unread");
+        el.classList.add("active-thread");
+        const countSpan = el.querySelector(".unread-count");
+        if (countSpan) {
+          countSpan.textContent = "0";
+          countSpan.classList.add("d-none");
+        }
+      }
+    });
 
+    // Always clear main icon too
     chatBtn.classList.remove("has-notification");
   }
 });

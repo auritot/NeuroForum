@@ -1,5 +1,5 @@
 from django.views.decorators.clickjacking import xframe_options_exempt
-from .models import ChatRoom, UserAccount
+from .models import ChatRoom, UserAccount, ChatUnread
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.core.mail import send_mail
@@ -266,64 +266,37 @@ def mail_template(request):
     return render(request, "html/mail_template.html", context)
 
 # MARK: Chat View
-# @xframe_options_exempt
-# def chat_view(request, other_user):
-#     print("🌐 HTTP session:", dict(request.session.items()))
-#     session_response = session_service.check_session(request)
-
-#     if session_response["status"] != "SUCCESS":
-#         return redirect(f"/login/?next=/chat/{other_user}/")
-
-#     user_info = session_response["data"]
-#     username = user_info.get("Username", "").strip()
-
-#     if not username:
-#         print("[ERROR] Missing Username in session data:", user_info)
-#         return redirect("/login")
-
-#     current_user = user_info.get("Username", "").strip().lower()
-#     target_user = other_user.strip().lower()
-
-#     if not current_user or current_user == target_user:
-#         return redirect("/chat/")
-
-#     existing_partners = ChatRoom.get_recent_partners_for_user(username)
-#     return render(request, "html/chat_view.html", {
-#         "user_info": user_info,
-#         "other_user": other_user,
-#         "partners": existing_partners,
-#     })
-
 
 @xframe_options_exempt
 def chat_view(request, other_user):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
         if request.GET.get("frame") == "1":
-            # Return a minimal message for iframe context
             return render(request, "html/chat_not_logged_in.html", status=401)
         return redirect(f"/login/?next=/chat/{other_user}/")
 
     user_info = session_response["data"]
     username = user_info.get("Username", "").strip()
 
-    is_iframe = request.GET.get("frame") == "1"
+    if request.GET.get("frame") != "1":
+        # Always redirect full view to iframe
+        return redirect(f"/chat/{other_user}/?frame=1")
 
-    if not username or (username == other_user and not is_iframe):
-        return render(request, "html/chat_landing.html", {"user_info": user_info})
+    # Load unread count if available
+    a, b = sorted([username.lower(), other_user.lower()])
+    room_name = f"private_{a}_{b}"
 
-    partners = ChatRoom.get_recent_partners_for_user(username)
+    unread_count = 0
+    try:
+        unread_obj = ChatUnread.objects.get(user__Username__iexact=username, room__name=room_name)
+        unread_count = unread_obj.unread_count
+    except ChatUnread.DoesNotExist:
+        pass
 
-    if is_iframe:
-        return render(request, "html/chat_inner.html", {
-            "user_info": user_info,
-            "other_user": other_user,
-        })
-
-    return render(request, "html/chat_view.html", {
+    return render(request, "html/chat_inner.html", {
         "user_info": user_info,
         "other_user": other_user,
-        "partners": partners,
+        "unread_count": unread_count,
     })
 
 

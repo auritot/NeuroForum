@@ -11,7 +11,7 @@ from django.utils import timezone
 from pytz import timezone as pytz_timezone
 
 from django.contrib.auth import get_user_model
-from .models import ChatRoom, ChatSession, ChatMessage
+from .models import ChatRoom, ChatSession, ChatMessage, ChatUnread, UserAccount
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -62,6 +62,12 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             print(f"❌ Chat not allowed between {self.scope['user'].Username} and {self.other_user}")
             await self.close(code=4003)
             return
+
+        await self._mark_as_read(self.scope["user"], self.chatroom)
+
+        @database_sync_to_async
+        def _mark_as_read(self, user, room):
+            ChatUnread.objects.filter(user=user, room=room).update(unread_count=0)
 
         # VERY IMPORTANT: accept() before you group_add(), or some browsers reject you.
         await self.accept()
@@ -200,7 +206,22 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def _save_message(self, session: ChatSession, user, content: str):
-        ChatMessage.objects.create(session=session, sender=user, content=content)
+        msg = ChatMessage.objects.create(session=session, sender=user, content=content)
+
+        # Get all other usernames in the room
+        participants = self.chatroom.name.replace("private_", "").split("_")
+        other_username = [u for u in participants if u != user.Username.lower()]
+        if not other_username:
+            return
+
+        try:
+            recipient = UserAccount.objects.get(Username__iexact=other_username[0])
+            unread_obj, _ = ChatUnread.objects.get_or_create(user=recipient, room=self.chatroom)
+            unread_obj.unread_count += 1
+            unread_obj.save()
+        except Exception as e:
+            logger.error(f"❌ Failed to increment unread: {e}")
+
 
     @database_sync_to_async
     def _fetch_messages_from_ended_sessions(self, chatroom):
