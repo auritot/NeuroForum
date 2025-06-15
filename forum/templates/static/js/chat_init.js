@@ -52,60 +52,60 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  window.addEventListener("message", function (event) {
-    if (event.data.type === "new-message") {
-      const fromUser = event.data.from;
-      const threadLink = document.querySelector(`.chat-thread-link[data-user="${fromUser}"]`);
-      const isChatOpen = chatBox.classList.contains("open") && chatFrame.src.includes(`/chat/${fromUser}/`);
+  // window.addEventListener("message", function (event) {
+  //   if (event.data.type === "new-message") {
+  //     const fromUser = event.data.from;
+  //     const threadLink = document.querySelector(`.chat-thread-link[data-user="${fromUser}"]`);
+  //     const isChatOpen = chatBox.classList.contains("open") && chatFrame.src.includes(`/chat/${fromUser}/`);
 
-      if (threadLink) {
-        if (!isChatOpen) {
-          const countSpan = threadLink.querySelector(".unread-count");
-          let count = parseInt(countSpan?.textContent || "0", 10) + 1;
-          countSpan.textContent = count;
-          countSpan.classList.remove("d-none");
-          threadLink.classList.add("has-unread");
-          chatBtn.classList.add("has-notification");
-        } else {
-          threadLink.classList.add("active-thread");
-        }
-      }
-    }
+  //     if (threadLink) {
+  //       if (!isChatOpen) {
+  //         const countSpan = threadLink.querySelector(".unread-count");
+  //         let count = parseInt(countSpan?.textContent || "0", 10) + 1;
+  //         countSpan.textContent = count;
+  //         countSpan.classList.remove("d-none");
+  //         threadLink.classList.add("has-unread");
+  //         chatBtn.classList.add("has-notification");
+  //       } else {
+  //         threadLink.classList.add("active-thread");
+  //       }
+  //     }
+  //   }
 
-    if (event.data.type === "chat-read") {
-      const fromUser = event.data.from;
-      threadLinks.forEach(el => {
-        if (el.dataset.user === fromUser) {
-          el.classList.remove("has-unread");
-          el.classList.add("active-thread");
-          const countSpan = el.querySelector(".unread-count");
-          if (countSpan) {
-            countSpan.textContent = "0";
-            countSpan.classList.add("d-none");
-          }
-        }
-      });
-      chatBtn.classList.remove("has-notification");
-    }
+  //   if (event.data.type === "chat-read") {
+  //     const fromUser = event.data.from;
+  //     threadLinks.forEach(el => {
+  //       if (el.dataset.user === fromUser) {
+  //         el.classList.remove("has-unread");
+  //         el.classList.add("active-thread");
+  //         const countSpan = el.querySelector(".unread-count");
+  //         if (countSpan) {
+  //           countSpan.textContent = "0";
+  //           countSpan.classList.add("d-none");
+  //         }
+  //       }
+  //     });
+  //     chatBtn.classList.remove("has-notification");
+  //   }
 
-    if (event.data.type === "notify") {
-      const fromUser   = event.data.from;
-      const threadLink = document.querySelector(
-        `.chat-thread-link[data-user="${fromUser}"]`
-      );
-      // are we currently chatting with them?
-      const isChatOpen = chatBox.classList.contains("open") &&
-                        chatFrame.src.includes(`/chat/${fromUser}/`);
-      if (threadLink && !isChatOpen) {
-        const countSpan = threadLink.querySelector(".unread-count");
-        let count = parseInt(countSpan.textContent || "0", 10) + 1;
-        countSpan.textContent        = count;
-        countSpan.classList.remove("d-none");
-        threadLink.classList.add("has-unread");
-        chatBtn.classList.add("has-notification");
-      }
-    }
-  });
+  //   if (event.data.type === "notify") {
+  //     const fromUser   = event.data.from;
+  //     const threadLink = document.querySelector(
+  //       `.chat-thread-link[data-user="${fromUser}"]`
+  //     );
+  //     // are we currently chatting with them?
+  //     const isChatOpen = chatBox.classList.contains("open") &&
+  //                       chatFrame.src.includes(`/chat/${fromUser}/`);
+  //     if (threadLink && !isChatOpen) {
+  //       const countSpan = threadLink.querySelector(".unread-count");
+  //       let count = parseInt(countSpan.textContent || "0", 10) + 1;
+  //       countSpan.textContent        = count;
+  //       countSpan.classList.remove("d-none");
+  //       threadLink.classList.add("has-unread");
+  //       chatBtn.classList.add("has-notification");
+  //     }
+  //   }
+  // });
 
   chatFrame?.addEventListener("load", () => {
     chatFrame.classList.remove("loading");

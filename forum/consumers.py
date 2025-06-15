@@ -11,7 +11,7 @@ from django.utils import timezone
 from pytz import timezone as pytz_timezone
 
 from django.contrib.auth import get_user_model
-from .models import ChatRoom, ChatSession, ChatMessage, ChatUnread, UserAccount
+from .models import ChatRoom, ChatSession, ChatMessage, UserAccount
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -51,8 +51,8 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         self.chatroom = await database_sync_to_async(ChatRoom.get_or_create_private)(a, b)
         self.session = await self._get_or_create_open_session(self.chatroom)
 
-        # clear unread count for me in this room
-        await self._mark_as_read(self.scope["user"], self.chatroom)
+        # # clear unread count for me in this room
+        # await self._mark_as_read(self.scope["user"], self.chatroom)
 
         # first accept, then group_add
         await self.accept()
@@ -193,18 +193,6 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _save_message(self, session, user, content):
         msg = ChatMessage.objects.create(session=session, sender=user, content=content)
-        # increment unread count in ChatUnread table
-        participants = self.chatroom.name.replace("private_", "").split("_")
-        other = [u for u in participants if u != user.Username.lower()]
-        if not other:
-            return
-        try:
-            recipient = UserAccount.objects.get(Username__iexact=other[0])
-            unread_obj, _ = ChatUnread.objects.get_or_create(user=recipient, room=self.chatroom)
-            unread_obj.unread_count += 1
-            unread_obj.save()
-        except Exception as e:
-            logger.error(f"Failed to increment ChatUnread: {e}")
 
     @database_sync_to_async
     def _fetch_messages_from_ended_sessions(self, chatroom):
@@ -237,6 +225,6 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         PrivateChatConsumer._session_participants[session_id] = cnt
         return cnt
 
-    @database_sync_to_async
-    def _mark_as_read(self, user, room):
-        ChatUnread.objects.filter(user=user, room=room).update(unread_count=0)
+    # @database_sync_to_async
+    # def _mark_as_read(self, user, room):
+    #     ChatUnread.objects.filter(user=user, room=room).update(unread_count=0)

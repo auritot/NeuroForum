@@ -15,10 +15,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentUser = (mainEl.dataset.currentUser || "").trim().toLowerCase();
   const otherUser   = (mainEl.dataset.otherUser   || "").trim().toLowerCase();
 
-  window.parent.postMessage({
-  type: "chat-read",
-  from: otherUser
-  }, "*");
+  // window.parent.postMessage({
+  // type: "chat-read",
+  // from: otherUser
+  // }, "*");
 
   // Build the proper WSS/WS URL.  If the page is HTTPS, use wss://, otherwise ws://
   const wsProtocol = (window.location.protocol === "https:") ? "wss://" : "ws://";
@@ -97,10 +97,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isSelf) {
       // Notify parent window (outer chat box)
       console.log("📤 Sending postMessage to parent", { sender, currentUser, isSelf });
-      window.parent.postMessage({
-        type: "new-message",
-        from: sender,
-      }, "*");
+      // window.parent.postMessage({
+      //   type: "new-message",
+      //   from: sender,
+      // }, "*");
     }
   });
 

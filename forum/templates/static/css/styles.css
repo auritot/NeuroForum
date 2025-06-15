@@ -129,21 +129,6 @@ main {
   text-decoration: none;
 }
 
-.chat-thread-link.has-unread .unread-count {
-  display: inline-block !important;
-  animation: blink 1s infinite;
-}
-
-.chat-thread-link .unread-count {
-  float: right;
-  font-size: 0.75rem;
-  padding: 0.2em 0.5em;
-  border-radius: 10px;
-  background: #ffc107;
-  color: black;
-  margin-left: 8px;
-}
-
 .chat-thread-link.active-thread {
   background-color: #2b5278;
   color: white !important;
@@ -179,12 +164,6 @@ main {
 
 .chat-btn-img:hover {
   filter: brightness(150%);
-}
-
-.chat-btn-img.has-notification {
-  animation: pulse 1s infinite;
-  filter: brightness(170%) drop-shadow(0 0 4px #ffc107);
-  transform: scale(1.05);
 }
 
 /* Input & Buttons in iframe */

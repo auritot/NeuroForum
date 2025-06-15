@@ -147,10 +147,10 @@ class ChatMessage(models.Model):
         return f"[{ts}] {self.sender.username}: {self.content[:40]}…"
     
 
-class ChatUnread(models.Model):
-    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
-    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
-    unread_count = models.PositiveIntegerField(default=0)
+# class ChatUnread(models.Model):
+#     user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
+#     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
+#     unread_count = models.PositiveIntegerField(default=0)
 
-    class Meta:
-        unique_together = ("user", "room")
+#     class Meta:
+#         unique_together = ("user", "room")
