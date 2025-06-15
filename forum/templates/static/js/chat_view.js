@@ -5,20 +5,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatInput = document.querySelector("#chat-input");
   const chatBox   = document.querySelector("#chat-box");
 
-  // if (!chatForm || !chatInput || !chatBox) {
-  //   console.error("Missing #chat-form, #chat-input, or #chat-box!");
-  //   return;
-  // }
-
   // Pull <main data-...> attributes
   const mainEl     = document.querySelector("main");
   const currentUser = (mainEl.dataset.currentUser || "").trim().toLowerCase();
   const otherUser   = (mainEl.dataset.otherUser   || "").trim().toLowerCase();
-
-  // window.parent.postMessage({
-  // type: "chat-read",
-  // from: otherUser
-  // }, "*");
 
   // Build the proper WSS/WS URL.  If the page is HTTPS, use wss://, otherwise ws://
   const wsProtocol = (window.location.protocol === "https:") ? "wss://" : "ws://";
@@ -52,27 +42,13 @@ document.addEventListener("DOMContentLoaded", () => {
     parentEl.scrollTop = parentEl.scrollHeight;
   }
 
-  // chatSocket.addEventListener("open", () => {
-  //   // console.log("✅ WebSocket connected to " + wsUrl);
-  // });
-
-  // chatSocket.addEventListener("error", (err) => {
-  //   // console.error("❌ WebSocket error:", err);
-  // });
-
-  // chatSocket.addEventListener("close", (e) => {
-  //   // console.warn("⚠️ WebSocket closed:", e);
-  // });
-
-  // chatSocket.addEventListener("message", (event) => {
-  //   // console.log("⟵ WS frame received:", event.data);
-  //   let data;
-  //   try {
-  //     data = JSON.parse(event.data);
-  //   } catch (_e) {
-  //     // console.error("Failed to parse frame as JSON:", event.data);
-  //     return;
-  //   }
+  chatSocket.addEventListener("message", (event) => {
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch {
+      return;
+    }
 
     // On the very first incoming frame, remove the “Loading…” placeholder
     if (!sawPlaceholder) {
@@ -92,17 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const isSelf = (sender === currentUser);
 
     appendBubble(chatBox, data, isSelf);
-
-  //   // After parsing message
-  //   if (!isSelf) {
-  //     // Notify parent window (outer chat box)
-  //     console.log("📤 Sending postMessage to parent", { sender, currentUser, isSelf });
-  //     // window.parent.postMessage({
-  //     //   type: "new-message",
-  //     //   from: sender,
-  //     // }, "*");
-  //   }
-  // });
+  });
 
   chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
