@@ -5,10 +5,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatInput = document.querySelector("#chat-input");
   const chatBox   = document.querySelector("#chat-box");
 
-  if (!chatForm || !chatInput || !chatBox) {
-    console.error("Missing #chat-form, #chat-input, or #chat-box!");
-    return;
-  }
+  // if (!chatForm || !chatInput || !chatBox) {
+  //   console.error("Missing #chat-form, #chat-input, or #chat-box!");
+  //   return;
+  // }
 
   // Pull <main data-...> attributes
   const mainEl     = document.querySelector("main");
@@ -52,27 +52,27 @@ document.addEventListener("DOMContentLoaded", () => {
     parentEl.scrollTop = parentEl.scrollHeight;
   }
 
-  chatSocket.addEventListener("open", () => {
-    console.log("✅ WebSocket connected to " + wsUrl);
-  });
+  // chatSocket.addEventListener("open", () => {
+  //   // console.log("✅ WebSocket connected to " + wsUrl);
+  // });
 
-  chatSocket.addEventListener("error", (err) => {
-    console.error("❌ WebSocket error:", err);
-  });
+  // chatSocket.addEventListener("error", (err) => {
+  //   // console.error("❌ WebSocket error:", err);
+  // });
 
-  chatSocket.addEventListener("close", (e) => {
-    console.warn("⚠️ WebSocket closed:", e);
-  });
+  // chatSocket.addEventListener("close", (e) => {
+  //   // console.warn("⚠️ WebSocket closed:", e);
+  // });
 
-  chatSocket.addEventListener("message", (event) => {
-    console.log("⟵ WS frame received:", event.data);
-    let data;
-    try {
-      data = JSON.parse(event.data);
-    } catch (_e) {
-      console.error("Failed to parse frame as JSON:", event.data);
-      return;
-    }
+  // chatSocket.addEventListener("message", (event) => {
+  //   // console.log("⟵ WS frame received:", event.data);
+  //   let data;
+  //   try {
+  //     data = JSON.parse(event.data);
+  //   } catch (_e) {
+  //     // console.error("Failed to parse frame as JSON:", event.data);
+  //     return;
+  //   }
 
     // On the very first incoming frame, remove the “Loading…” placeholder
     if (!sawPlaceholder) {
@@ -93,16 +93,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     appendBubble(chatBox, data, isSelf);
 
-    // After parsing message
-    if (!isSelf) {
-      // Notify parent window (outer chat box)
-      console.log("📤 Sending postMessage to parent", { sender, currentUser, isSelf });
-      // window.parent.postMessage({
-      //   type: "new-message",
-      //   from: sender,
-      // }, "*");
-    }
-  });
+  //   // After parsing message
+  //   if (!isSelf) {
+  //     // Notify parent window (outer chat box)
+  //     console.log("📤 Sending postMessage to parent", { sender, currentUser, isSelf });
+  //     // window.parent.postMessage({
+  //     //   type: "new-message",
+  //     //   from: sender,
+  //     // }, "*");
+  //   }
+  // });
 
   chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -113,13 +113,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (chatSocket.readyState !== WebSocket.OPEN) {
-      console.error("WebSocket is not open; cannot send.");
+      // console.error("WebSocket is not open; cannot send.");
       return;
     }
 
     // Build our JSON payload
     const payload = { message: text };
-    console.log("⟶ WS send:", JSON.stringify(payload));
+    // console.log("⟶ WS send:", JSON.stringify(payload));
     chatSocket.send(JSON.stringify(payload));
 
     // Clear & refocus
