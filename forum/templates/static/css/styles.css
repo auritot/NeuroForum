@@ -21,8 +21,12 @@ main {
     border: none !important;
     padding: 1rem;
     margin-bottom: 1rem;
-    height: 60vh;
+
+    /* flex-grow instead of fixed height */
+    flex: 1 1 auto;
+    min-height: 0;        /* allow shrinking in a flex column */
     overflow-y: auto;
+
     background-color: #0e1621;
     position: relative;
 }
@@ -56,19 +60,48 @@ main {
     margin-right: auto;
 }
 
-/* Floating chat box for popup */
+/* ─── Floating container ───────────────────────────────────────── */
 #chat-box-floating {
   position: fixed;
   bottom: 1rem;
   right: 1rem;
-  width: 550px; 
-  height: 500px;
-  background: #fff;
+  width: 350px;               /* adjust to taste */
+  height: 500px;              /* adjust to taste */
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-  z-index: 9999;
-  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  z-index: 10000;
+}
+
+/* ─── Header ───────────────────────────────────────────────────── */
+#chat-box-floating .chat-header {
+  padding: 0.75rem 1rem;
+  background-color: #0e1621;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ─── Body: sidebar + iframe ──────────────────────────────────── */
+#chat-box-floating .chat-body-wrapper {
+  display: flex;
+  flex: 1;               /* fill remaining vertical space */
+  overflow: hidden;      /* contain scrollbars */
+}
+
+#chat-box-floating .chat-sidebar {
+  width: 200px;
+  background: #202b36;
+  color: #fff;
+  overflow-y: auto;
+}
+
+#chat-box-floating .chat-frame {
+  flex: 1;               /* let the iframe expand */
+  border: none;
+  height: 100%;
 }
 
 .chat-header {
