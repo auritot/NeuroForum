@@ -21,12 +21,8 @@ main {
     border: none !important;
     padding: 1rem;
     margin-bottom: 1rem;
-
-    /* flex-grow instead of fixed height */
-    flex: 1 1 auto;
-    min-height: 0;        /* allow shrinking in a flex column */
+    height: 60vh;
     overflow-y: auto;
-
     background-color: #0e1621;
     position: relative;
 }
