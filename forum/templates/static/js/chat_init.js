@@ -87,6 +87,24 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       chatBtn.classList.remove("has-notification");
     }
+
+    if (event.data.type === "notify") {
+      const fromUser   = event.data.from;
+      const threadLink = document.querySelector(
+        `.chat-thread-link[data-user="${fromUser}"]`
+      );
+      // are we currently chatting with them?
+      const isChatOpen = chatBox.classList.contains("open") &&
+                        chatFrame.src.includes(`/chat/${fromUser}/`);
+      if (threadLink && !isChatOpen) {
+        const countSpan = threadLink.querySelector(".unread-count");
+        let count = parseInt(countSpan.textContent || "0", 10) + 1;
+        countSpan.textContent        = count;
+        countSpan.classList.remove("d-none");
+        threadLink.classList.add("has-unread");
+        chatBtn.classList.add("has-notification");
+      }
+    }
   });
 
   chatFrame?.addEventListener("load", () => {
