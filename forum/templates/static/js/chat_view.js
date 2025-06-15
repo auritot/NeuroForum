@@ -70,10 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1) Handle our custom "notify" event (fired by the consumer on unread)
     if (data.type === "notify" && data.from) {
       // forward to parent just like a new-message
-      window.parent.postMessage({
-        type: "new-message",
-        from: data.from
-      }, "*");
+      window.parent.postMessage({ type: "new-message", from: data.from }, "*");
       return;  // don't treat it as a real chat bubble
     }
 

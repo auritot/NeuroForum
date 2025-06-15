@@ -170,6 +170,12 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             if remaining == 0:
                 await self._close_session(self.session)
 
+    async def chat_unread_notification(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "notify",
+            "from": event["from_user"],
+        }))
+
 
     # ───── Database / ORM helpers ─────
 
@@ -230,3 +236,4 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _mark_as_read(self, user, room):
         ChatUnread.objects.filter(user=user, room=room).update(unread_count=0)
+

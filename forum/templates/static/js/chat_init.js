@@ -1,100 +1,74 @@
 // static/js/chat_init.js
 
-document.addEventListener("DOMContentLoaded", function () {
-  const chatBtn    = document.getElementById("chat-btn");
-  const chatBox    = document.getElementById("chat-box-floating");
-  const closeChat  = document.getElementById("close-chat");
-  const chatFrame  = document.getElementById("chat-frame");
-  const threadLinks = document.querySelectorAll(".chat-thread-link");
+document.addEventListener("DOMContentLoaded", () => {
+  const chatBtn     = document.getElementById("chat-btn");
+  const chatBox     = document.getElementById("chat-box-floating");
+  const closeBtn    = document.getElementById("close-chat");
+  const chatFrame   = document.getElementById("chat-frame");
+  const threadLinks = Array.from(document.querySelectorAll(".chat-thread-link"));
 
-  if (!chatBtn) return;
-
-  // 1) Open chat panel
-  chatBtn.addEventListener("click", () => {
+  function openChat() {
     chatBox.classList.remove("d-none");
-    // if no thread selected yet, landing page
-    if (!chatFrame.src || chatFrame.src.includes("landing")) {
-      chatFrame.src = "/chat/landing/?frame=1";
-    }
-    // clear bell glow
-    chatBtn.classList.remove("has-notification");
-  });
-
-  // 2) Close button
-  closeChat?.addEventListener("click", () => {
+  }
+  function closeChat() {
     chatBox.classList.add("d-none");
     chatFrame.src = "";
-    threadLinks.forEach(el => el.classList.remove("active-thread"));
-  });
+    threadLinks.forEach(l => l.classList.remove("active-thread"));
+  }
 
-  // 3) When iframe loads, un-hide content
-  chatFrame?.addEventListener("load", () => {
-    chatFrame.classList.remove("loading");
+  chatBtn.addEventListener("click", () => {
+    openChat();
+    if (!chatFrame.src.includes("/chat/")) {
+      chatFrame.src = "/chat/landing/?frame=1";
+    }
+    chatBtn.classList.remove("has-notification");
   });
+  closeBtn.addEventListener("click", closeChat);
 
-  // 4) Thread click (open that user’s chat)
+  // click on a thread in the sidebar
   threadLinks.forEach(link => {
-    link.addEventListener("click", (e) => {
+    link.addEventListener("click", e => {
       e.preventDefault();
       const user = link.dataset.user;
       if (!user) return;
       chatFrame.src = `/chat/${user}/?frame=1`;
-      threadLinks.forEach(el => el.classList.remove("active-thread"));
+      threadLinks.forEach(l => l.classList.remove("active-thread"));
       link.classList.add("active-thread");
-      link.classList.remove("has-unread");
-      const countSpan = link.querySelector(".unread-count");
-      if (countSpan) {
-        countSpan.textContent = "0";
-        countSpan.classList.add("d-none");
+      // clear that thread’s unread badge
+      const badge = link.querySelector(".unread-count");
+      if (badge) {
+        badge.textContent = "0";
+        badge.classList.add("d-none");
       }
       chatBtn.classList.remove("has-notification");
-      chatBox.classList.remove("d-none");
+      openChat();
     });
   });
 
-  // 5) Listen for child-postMessages
-  window.addEventListener("message", (event) => {
-    const { type, from } = event.data || {};
+  // receive “new-message” from inner frames (either a real message or an unread ping)
+  window.addEventListener("message", event => {
+    if (event.data.type !== "new-message") return;
+    const fromUser = (event.data.from || "").toLowerCase();
+    const threadLink = document.querySelector(`.chat-thread-link[data-user="${fromUser}"]`);
+    const isOpen     = !chatBox.classList.contains("d-none") && chatFrame.src.includes(`/chat/${fromUser}/`);
 
-    if (type === "new-message" && from) {
-      const threadLink = document.querySelector(`.chat-thread-link[data-user="${from}"]`);
-      const isOpen = !chatBox.classList.contains("d-none") 
-                     && chatFrame.src.includes(`/chat/${from}/`);
-
-      if (threadLink) {
-        if (!isOpen) {
-          // bump unread badge
-          const countSpan = threadLink.querySelector(".unread-count");
-          let count = parseInt(countSpan?.textContent || "0", 10) + 1;
-          countSpan.textContent = count;
-          countSpan.classList.remove("d-none");
-          threadLink.classList.add("has-unread");
-          // glow the main chat icon
-          chatBtn.classList.add("has-notification");
-        } else {
-          // if this thread is open, highlight it
-          threadLink.classList.add("active-thread");
-        }
-      } else {
-        // global chat icon if message from a **new** partner
+    if (threadLink) {
+      if (!isOpen) {
+        // bump unread‐badge
+        const badge = threadLink.querySelector(".unread-count");
+        let count   = parseInt(badge?.textContent || "0", 10) + 1;
+        badge.textContent = count;
+        badge.classList.remove("d-none");
+        threadLink.classList.add("has-unread");
+        // glow the chat icon
         chatBtn.classList.add("has-notification");
+      } else {
+        // if that thread is open, highlight it
+        threadLink.classList.add("active-thread");
       }
-    }
-
-    if (type === "chat-read" && from) {
-      // clear the clicked partner’s unread
-      threadLinks.forEach(el => {
-        if (el.dataset.user === from) {
-          el.classList.remove("has-unread");
-          el.classList.add("active-thread");
-          const countSpan = el.querySelector(".unread-count");
-          if (countSpan) {
-            countSpan.textContent = "0";
-            countSpan.classList.add("d-none");
-          }
-        }
-      });
-      chatBtn.classList.remove("has-notification");
+    } else {
+      // brand‐new partner: glow the chat icon too
+      chatBtn.classList.add("has-notification");
     }
   });
 });
