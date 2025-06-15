@@ -91,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // After parsing message
     if (!isSelf) {
       // Notify parent window (outer chat box)
+      console.log("📤 Sending postMessage to parent", { sender, currentUser, isSelf });
       window.parent.postMessage({
         type: "new-message",
         from: sender,
