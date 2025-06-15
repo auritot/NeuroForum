@@ -369,6 +369,25 @@ def start_chat_view(request):
 
     return redirect(f"/chat/{username}/")
 
+@xframe_options_exempt
+def delete_chat(request, username):
+    # only accept AJAX POST
+    if request.method != "POST" or request.headers.get("x-requested-with") != "XMLHttpRequest":
+        return JsonResponse({"error":"Invalid request"}, status=400)
+
+    me = request.user
+    other = UserAccount.objects.filter(Username__iexact=username).first()
+    if not other:
+        return JsonResponse({"error":"User not found"}, status=404)
+
+    # build the private‐chat room name without creating it
+    a, b = sorted([me.Username.lower(), other.Username.lower()])
+    room_name = f"private_{a}_{b}"
+
+    # delete if it exists (no extra creation step)
+    ChatRoom.objects.filter(name=room_name).delete()
+    return JsonResponse({"success": True})
+
 # MARK: Manage Filtered Words View
 
 
