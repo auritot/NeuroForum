@@ -172,16 +172,16 @@ main {
 }
 
 /* Chat Button */
-.chat-btn-img {
+.chat-btn {
   cursor: pointer;
   transition: filter 0.3s ease;
 }
 
-.chat-btn-img:hover {
+.chat-btn:hover {
   filter: brightness(150%);
 }
 
-.chat-btn-img.has-notification {
+.chat-btn.has-notification {
   animation: pulse 1s infinite;
   filter: brightness(170%) drop-shadow(0 0 4px #ffc107);
   transform: scale(1.05);

@@ -10,35 +10,30 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // Pull <main data-...> attributes
+  // Grab the current user and the peer from the <main> data attributes
   const mainEl     = document.querySelector("main");
   const currentUser = (mainEl.dataset.currentUser || "").trim().toLowerCase();
   const otherUser   = (mainEl.dataset.otherUser   || "").trim().toLowerCase();
 
+  // Tell parent we opened this chat (so it can clear unread badges)
   window.parent.postMessage({
-  type: "chat-read",
-  from: otherUser
+    type: "chat-read",
+    from: otherUser
   }, "*");
 
-  // Build the proper WSS/WS URL.  If the page is HTTPS, use wss://, otherwise ws://
+  // Build WebSocket URL
   const wsProtocol = (window.location.protocol === "https:") ? "wss://" : "ws://";
   const wsUrl      = wsProtocol + window.location.host + "/ws/chat/" + otherUser + "/";
-
   const chatSocket = new WebSocket(wsUrl);
 
-  // This flag tells us whether we've already removed the “Loading previous chats…” placeholder
   let sawPlaceholder = false;
 
-  // Helper to append a message bubble into #chat-box
   function appendBubble(parentEl, data, isSelf) {
     const alignClass = isSelf ? "justify-content-end" : "justify-content-start";
     const bubbleType = isSelf ? "self" : "other";
-
-    // We expect data.timestamp == "HH:MM dd/mm/YYYY"
     const timeHtml = data.timestamp
       ? `<br><small class="timestamp">${data.timestamp}</small>`
       : "";
-
     const msgHtml = `
       <div class="d-flex ${alignClass} mb-2">
         <div class="chat-bubble ${bubbleType}">
@@ -47,7 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
           ${timeHtml}
         </div>
       </div>`;
-
     parentEl.insertAdjacentHTML("beforeend", msgHtml);
     parentEl.scrollTop = parentEl.scrollHeight;
   }
@@ -65,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   chatSocket.addEventListener("message", (event) => {
-    console.log("⟵ WS frame received:", event.data);
     let data;
     try {
       data = JSON.parse(event.data);
@@ -74,32 +67,38 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // On the very first incoming frame, remove the “Loading…” placeholder
+    // 1) Handle our custom "notify" event (fired by the consumer on unread)
+    if (data.type === "notify" && data.from) {
+      // forward to parent just like a new-message
+      window.parent.postMessage({
+        type: "new-message",
+        from: data.from
+      }, "*");
+      return;  // don't treat it as a real chat bubble
+    }
+
+    // 2) The old "history" placeholder removal
     if (!sawPlaceholder) {
       const ph = document.querySelector("#chat-placeholder");
       if (ph) ph.remove();
       sawPlaceholder = true;
     }
 
-    // If the server deliberately sent { history: true } with NO message/sender,
-    // that is just our “no history” placeholder.  We silently ignore it.
+    // 3) Ignore pure-history frames
     if (!data.message || !data.sender) {
       return;
     }
 
-    // Otherwise, we have a real bubble.  Lowercase the sender to check if it was from us
+    // 4) Render real bubble
     const sender = data.sender.toLowerCase();
     const isSelf = (sender === currentUser);
-
     appendBubble(chatBox, data, isSelf);
 
-    // After parsing message
+    // 5) Notify parent it’s a real incoming chat
     if (!isSelf) {
-      // Notify parent window (outer chat box)
-      console.log("📤 Sending postMessage to parent", { sender, currentUser, isSelf });
       window.parent.postMessage({
         type: "new-message",
-        from: sender,
+        from: sender
       }, "*");
     }
   });
@@ -111,18 +110,11 @@ document.addEventListener("DOMContentLoaded", () => {
       chatInput.focus();
       return;
     }
-
     if (chatSocket.readyState !== WebSocket.OPEN) {
       console.error("WebSocket is not open; cannot send.");
       return;
     }
-
-    // Build our JSON payload
-    const payload = { message: text };
-    console.log("⟶ WS send:", JSON.stringify(payload));
-    chatSocket.send(JSON.stringify(payload));
-
-    // Clear & refocus
+    chatSocket.send(JSON.stringify({ message: text }));
     chatInput.value = "";
     chatInput.focus();
   });
