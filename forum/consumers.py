@@ -143,6 +143,14 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
             await self._save_message(self.session, self.scope["user"], safe_message)
 
+            await self.channel_layer.group_send(
+                f"chat_{self.other_user.username}",
+                {
+                    "type": "chat.unread_notification",
+                    "from_user": self.scope["user"].username,
+                }
+            )
+
         except Exception as e:
             import traceback
             logger.error("❌ WebSocket receive() crashed:\n" + traceback.format_exc())
@@ -183,6 +191,12 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
                 logger.info(f"[DISCONNECT] user={self.current_user}, room={self.room_name}, remaining={remaining}")
             except Exception as e:
                 logger.error(f"Error finalizing disconnect: {e}")
+
+    async def chat_unread_notification(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "notify",
+            "from": event["from_user"]
+        }))
 
     #
     # ─── Database / ORM HELPER METHODS ───────────────────────────────────────────
