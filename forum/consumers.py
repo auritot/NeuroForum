@@ -1,5 +1,4 @@
 # forum/consumers.py
-
 import json
 import time
 import bleach
@@ -20,12 +19,21 @@ User = get_user_model()
 
 class PrivateChatConsumer(AsyncWebsocketConsumer):
     """
-    WebSocket consumer for a two‐way private chat.
-    URL: /ws/chat/<other_username>/
+    WebSocket consumer for a private chat between two users.
     """
+
+    # In-memory count of open sockets per ChatSession
     _session_participants = {}
 
     async def connect(self):
+        """
+        Called when a websocket client connects.
+        - Rejects if not authenticated or chatting with self.
+        - Joins:
+          1) the chat-room group for broadcasting actual chat messages
+          2) a personal notify_<username> group for unread‐ping notifications
+        - Sends any previous‐session history, then backlog in current session.
+        """
         user = self.scope.get("user")
         if not user or not getattr(user, "is_authenticated", False):
             await self.close(code=4001)
@@ -33,48 +41,39 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
         self.other_user = self.scope["url_route"]["kwargs"]["username"].lower()
         self.current_user = user.Username.lower()
-
         if self.current_user == self.other_user:
             await self.close(code=4004)
             return
 
-        # Canonical room name
+        # canonical room name
         a, b = sorted([self.current_user, self.other_user])
         self.room_name = f"private_{a}_{b}"
-
-        # Fetch/Create room & session
         self.chatroom = await database_sync_to_async(ChatRoom.get_or_create_private)(a, b)
         self.session = await self._get_or_create_open_session(self.chatroom)
 
-        if not await self._user_can_chat_with(self.scope["user"], self.other_user):
-            await self.close(code=4003)
-            return
-
-        # Reset unread counter when joining
+        # clear unread count for me in this room
         await self._mark_as_read(self.scope["user"], self.chatroom)
 
-        # IMPORTANT: accept before group_add
+        # first accept, then group_add
         await self.accept()
-
-        # Join the chat room group
+        # join my personal notify channel
+        await self.channel_layer.group_add(f"notify_{self.current_user}", self.channel_name)
+        # join the shared chat room
         await self.channel_layer.group_add(self.room_name, self.channel_name)
 
-        # ALSO join your own notification group so you can receive unread pings
-        await self.channel_layer.group_add(f"notify_{self.current_user}", self.channel_name)
-
-        # Rate‐limit setup
+        # rate‐limit setup
         self.rate_limit_interval = 0.2
         self.last_message_time = 0.0
 
-        # Track session participants
+        # track number of participants
         await self._increment_participant_count(self.session.id)
 
-        # Send history from ended sessions...
+        # 1) send ended‐session history
         past_msgs = await self._fetch_messages_from_ended_sessions(self.chatroom)
+        sg = pytz_timezone("Asia/Singapore")
         if not past_msgs:
             await self.send(text_data=json.dumps({"history": True}))
         else:
-            sg = pytz_timezone("Asia/Singapore")
             for msg in past_msgs:
                 local_time = msg.timestamp.astimezone(sg)
                 await self.send(text_data=json.dumps({
@@ -82,11 +81,10 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
                     "sender":         msg.sender.Username,
                     "timestamp":      local_time.strftime("%I:%M %p %d/%m/%Y"),
                     "history":        True,
-                    "session_range":  f"{msg.session.started_at.astimezone(sg).strftime('%I:%M %p %d/%m/%Y')} → "
-                                      f"{msg.session.ended_at.astimezone(sg).strftime('%I:%M %p %d/%m/%Y')}"
+                    "session_range":  f"{msg.session.started_at.astimezone(sg).strftime('%I:%M %p %d/%m/%Y')} → {msg.session.ended_at.astimezone(sg).strftime('%I:%M %p %d/%m/%Y')}"
                 }))
 
-        # ...then backlog from the open session
+        # 2) send backlog from the currently open session
         current_backlog = await self._fetch_messages_from_session(self.session)
         for msg in current_backlog:
             local_time = msg.timestamp.astimezone(sg)
@@ -97,54 +95,56 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
                 "history":   False,
             }))
 
-
     async def receive(self, text_data):
+        """
+        Called when a text frame is received.
+        - Broadcasts the cleaned message to the room.
+        - Saves it to DB.
+        - Then pings the other user’s personal notify_<other> group.
+        """
         now = time.time()
         if now - self.last_message_time < self.rate_limit_interval:
             return
         self.last_message_time = now
 
-        try:
-            data = json.loads(text_data)
-            raw_message = data.get("message", "")
-            if not isinstance(raw_message, str) or len(raw_message) > 2048:
-                return
+        data = json.loads(text_data)
+        raw = data.get("message", "")
+        if not isinstance(raw, str) or len(raw) > 2048:
+            return
 
-            safe_message = bleach.clean(raw_message)
-            singapore_time = timezone.now().astimezone(pytz_timezone("Asia/Singapore"))
-            timestamp_str = singapore_time.strftime("%I:%M %p %d/%m/%Y")
+        safe_message = bleach.clean(raw)
+        sg = timezone.now().astimezone(pytz_timezone("Asia/Singapore"))
+        timestamp_str = sg.strftime("%I:%M %p %d/%m/%Y")
 
-            # 1) Broadcast to the chat room
-            await self.channel_layer.group_send(
-                self.room_name,
-                {
-                    "type":      "chat.message",
-                    "message":   safe_message,
-                    "sender":    self.current_user,
-                    "history":   False,
-                    "timestamp": timestamp_str,
-                }
-            )
+        # 1) send to everyone in the chatroom
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                "type":      "chat.message",
+                "message":   safe_message,
+                "sender":    self.current_user,
+                "timestamp": timestamp_str,
+                "history":   False,
+            }
+        )
 
-            # 2) Persist it
-            await self._save_message(self.session, self.scope["user"], safe_message)
+        # 2) persist the message
+        await self._save_message(self.session, self.scope["user"], safe_message)
 
-            # 3) Tell *only* the other user that they have a new unread message
-            await self.channel_layer.group_send(
-                f"notify_{self.other_user}",
-                {
-                    "type":      "chat.unread_notification",
-                    "from_user": self.current_user,
-                }
-            )
-
-        except Exception as e:
-            logger.error("❌ WebSocket receive() crashed:\n" + traceback.format_exc())
-            await self.close(code=1011)
-
+        # 3) ping the other user’s notify channel for unread‐badge/glow
+        await self.channel_layer.group_send(
+            f"notify_{self.other_user}",
+            {
+                "type":      "chat.unread_notification",
+                "from_user": self.current_user,
+            }
+        )
 
     async def chat_message(self, event):
-        # Repackage for the JS client
+        """
+        Handler for actual chat messages coming from the room group.
+        Repackages them into the JSON shape the JS expects.
+        """
         await self.send(text_data=json.dumps({
             "message":   event["message"],
             "sender":    event["sender"],
@@ -152,17 +152,21 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             "history":   event.get("history", False),
         }))
 
-
     async def chat_unread_notification(self, event):
-        # Sent only to the other user when you call group_send(..., type="chat.unread_notification")
+        """
+        Handler for unread‐notification pings.
+        Instead of a chat bubble, we forward a {type:"notify",from:…} frame
+        so the frontend can bump badges and glow the icon.
+        """
         await self.send(text_data=json.dumps({
-            "type":     "notify",
-            "from":     event["from_user"],
+            "type": "notify",
+            "from": event["from_user"],
         }))
 
-
     async def disconnect(self, close_code):
-        # Clean up group memberships & session tracking
+        """
+        Clean up group memberships and close session if needed.
+        """
         if hasattr(self, "room_name"):
             await self.channel_layer.group_discard(self.room_name, self.channel_name)
             await self.channel_layer.group_discard(f"notify_{self.current_user}", self.channel_name)
@@ -170,19 +174,16 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             if remaining == 0:
                 await self._close_session(self.session)
 
-    async def chat_unread_notification(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "notify",
-            "from": event["from_user"],
-        }))
-
-
-    # ───── Database / ORM helpers ─────
+    # ────────────────────────────────────────────────────────────────────────
+    # Database/ORM helpers
+    # ────────────────────────────────────────────────────────────────────────
 
     @database_sync_to_async
     def _get_or_create_open_session(self, chatroom):
         open_sess = ChatSession.objects.filter(room=chatroom, ended_at__isnull=True).first()
-        return open_sess or ChatSession.objects.create(room=chatroom)
+        if open_sess:
+            return open_sess
+        return ChatSession.objects.create(room=chatroom)
 
     @database_sync_to_async
     def _close_session(self, session):
@@ -191,32 +192,35 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def _save_message(self, session, user, content):
-        ChatMessage.objects.create(session=session, sender=user, content=content)
-
-        # also increment the DB‐driven unread counter
+        msg = ChatMessage.objects.create(session=session, sender=user, content=content)
+        # increment unread count in ChatUnread table
         participants = self.chatroom.name.replace("private_", "").split("_")
         other = [u for u in participants if u != user.Username.lower()]
-        if other:
+        if not other:
+            return
+        try:
             recipient = UserAccount.objects.get(Username__iexact=other[0])
             unread_obj, _ = ChatUnread.objects.get_or_create(user=recipient, room=self.chatroom)
             unread_obj.unread_count += 1
             unread_obj.save()
+        except Exception as e:
+            logger.error(f"Failed to increment ChatUnread: {e}")
 
     @database_sync_to_async
     def _fetch_messages_from_ended_sessions(self, chatroom):
-        return list(ChatMessage.objects.filter(
+        qs = ChatMessage.objects.filter(
             session__room=chatroom, session__ended_at__isnull=False
-        ).select_related("session","sender").order_by("session__started_at","timestamp"))
+        ).select_related("session", "sender").order_by("session__started_at", "timestamp")
+        return list(qs)
 
     @database_sync_to_async
     def _fetch_messages_from_session(self, session):
-        return list(ChatMessage.objects.filter(
-            session=session
-        ).select_related("sender").order_by("timestamp"))
+        qs = ChatMessage.objects.filter(session=session).select_related("sender").order_by("timestamp")
+        return list(qs)
 
     @database_sync_to_async
     def _user_can_chat_with(self, user, other_username):
-        return True  # your authorization logic
+        return True
 
     @database_sync_to_async
     def _increment_participant_count(self, session_id):
@@ -236,4 +240,3 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _mark_as_read(self, user, room):
         ChatUnread.objects.filter(user=user, room=room).update(unread_count=0)
-

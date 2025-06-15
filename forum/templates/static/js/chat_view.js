@@ -1,114 +1,75 @@
 // static/js/chat_view.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  const chatForm  = document.querySelector("#chat-form");
-  const chatInput = document.querySelector("#chat-input");
-  const chatBox   = document.querySelector("#chat-box");
-
+  const chatForm       = document.querySelector("#chat-form");
+  const chatInput      = document.querySelector("#chat-input");
+  const chatBox        = document.querySelector("#chat-box");
+  const chatPlaceholder = document.getElementById("chat-placeholder");
   if (!chatForm || !chatInput || !chatBox) {
     console.error("Missing #chat-form, #chat-input, or #chat-box!");
     return;
   }
 
-  // Grab the current user and the peer from the <main> data attributes
-  const mainEl     = document.querySelector("main");
+  const mainEl      = document.querySelector("main");
   const currentUser = (mainEl.dataset.currentUser || "").trim().toLowerCase();
   const otherUser   = (mainEl.dataset.otherUser   || "").trim().toLowerCase();
 
-  // Tell parent we opened this chat (so it can clear unread badges)
-  window.parent.postMessage({
-    type: "chat-read",
-    from: otherUser
-  }, "*");
-
-  // Build WebSocket URL
-  const wsProtocol = (window.location.protocol === "https:") ? "wss://" : "ws://";
-  const wsUrl      = wsProtocol + window.location.host + "/ws/chat/" + otherUser + "/";
+  // build WS URL
+  const protocol   = window.location.protocol === "https:" ? "wss" : "ws";
+  const wsUrl      = `${protocol}://${window.location.host}/ws/chat/${otherUser}/`;
   const chatSocket = new WebSocket(wsUrl);
 
-  let sawPlaceholder = false;
+  // on open, notify parent that this thread is active (mark it read)
+  chatSocket.addEventListener("open", () => {
+    window.parent.postMessage({ type: "chat-read", from: otherUser }, "*");
+  });
 
-  function appendBubble(parentEl, data, isSelf) {
-    const alignClass = isSelf ? "justify-content-end" : "justify-content-start";
-    const bubbleType = isSelf ? "self" : "other";
-    const timeHtml = data.timestamp
-      ? `<br><small class="timestamp">${data.timestamp}</small>`
-      : "";
-    const msgHtml = `
-      <div class="d-flex ${alignClass} mb-2">
-        <div class="chat-bubble ${bubbleType}">
-          <small><strong>${data.sender}</strong></small><br>
-          ${data.message}
-          ${timeHtml}
-        </div>
-      </div>`;
-    parentEl.insertAdjacentHTML("beforeend", msgHtml);
-    parentEl.scrollTop = parentEl.scrollHeight;
+  let sawPlaceholder = false;
+  function appendBubble({ message, sender, timestamp }) {
+    const isSelf    = sender.toLowerCase() === currentUser;
+    const wrapper   = document.createElement("div");
+    wrapper.classList.add("d-flex", isSelf ? "justify-content-end" : "justify-content-start", "mb-2");
+
+    const bubble    = document.createElement("div");
+    bubble.classList.add("p-2", isSelf ? "bg-light text-dark" : "bg-primary text-white", "rounded");
+    bubble.textContent = message;
+
+    const ts        = document.createElement("div");
+    ts.classList.add("small", "text-muted", "mt-1");
+    ts.textContent = timestamp;
+
+    bubble.appendChild(ts);
+    wrapper.appendChild(bubble);
+    chatBox.appendChild(wrapper);
+    chatBox.scrollTop = chatBox.scrollHeight;
   }
 
-  chatSocket.addEventListener("open", () => {
-    console.log("✅ WebSocket connected to " + wsUrl);
-  });
+  chatSocket.addEventListener("message", e => {
+    const data = JSON.parse(e.data);
 
-  chatSocket.addEventListener("error", (err) => {
-    console.error("❌ WebSocket error:", err);
-  });
-
-  chatSocket.addEventListener("close", (e) => {
-    console.warn("⚠️ WebSocket closed:", e);
-  });
-
-  chatSocket.addEventListener("message", (event) => {
-    let data;
-    try {
-      data = JSON.parse(event.data);
-    } catch (_e) {
-      console.error("Failed to parse frame as JSON:", event.data);
-      return;
+    if (data.history) {
+      // initial backlog
+      data.history.forEach(msg => appendBubble(msg));
     }
-
-    // 1) Handle our custom "notify" event (fired by the consumer on unread)
-    if (data.type === "notify" && data.from) {
-      // forward to parent just like a new-message
+    else if (data.message) {
+      // a live message in THIS thread
+      if (!sawPlaceholder && chatPlaceholder) {
+        chatBox.removeChild(chatPlaceholder);
+        sawPlaceholder = true;
+      }
+      appendBubble(data);
+    }
+    else if (data.type === "notify") {
+      // an unread‐badge ping for other threads
       window.parent.postMessage({ type: "new-message", from: data.from }, "*");
-      return;  // don't treat it as a real chat bubble
-    }
-
-    // 2) The old "history" placeholder removal
-    if (!sawPlaceholder) {
-      const ph = document.querySelector("#chat-placeholder");
-      if (ph) ph.remove();
-      sawPlaceholder = true;
-    }
-
-    // 3) Ignore pure-history frames
-    if (!data.message || !data.sender) {
-      return;
-    }
-
-    // 4) Render real bubble
-    const sender = data.sender.toLowerCase();
-    const isSelf = (sender === currentUser);
-    appendBubble(chatBox, data, isSelf);
-
-    // 5) Notify parent it’s a real incoming chat
-    if (!isSelf) {
-      window.parent.postMessage({
-        type: "new-message",
-        from: sender
-      }, "*");
     }
   });
 
-  chatForm.addEventListener("submit", (e) => {
+  chatForm.addEventListener("submit", e => {
     e.preventDefault();
     const text = chatInput.value.trim();
-    if (!text) {
+    if (!text || chatSocket.readyState !== WebSocket.OPEN) {
       chatInput.focus();
-      return;
-    }
-    if (chatSocket.readyState !== WebSocket.OPEN) {
-      console.error("WebSocket is not open; cannot send.");
       return;
     }
     chatSocket.send(JSON.stringify({ message: text }));
