@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
   const chatBtn = document.getElementById("chat-btn");
-  const chatBox = document.getElementById("chat-box");
+  const chatBox = document.getElementById("chat-box-floating");
   const chatFrame = document.getElementById("chat-frame");
   const chatOverlay = document.getElementById("chat-overlay");
   const closeBtn = document.getElementById("close-chat");
@@ -10,11 +10,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function openChat() {
     chatBox.classList.add("open");
+    chatBox.classList.remove("d-none");
     chatOverlay.classList.add("show");
   }
 
   function closeChat() {
     chatBox.classList.remove("open");
+    chatBox.classList.add("d-none");
     chatOverlay.classList.remove("show");
     chatFrame.src = "";
     threadLinks.forEach((el) => el.classList.remove("active-thread"));

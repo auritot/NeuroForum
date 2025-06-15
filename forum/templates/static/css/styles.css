@@ -118,7 +118,9 @@ main {
   font-weight: 500;
   margin-bottom: 6px;
   transition: background 0.2s ease, color 0.2s ease;
-  background-color: transparent;
+  background-color: #1a2838;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .chat-thread-link:hover {
