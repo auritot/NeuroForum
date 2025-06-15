@@ -14,6 +14,9 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         alert("Please log in to use chat.");
       }
+
+      // Reset notification class when opening
+      chatBtn.classList.remove("has-notification");
     });
   }
 
@@ -26,6 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
     chatFrame.classList.remove("loading");
   });
 });
+
 
 window.addEventListener("message", (event) => {
   if (event.data?.type === "new-message") {
@@ -42,14 +46,4 @@ window.addEventListener("message", (event) => {
       }
     }
   }
-});
-
-
-chatBtn.addEventListener("click", () => {
-  chatFrame.src = "/chat/landing/?frame=1";
-  chatBox.classList.remove("d-none");
-
-  // Reset chat icon
-  // chatBtn.src = "/static/icons/chat.png"; // back to default
-  chatBtn.classList.remove("has-notification");
 });

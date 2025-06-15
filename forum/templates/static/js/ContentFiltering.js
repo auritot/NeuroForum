@@ -17,7 +17,12 @@ window.addEventListener('DOMContentLoaded', () => {
     fetch('/api/filtered-words/')
         .then(response => response.json())
         .then(data => {
-            filteredWords = data.map(item => item.FilterContent.toLowerCase());
+            if (Array.isArray(data.data)) {
+            filteredWords = data.data.map(item => item.FilterContent.toLowerCase());
+            } else {
+            console.warn('API response format unexpected:', data);
+            filteredWords = [];
+            }
         })
         .catch(error => {
             console.error('Error fetching filtered words:', error);

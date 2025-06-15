@@ -162,27 +162,8 @@
      </div>
 <script src="{% static 'js/chat_init.js' %}"></script>
 <script src="{% static 'js/ContentFiltering.js' %}"></script>
-<script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            const alerts = document.querySelectorAll('.alert-animated.fade-in');
-            alerts.forEach((alert) => {
-                // Add fade-in class (already added in template for initial effect)
-                // alert.classList.add('fade-in');
+<script src="{% static 'js/alerts.js' %}"></script>
 
-                // Set timeout to add fade-out class and then remove the element
-                setTimeout(() => {
-                    alert.classList.remove('fade-in');
-                    alert.classList.add('fade-out');
-                    // Remove the alert after the animation completes
-                    alert.addEventListener('animationend', () => {
-                        if (alert.classList.contains('fade-out')) {
-                            alert.remove();
-                        }
-                    });
-                }, 5000); // Adjust delay as needed (5000ms = 5 seconds)
-            });
-        });
-    </script>
     {% block scripts %}{% endblock %}
 </body>
 
