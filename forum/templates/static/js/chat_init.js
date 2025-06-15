@@ -45,10 +45,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // helper to get CSRF cookie
-function getCookie(name) {
-  let v = document.cookie.match('(^|;)\\s*'+ name +'\\s*=\\s*([^;]+)');
-  return v ? v.pop() : '';
-}
+// function getCookie(name) {
+//   let v = document.cookie.match('(^|;)\\s*'+ name +'\\s*=\\s*([^;]+)');
+//   return v ? v.pop() : '';
+// }
 
 // document.querySelectorAll(".delete-chat").forEach(btn => {
 //   btn.addEventListener("click", e => {
