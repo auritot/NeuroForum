@@ -32,41 +32,42 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 window.addEventListener("message", (event) => {
-  if (event.data?.type === "new-message") {
-    const chatBtn = document.getElementById("chat-btn");
-    const chatFrame = document.getElementById("chat-frame");
-    const chatBox = document.getElementById("chat-box-floating");
-    const threadLink = document.querySelector(`.chat-thread-link[data-user="${fromUser}"]`);
-  
+  if (!event.data?.type || !event.data?.from) return;
+
+  const fromUser = event.data.from.toLowerCase();
+  const chatBtn = document.getElementById("chat-btn");
+  const chatFrame = document.getElementById("chat-frame");
+  const chatBox = document.getElementById("chat-box-floating");
+
+  const threadLink = document.querySelector(`.chat-thread-link[data-user="${fromUser}"]`);
+
+  if (event.data.type === "new-message") {
+    // 🔢 Update unread badge
     if (threadLink) {
-    const countSpan = threadLink.querySelector(".unread-count");
-    let count = parseInt(countSpan.textContent || "0", 10) + 1;
-    countSpan.textContent = count;
-    countSpan.classList.remove("d-none");
-    threadLink.classList.add("has-unread");
+      const countSpan = threadLink.querySelector(".unread-count");
+      let count = parseInt(countSpan.textContent || "0", 10) + 1;
+      countSpan.textContent = count;
+      countSpan.classList.remove("d-none");
+      threadLink.classList.add("has-unread");
     }
 
-    if (event.data?.type === "chat-read") {
-      const fromUser = event.data.from.toLowerCase();
-      const threadLink = document.querySelector(`.chat-thread-link[data-user="${fromUser}"]`);
-      if (threadLink) {
-        const countSpan = threadLink.querySelector(".unread-count");
-        countSpan.textContent = "0";
-        countSpan.classList.add("d-none");
-        threadLink.classList.remove("has-unread");
-      }
+    const chatSrc = chatFrame.getAttribute("src") || "";
+    const isChatOpen = !chatBox.classList.contains("d-none") &&
+                       chatSrc.includes(`/chat/${fromUser}/`);
+
+    if (!isChatOpen) {
+      console.log("🔔 Showing global chat notification");
+      chatBtn.classList.add("has-notification");
     }
+  }
 
-    if (chatBtn && chatFrame && chatBox) {
-      const chatSrc = chatFrame.getAttribute("src") || "";
-      const isChatOpen = !chatBox.classList.contains("d-none") && chatSrc.includes(`/chat/${event.data.from}/`);
-
-
-      // Global badge logic: if chat box isn't open, show the glow
-      if (!isChatOpen) {
-        console.log("🔔 Showing global chat notification");
-        chatBtn.classList.add("has-notification");
-      }
+  if (event.data.type === "chat-read") {
+    if (threadLink) {
+      const countSpan = threadLink.querySelector(".unread-count");
+      countSpan.textContent = "0";
+      countSpan.classList.add("d-none");
+      threadLink.classList.remove("has-unread");
     }
   }
 });
+
