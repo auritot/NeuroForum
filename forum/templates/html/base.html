@@ -86,13 +86,9 @@
                          </li>
                          {% endif %}
                          <li class="nav-item me-3">
-                              <img
-                                   id="chat-btn"
-                                   src="{% static 'icons/chat.png' %}"
-                                   alt="Chat"
-                                   class="chat-btn-img me-2"
-                                   data-username="{{ user_info.Username|escapejs }}"
-                              />
+                              <button id="chat-btn" class="chat-toggle btn border-0 bg-transparent p-0">
+                                   <img src="{% static 'icons/chat.png' %}" alt="Chat" />
+                              </button>
                          </li>
                          <li class="nav-item me-2">
                               <a href={% url 'user_profile_view' %} class="d-flex align-items-center p-0">
@@ -165,7 +161,7 @@
                     </ul>
 
                </div>
-               <iframe id="chat-frame" class="chat-frame loading"></iframe>
+               <iframe id="chat-frame" class="chat-frame loading" loading="lazy"></iframe>
           </div>
      </div>
 <script src="{% static 'js/chat_init.js' %}"></script>
@@ -173,6 +169,7 @@
 <script src="{% static 'js/alerts.js' %}"></script>
 
     {% block scripts %}{% endblock %}
+    <div id="chat-overlay"></div>
 </body>
 
 </html>
