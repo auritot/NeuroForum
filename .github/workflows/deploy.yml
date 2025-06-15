@@ -22,6 +22,8 @@ jobs:
           set -e
           cd /var/www/neuroforum_django
 
+          git reset --hard
+          git clean -fd
           git pull origin main
 
           echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" > .env
