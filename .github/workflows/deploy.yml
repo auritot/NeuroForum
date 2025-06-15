@@ -47,6 +47,8 @@ jobs:
           docker-compose build --no-cache
           docker-compose up -d
 
+          sleep 10
+
           echo "Running Django migrations inside container..."
           docker-compose exec -T web python manage.py makemigrations --noinput
           docker-compose exec -T web python manage.py migrate --noinput
