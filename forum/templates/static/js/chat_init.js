@@ -35,8 +35,9 @@ window.addEventListener("message", (event) => {
   if (event.data?.type === "new-message") {
     const chatBtn = document.getElementById("chat-btn");
     const chatFrame = document.getElementById("chat-frame");
+    const chatBox = document.getElementById("chat-box-floating");
 
-    if (chatBtn && chatFrame) {
+    if (chatBtn && chatFrame && chatBox) {
       const isChatOpen = !chatFrame.classList.contains("loading") && !chatBox.classList.contains("d-none");
 
       // Global badge logic: if chat box isn't open, show the glow

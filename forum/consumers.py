@@ -86,26 +86,28 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
                 })
             )
         else:
+            sg = pytz_timezone("Asia/Singapore")
             for msg in past_msgs:
+                local_time = msg.timestamp.astimezone(sg)
                 await self.send(
                     text_data=json.dumps({
                         "message":        msg.content,
                         "sender":         msg.sender.Username,
-                        "timestamp":      msg.timestamp.strftime("%H:%M %d/%m/%Y"),
+                        "timestamp": local_time.strftime("%I:%M %p %d/%m/%Y"),
                         "history":        True,
-                        "session_range":  f"{msg.session.started_at.strftime('%H:%M %d/%m/%Y')} → "
-                                          f"{msg.session.ended_at.strftime('%H:%M %d/%m/%Y')}"
+                        "session_range": f"{msg.session.started_at.astimezone(sg).strftime('%I:%M %p %d/%m/%Y')} → {msg.session.ended_at.astimezone(sg).strftime('%I:%M %p %d/%m/%Y')}"
                     })
                 )
 
         # 2) Then send any backlog from the “currently open” session
         current_backlog = await self._fetch_messages_from_session(self.session)
         for msg in current_backlog:
+            local_time = msg.timestamp.astimezone(sg)
             await self.send(
                 text_data=json.dumps({
                     "message":   msg.content,
                     "sender":    msg.sender.Username,
-                    "timestamp": msg.timestamp.strftime("%H:%M %d/%m/%Y"),
+                    "timestamp": local_time.strftime("%I:%M %p %d/%m/%Y"),
                     "history":   False,
                 })
             )
@@ -124,7 +126,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
             safe_message = bleach.clean(raw_message)
             singapore_time = timezone.now().astimezone(pytz_timezone("Asia/Singapore"))
-            timestamp_str = singapore_time.strftime("%H:%M %d/%m/%Y")
+            timestamp_str = singapore_time.strftime("%I:%M %p %d/%m/%Y")
 
             await self.channel_layer.group_send(
                 self.room_name,
