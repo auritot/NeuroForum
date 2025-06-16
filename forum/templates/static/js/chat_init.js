@@ -136,7 +136,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   window.addEventListener('message', e => {
-    if (e.data === 'close-chat') {
+    if (e.data === 'close-chat' || e.data === 'back-to-chats') {
+      // either message closes the overlay
       closeChat();
     }
   });
