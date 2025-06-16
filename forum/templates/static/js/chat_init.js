@@ -132,18 +132,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // keep the little “active” highlight in sync when the iframe reloads
   chatFrame.addEventListener("load", () => {
-    chatFrame.classList.remove("loading");
-
     const m = chatFrame.src.match(/\/chat\/([^/]+)\//);
     if (m) {
       const active = m[1];
-      if (threadLinks.some(el => el.dataset.user === active)) {
-        threadLinks.forEach(el =>
-          el.classList.toggle("active-thread", el.dataset.user === active)
-      );
+      document.querySelectorAll("#chat-partner-list li").forEach(li => {
+        const link = li.querySelector("a.chat-thread-link");
+        li.classList.toggle("active-thread", link.dataset.user === active);
+      });
     }
-      if (searchInput) searchInput.value = "";
-    }
+    if (searchInput) searchInput.value = "";
   });
 
   window.addEventListener('message', e => {
