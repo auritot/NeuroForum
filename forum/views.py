@@ -339,12 +339,9 @@ def chat_home_view(request):
     partners = ChatRoom.get_recent_partners_for_user(username)
 
     if partners:
-        return redirect(f"/chat/{partners[0]}")
+        return redirect('chat_view', other_user=partners[0])
 
-    return render(request, "html/chat_landing.html", {
-        "user_info": user_info
-    })
-
+    return render(request, 'chat_landing.html', { 'error': 'No chats yet.' })
 
 @xframe_options_exempt
 def start_chat_view(request):

@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeBtn    = document.getElementById("close-chat");
   const chatOverlay = document.getElementById("chat-overlay");
   const threadLinks = Array.from(document.querySelectorAll(".chat-thread-link"));
+  const searchInput = document.getElementById("sidebarUsernameIframe");
 
   // if any of these are missing, bail out
   if (!chatBtn || !chatBox || !chatFrame || !closeBtn || !chatOverlay) return;
