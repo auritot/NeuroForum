@@ -136,9 +136,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   window.addEventListener('message', e => {
-    if (e.data === 'close-chat' || e.data === 'back-to-chats') {
-      // either message closes the overlay
-      closeChat();
+    if (e.data === 'close-chat') {
+       closeChat();
+    }
+    else if (e.data === 'back-to-chats') {
+      // reload the “new chat” landing page in the overlay
+      chatFrame.src = '/chat/landing/?frame=1';
+      threadLinks.forEach(el => el.classList.remove('active-thread'));
     }
   });
 });
