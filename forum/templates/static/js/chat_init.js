@@ -145,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (e.data === 'back-to-chats') {
       // reload the “new chat” landing page in the overlay
       chatFrame.src = '/chat/landing/?frame=1';
-      threadLinks.forEach(el => el.classList.remove('active-thread'));
+      // threadLinks.forEach(el => el.classList.remove('active-thread'));
     }
   });
 });
