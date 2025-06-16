@@ -109,9 +109,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const input = document.getElementById("sidebarUsernameIframe");
       const user  = input.value.trim().toLowerCase();
       if (!user) return;
-      threadLinks.forEach(l => l.classList.remove("active-thread"));
+      // threadLinks.forEach(l => l.classList.remove("active-thread"));
+      // const match = threadLinks.find(l => l.dataset.user === user);
+      // if (match) match.classList.add("active-thread");
       const match = threadLinks.find(l => l.dataset.user === user);
-      if (match) match.classList.add("active-thread");
+      if (match) {
+        threadLinks.forEach(l => l.classList.remove("active-thread"));
+        match.classList.add("active-thread");
+      }
       chatFrame.src = `/chat/${user}/?frame=1`;
 
       // clear your “find user” box
@@ -128,9 +133,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const m = chatFrame.src.match(/\/chat\/([^/]+)\//);
     if (m) {
       const active = m[1];
-      threadLinks.forEach(el =>
-        el.classList.toggle("active-thread", el.dataset.user === active)
+      if (threadLinks.some(el => el.dataset.user === active)) {
+        threadLinks.forEach(el =>
+          el.classList.toggle("active-thread", el.dataset.user === active)
       );
+    }
       if (searchInput) searchInput.value = "";
     }
   });
