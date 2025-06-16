@@ -43,9 +43,14 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       const user = el.dataset.user;
       if (!user) return;
+
       threadLinks.forEach(l => l.classList.remove("active-thread"));
       el.classList.add("active-thread");
+
       chatFrame.src = `/chat/${user}/?frame=1`;
+      
+      if (searchInput) searchInput.value = "";
+
       openChat();
     });
   });
@@ -118,6 +123,12 @@ document.addEventListener("DOMContentLoaded", () => {
         el.classList.toggle("active-thread", el.dataset.user === active)
       );
       if (searchInput) searchInput.value = "";
+    }
+  });
+
+  window.addEventListener('message', e => {
+    if (e.data === 'close-chat') {
+      closeChat();
     }
   });
 });
