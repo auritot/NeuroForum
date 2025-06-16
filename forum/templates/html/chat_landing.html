@@ -21,7 +21,7 @@
             <p class="text-danger mt-2">{{ error }}</p>
 
             <a href="#"
-                onclick="window.parent.postMessage('close-chat','*'); return false;"
+                onclick="window.parent.document.getElementById('close-chat').click(); return false;"
                 class="btn btn-outline-light mt-3">
                 Back to Chats
             </a>
