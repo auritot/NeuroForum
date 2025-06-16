@@ -20,8 +20,8 @@
         {% if error %}
             <p class="text-danger mt-2">{{ error }}</p>
 
-            <a href="#"
-                onclick="window.parent.postMessage('close-chat','*'); return false;"
+            <a id="back-to-chats-btn"
+                href="#"
                 class="btn btn-outline-light mt-3">
                 Back to Chats
             </a>

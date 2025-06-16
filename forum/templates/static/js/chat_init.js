@@ -131,4 +131,15 @@ document.addEventListener("DOMContentLoaded", () => {
       closeChat();
     }
   });
+
+   // 1) Find our new button by ID
+  const backBtn = document.getElementById("back-to-chats-btn");
+  // 2) If present, attach a click handler
+  if (backBtn) {
+    backBtn.addEventListener("click", e => {
+      e.preventDefault();
+      // Send to parent frame, matching your existing pattern
+      window.parent.postMessage("back-to-chats", window.location.origin);
+    });
+  }
 });
