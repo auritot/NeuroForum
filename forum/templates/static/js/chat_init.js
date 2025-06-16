@@ -48,21 +48,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // clicking an existing thread
   threadLinks.forEach(el => {
-    const li = el.closest("li");
     el.addEventListener("click", e => {
       e.preventDefault();
       const user = el.dataset.user;
       if (!user) return;
 
-      // clear every <li>
-      document.querySelectorAll("#chat-partner-list li")
-        .forEach(li => li.classList.remove("active-thread"));
-      // light up only this one
-      li.classList.add("active-thread");
+      // Clear every link…
+      threadLinks.forEach(a => a.classList.remove("active-thread"));
+      // …then highlight this one
+      el.classList.add("active-thread");
 
       chatFrame.src = `/chat/${user}/?frame=1`;
-      if (searchInput) searchInput.value = "";
-
       openChat();
     });
   });
@@ -135,13 +131,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const m = chatFrame.src.match(/\/chat\/([^/]+)\//);
     if (m) {
       const active = m[1];
-      document.querySelectorAll("#chat-partner-list li").forEach(li => {
-        const link = li.querySelector("a.chat-thread-link");
-        li.classList.toggle("active-thread", link.dataset.user === active);
-      });
+      threadLinks.forEach(el =>
+        el.classList.toggle("active-thread", el.dataset.user === active)
+      );
     }
-    if (searchInput) searchInput.value = "";
   });
+
 
   window.addEventListener('message', e => {
     if (e.data === 'close-chat') {
