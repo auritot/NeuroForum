@@ -1,4 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // 1) Bind the "Back to Chats" button first, before any bail-out checks:
+  const backBtn = document.getElementById("back-to-chats-btn");
+  if (backBtn) {
+    backBtn.addEventListener("click", e => {
+      e.preventDefault();
+      window.parent.postMessage("back-to-chats", window.location.origin);
+    });
+  }
+
   const chatBtn     = document.getElementById("chat-btn");
   const chatBox     = document.getElementById("chat-box-floating");
   const chatFrame   = document.getElementById("chat-frame");
@@ -131,15 +140,4 @@ document.addEventListener("DOMContentLoaded", () => {
       closeChat();
     }
   });
-
-   // 1) Find our new button by ID
-  const backBtn = document.getElementById("back-to-chats-btn");
-  // 2) If present, attach a click handler
-  if (backBtn) {
-    backBtn.addEventListener("click", e => {
-      e.preventDefault();
-      // Send to parent frame, matching your existing pattern
-      window.parent.postMessage("back-to-chats", window.location.origin);
-    });
-  }
 });
