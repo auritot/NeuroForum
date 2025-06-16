@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django_cryptography.fields import encrypt
 
 # Create your models here.
 class UserAccount(models.Model):
@@ -136,6 +137,7 @@ class ChatMessage(models.Model):
     """
     session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
+    content = encrypt(models.TextField())
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 

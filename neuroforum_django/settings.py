@@ -84,6 +84,7 @@ else:
 INSTALLED_APPS = [
     'forum',
     'django_recaptcha',
+    'django_cryptography',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
