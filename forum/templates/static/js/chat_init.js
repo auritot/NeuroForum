@@ -48,21 +48,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // clicking an existing thread
   threadLinks.forEach(el => {
+    const li = el.closest("li");
     el.addEventListener("click", e => {
       e.preventDefault();
       const user = el.dataset.user;
       if (!user) return;
 
-      threadLinks.forEach(l => l.classList.remove("active-thread"));
-      el.classList.add("active-thread");
+      // clear every <li>
+      document.querySelectorAll("#chat-partner-list li")
+        .forEach(li => li.classList.remove("active-thread"));
+      // light up only this one
+      li.classList.add("active-thread");
 
       chatFrame.src = `/chat/${user}/?frame=1`;
-      
       if (searchInput) searchInput.value = "";
 
       openChat();
     });
   });
+
 
   // helper to get CSRF cookie
 // function getCookie(name) {
