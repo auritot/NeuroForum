@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from django_cryptography.fields import encrypt
+from forum.crypto_utils import encrypt_message, decrypt_message
 
 # Create your models here.
 class UserAccount(models.Model):
@@ -137,12 +137,22 @@ class ChatMessage(models.Model):
     """
     session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
-    content = encrypt(models.TextField())
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["timestamp"]  # old → new
+
+    @property
+    def content(self):
+        try:
+            return decrypt_message(self.content_encrypted)
+        except Exception:
+            return "[Decryption Failed]"
+
+    @content.setter
+    def content(self, value):
+        self.content_encrypted = encrypt_message(value)
 
     def __str__(self):
         ts = self.timestamp.strftime("%H:%M %d/%m/%Y")

@@ -84,7 +84,6 @@ else:
 INSTALLED_APPS = [
     'forum',
     'django_recaptcha',
-    'django_cryptography',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -92,6 +91,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'channels',
+    'cryptography',
 ]
 
 ASGI_APPLICATION = 'neuroforum_django.asgi.application'
