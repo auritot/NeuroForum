@@ -19,10 +19,10 @@
 
         {% if error %}
             <p class="text-danger mt-2">{{ error }}</p>
-            <a href="#"
-                onclick="window.parent.postMessage('close-chat','*'); return false;"
+
+            <a href="{% url 'chat_home_view' %}"
                 class="btn btn-outline-light mt-3">
-                Back to Home
+                Back to Chats
             </a>
         {% endif %}
     </div>

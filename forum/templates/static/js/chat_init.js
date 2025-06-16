@@ -25,9 +25,14 @@ document.addEventListener("DOMContentLoaded", () => {
   chatBtn.addEventListener("click", () => {
     openChat();
     if (!chatFrame.src || chatFrame.src.endsWith("landing/?frame=1")) {
-      chatFrame.src = "/chat/landing/?frame=1";
+      if (threadLinks.length > 0) {
+        threadLinks[0].click();
+      } else {
+        chatFrame.src = "/chat/landing/?frame=1";
+      }
     }
   });
+  
   closeBtn.addEventListener("click", closeChat);
   chatOverlay.addEventListener("click", closeChat);
 
