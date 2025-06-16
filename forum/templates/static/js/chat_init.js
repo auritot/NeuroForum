@@ -18,8 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function closeChat() {
     chatBox.classList.add("d-none");
     chatOverlay.classList.remove("show");
-    // chatFrame.src = "";
-    // threadLinks.forEach(el => el.classList.remove("active-thread"));
+    chatFrame.src = "";
+    threadLinks.forEach(el => el.classList.remove("active-thread"));
   }
 
   // toggle open/landing
