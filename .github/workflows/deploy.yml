@@ -27,7 +27,7 @@ jobs:
           git pull origin main
 
           echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" > .env
-          echo "FERNET_KEY=${{ secrets.FERNET_KEY }}" >> .env
+          echo "FERNET_KEY='${{ secrets.FERNET_KEY }}'" >> .env
           echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
           echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
           echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
