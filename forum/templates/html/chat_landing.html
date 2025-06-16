@@ -20,13 +20,14 @@
         {% if error %}
             <p class="text-danger mt-2">{{ error }}</p>
 
-            <a id="back-to-chats-btn"
-                href="#"
+            <button id="back-to-chats-btn"
+                type="button"
                 class="btn btn-outline-light mt-3">
                 Back to Chats
-            </a>
+            </button>
 
         {% endif %}
     </div>
+<script src="{% static 'js/chat_init.js' %}"></script>
 </body>
 </html>
