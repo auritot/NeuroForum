@@ -17,22 +17,22 @@ document.addEventListener("DOMContentLoaded", () => {
   function closeChat() {
     chatBox.classList.add("d-none");
     chatOverlay.classList.remove("show");
-    chatFrame.src = "";
-    threadLinks.forEach(el => el.classList.remove("active-thread"));
+    // chatFrame.src = "";
+    // threadLinks.forEach(el => el.classList.remove("active-thread"));
   }
 
   // toggle open/landing
   chatBtn.addEventListener("click", () => {
     openChat();
     if (!chatFrame.src || chatFrame.src.endsWith("landing/?frame=1")) {
-      if (threadLinks.length > 0) {
+      chatFrame.src = "/chat/landing/?frame=1";
+      // then auto-click the first thread (if any)
+      if (threadLinks.length) {
         threadLinks[0].click();
-      } else {
-        chatFrame.src = "/chat/landing/?frame=1";
       }
     }
   });
-  
+
   closeBtn.addEventListener("click", closeChat);
   chatOverlay.addEventListener("click", closeChat);
 
@@ -98,6 +98,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const match = threadLinks.find(l => l.dataset.user === user);
       if (match) match.classList.add("active-thread");
       chatFrame.src = `/chat/${user}/?frame=1`;
+
+      // clear your “find user” box
+      if (searchInput) searchInput.value = "";
+
       openChat();
     });
   }
@@ -105,12 +109,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // keep the little “active” highlight in sync when the iframe reloads
   chatFrame.addEventListener("load", () => {
     chatFrame.classList.remove("loading");
+
     const m = chatFrame.src.match(/\/chat\/([^/]+)\//);
     if (m) {
       const active = m[1];
       threadLinks.forEach(el =>
         el.classList.toggle("active-thread", el.dataset.user === active)
       );
+      if (searchInput) searchInput.value = "";
     }
   });
 });
