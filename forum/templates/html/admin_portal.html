@@ -1,0 +1,40 @@
+{% extends 'html/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Manage Users</h2>
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+            <tr>
+                <td>{{ user.Username }}</td>
+                <td>{{ user.Role }}</td>
+                <td>{{ user.Email }}</td>
+                <td>
+                    <form action="{% url 'change_user_role' user.UserID %}" method="POST" style="display:inline-block;">
+                        {% csrf_token %}
+                        <select name="role" class="form-select form-select-sm d-inline w-auto">
+                            <option value="member" {% if user.Role == 'member' %}selected{% endif %}>member</option>
+                            <option value="admin" {% if user.Role == 'admin' %}selected{% endif %}>admin</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                    </form>
+                    <form action="{% url 'delete_user' user.UserID %}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
