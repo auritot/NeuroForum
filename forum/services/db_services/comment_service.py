@@ -3,6 +3,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from .. import utilities
 from datetime import datetime
 
+comment_col = ["CommentID", "CommentContents", "Timestamp", "PostID_id", "UserID_id"]
 comment_username_col = ["CommentID", "CommentContents", "Timestamp", "PostID_id", "UserID_id", "Username", "CommentPosition"]
 
 # MARK: Get Comments for page by Post ID
@@ -60,6 +61,30 @@ def get_comments_for_page(start_index, per_page, postID=None, userID=None):
             comment_data = {"comments": comments}
 
         return utilities.response("SUCCESS", "Retrieved Post for pages", comment_data)
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    
+# MARK: Get Comment by ID
+def get_comment_by_id(comment_id):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT * FROM forum_comment
+                WHERE CommentID = %s;
+                """, 
+                [comment_id],
+            )
+
+            result = cursor.fetchone()
+            if result is None:
+                return utilities.response("NOT_FOUND", "Post not found")
+
+            comment = dict(zip(comment_col, result))
+            comment_data = {"comment": comment}
+
+        return utilities.response("SUCCESS", "Retrieved Comment by ID", comment_data)
     
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")

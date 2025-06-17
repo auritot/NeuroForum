@@ -119,7 +119,6 @@ def post_form_view(request, context={}, post_id=None):
         messages.error(request, "Session Expired! Please login.")
         return redirect("login_view")
     
-
     if post_id != None:
         post_response = post_service.get_post_by_id(post_id)
         if post_response["status"] == "SUCCESS":
@@ -134,8 +133,6 @@ def filtered_words_api(request):
     return JsonResponse(response)
 
 # MARK: Post View
-
-
 def post_view(request, post_id, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
