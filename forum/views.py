@@ -11,6 +11,7 @@ from django.urls import reverse  # Added for reversing URLs
 from urllib.parse import urlencode  # Added for encoding query parameters
 import re
 
+from django.views.decorators.http import require_POST
 from .services import session_service, utilities
 from .services.db_services import user_service, post_service, comment_service, ContentFiltering_service
 from django.contrib.messages import get_messages
