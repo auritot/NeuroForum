@@ -16,6 +16,15 @@ def setup_session(request, user_data):
     except Exception as e:
         return utilities.response("ERROR", f"An error occurred: {str(e)}")
 
+def update_session(request, username):
+    try:
+        request.session["Username"] = username
+        request.session.save()  # optional, usually auto-saved
+
+        return utilities.response("SUCCESS", "Session values updated")
+
+    except Exception as e:
+        return utilities.response("ERROR", f"An error occurred: {str(e)}")
 
 # MARK: Check Session
 def check_session(request):

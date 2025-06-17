@@ -12,7 +12,7 @@ from urllib.parse import urlencode  # Added for encoding query parameters
 import re
 
 from .services import session_service, utilities
-from .services.db_services import post_service, comment_service, ContentFiltering_service
+from .services.db_services import user_service, post_service, comment_service, ContentFiltering_service
 from django.contrib.messages import get_messages
 
 # Constants for validation
@@ -170,12 +170,14 @@ def user_profile_view(request, context={}):
         return redirect("login_view")
     # else:
     #     return redirect('index')
+    
+    user_response = user_service.get_user_by_id(context["user_info"]["UserID"])
+    if user_response["status"] == "SUCCESS":
+        context["user_data"] = user_response["data"]
 
     return render(request, "html/user_profile_view.html", context)
 
 # MARK: User Manage Post View
-
-
 def user_manage_post_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":

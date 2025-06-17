@@ -34,6 +34,10 @@ urlpatterns = [
     path("login/authenticate", user_process.process_login, name="process_login"),
     path("register/registration", user_process.process_register,
          name="process_register"),
+     path("user/update_profile", user_process.process_update_profile,
+         name="process_update_profile"),
+     path("user/change_password", user_process.process_change_password,
+         name="process_change_password"),
     path('logout/', views.logout_view, name='logout_view'),
     # Post Related
     path("post/create", post_process.process_create_post,

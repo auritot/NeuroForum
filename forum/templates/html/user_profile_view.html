@@ -40,16 +40,16 @@
         <div class="card shadow-sm mb-4">
           <div class="card-body">
             <h4 class="card-title mb-4">Edit User Profile</h4>
-            <form method="POST" action="">
+            <form method="POST" action={% url 'process_update_profile' %}>
               {% csrf_token %}
               <div class="mb-3">
                 <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" value="{{ user_info.Username }}"
+                <input type="text" class="form-control" id="username" name="username" value="{{ user_data.Username }}"
                   required>
               </div>
               <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" value="{{ user_info.Email }}" required>
+                <input type="email" class="form-control" id="email" name="email" value="{{ user_data.Email }}" required>
               </div>
               <div class="d-grid">
                 <button type="submit" class="btn btn-primary">Update Profile</button>
@@ -61,7 +61,7 @@
         <div class="card shadow-sm mb-4">
           <div class="card-body">
             <h4 class="card-title mb-4">Change Password</h4>
-            <form method="POST" action="">
+            <form method="POST" action={% url 'process_change_password' %}>
               {% csrf_token %}
               <div class="mb-3">
                 <label for="password" class="form-label">Old Password</label>
