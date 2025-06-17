@@ -712,3 +712,53 @@ def manage_filtered_words_view(request):
     context['FILTER_CONTENT_MAX_LENGTH'] = FILTER_CONTENT_MAX_LENGTH
 
     return render(request, "html/filtered_words_manage.html", context)
+
+def admin_portal(request):
+    session_response = session_service.check_session(request)
+    if session_response["status"] != "SUCCESS":
+        return redirect("/login")
+
+    user_info = session_response["data"]
+    if user_info["Role"].lower() != "admin":
+        return redirect("/")
+
+    users = UserAccount.objects.all()
+    return render(request, "html/admin_portal.html", {"users": users, "user_info": user_info})
+
+
+@require_POST
+def change_user_role(request, user_id):
+    session_response = session_service.check_session(request)
+    if session_response["status"] != "SUCCESS":
+        return redirect("/login")
+
+    user_info = session_response["data"]
+    if user_info["Role"].lower() != "admin":
+        return redirect("/")
+
+    role = request.POST.get("role")
+    user = get_object_or_404(UserAccount, UserID=user_id)
+    user.Role = role
+    user.save()
+    messages.success(request, f"Updated role for {user.Username} to {role}.")
+    return redirect("admin_portal")
+
+
+@require_POST
+def delete_user(request, user_id):
+    session_response = session_service.check_session(request)
+    if session_response["status"] != "SUCCESS":
+        return redirect("/login")
+
+    user_info = session_response["data"]
+    if user_info["Role"].lower() != "admin":
+        return redirect("/")
+
+    user = get_object_or_404(UserAccount, UserID=user_id)
+    if user.Username.lower() == user_info["Username"].lower():
+        messages.error(request, "You cannot delete yourself.")
+        return redirect("admin_portal")
+
+    user.delete()
+    messages.success(request, f"Deleted user {user.Username}.")
+    return redirect("admin_portal")
