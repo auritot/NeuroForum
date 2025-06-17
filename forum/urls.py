@@ -56,5 +56,9 @@ urlpatterns = [
     # Word Filter Related
     path("wordfilter/manage", views.manage_filtered_words_view,
          name="manage_wordfilter"),
+        # Admin portal to Manage Users
+    path("admin_portal/", views.admin_portal, name="admin_portal"),
+    path("admin_portal/change-role/<int:user_id>/", views.change_user_role, name="change_user_role"),
+    path("admin_portal/delete/<int:user_id>/", views.delete_user, name="delete_user"),
 
 ]
