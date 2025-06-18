@@ -38,6 +38,12 @@ jobs:
           echo "DEBUG=False" >> .env
           echo "RECAPTCHA_PUBLIC_KEY='${{ secrets.RECAPTCHA_PUBLIC_KEY }}'" >> .env
           echo "RECAPTCHA_PRIVATE_KEY='${{ secrets.RECAPTCHA_PRIVATE_KEY }}'" >> .env
+          echo "EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend" >> .env
+          echo "EMAIL_HOST=smtp.gmail.com" >> .env
+          echo "EMAIL_USE_TLS=True" >> .env
+          echo "EMAIL_PORT=${{ secrets.EMAIL_PORT }}" >> .env
+          echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}" >> .env
+          echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}" >> .env
 
           docker system prune -af
           docker volume prune -f

@@ -23,20 +23,21 @@ urlpatterns = [
          name="user_manage_post_view"),
     path("manage_comment", views.user_manage_comment_view,
          name="user_manage_comment_view"),
-    path("mail_template", views.mail_template, name="mail_template"),
+    path("email_verification/", views.email_verification,
+         name="email_verification"),
     path("chat/", views.chat_home_view, name="chat_home_view"),
     path("chat/start/", views.start_chat_view, name="start_chat"),
     path("chat/landing/", views.chat_landing_or_redirect_view, name="chat_landing"),
     path("chat/<str:other_user>/", views.chat_view, name="chat_view"),
-#     path("delete_chat/<str:username>/", views.delete_chat, name="delete_chat"),
+    #     path("delete_chat/<str:username>/", views.delete_chat, name="delete_chat"),
     # MARK: Process
     # User Related
     path("login/authenticate", user_process.process_login, name="process_login"),
     path("register/registration", user_process.process_register,
          name="process_register"),
-     path("user/update_profile", user_process.process_update_profile,
+    path("user/update_profile", user_process.process_update_profile,
          name="process_update_profile"),
-     path("user/change_password", user_process.process_change_password,
+    path("user/change_password", user_process.process_change_password,
          name="process_change_password"),
     path('logout/', views.logout_view, name='logout_view'),
     # Post Related
@@ -56,9 +57,11 @@ urlpatterns = [
     # Word Filter Related
     path("wordfilter/manage", views.manage_filtered_words_view,
          name="manage_wordfilter"),
-        # Admin portal to Manage Users
+    # Admin portal to Manage Users
     path("admin_portal/", views.admin_portal, name="admin_portal"),
-    path("admin_portal/change-role/<int:user_id>/", views.change_user_role, name="change_user_role"),
-    path("admin_portal/delete/<int:user_id>/", views.delete_user, name="delete_user"),
+    path("admin_portal/change-role/<int:user_id>/",
+         views.change_user_role, name="change_user_role"),
+    path("admin_portal/delete/<int:user_id>/",
+         views.delete_user, name="delete_user"),
 
 ]

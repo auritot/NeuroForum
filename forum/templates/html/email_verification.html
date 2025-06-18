@@ -1,0 +1,30 @@
+{% extends 'html/base.html' %}
+{% block title %}Email Verification{% endblock %}
+{% block content %}
+<main class="center-element">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-3 mt-2">Enter Verification Code</h2>
+                        {% if error %}
+                        <p class="text-danger text-center">{{ error }}</p>
+                        {% endif %}
+                        <form method="POST">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="code" class="form-label">Verification Code</label>
+                                <input type="text" class="form-control" id="code" name="code" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Verify</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

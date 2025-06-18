@@ -15,6 +15,9 @@ from django.views.decorators.http import require_POST
 from .services import session_service, utilities
 from .services.db_services import user_service, post_service, comment_service, ContentFiltering_service
 from django.contrib.messages import get_messages
+from django.utils import timezone
+from datetime import timedelta, datetime
+
 
 # Constants for validation
 FILTER_CONTENT_REGEX = r"^[\w '.@*-]+$"
@@ -111,6 +114,54 @@ def register_view(request, context={}):
     })
 
 
+def email_verification(request, context={}):
+    if request.method == "POST":
+        code = request.POST.get("code")
+        session_code = request.session.get("verification_code")
+        attempts = request.session.get("verification_attempts", 0)
+        code_generated_at = request.session.get("code_generated_at")
+
+        if not code_generated_at or timezone.now() > datetime.fromisoformat(code_generated_at) + timedelta(minutes=5):
+            messages.error(request, "Verification code expired.")
+            return redirect("login_view")
+
+        if code != session_code:
+            attempts += 1
+            request.session['verification_attempts'] = attempts
+            if attempts >= 3:
+                # Lock out the account (you can add user_service.lock_account(email) here)
+                messages.error(
+                    request, "Too many failed attempts. Account temporarily locked.")
+                return redirect("login_view")
+            messages.error(request, f"Incorrect code. Attempt {attempts}/3.")
+            return redirect("email_verification")
+
+        # Success – log the user in
+        email = request.session.get('pending_user')
+        response = user_service.get_user_by_email(email)
+        if response["status"] != "SUCCESS":
+            messages.error(request, "User not found.")
+            return redirect("login_view")
+
+        user_data = response["data"]
+        session_response = session_service.setup_session(request, user_data)
+        if session_response["status"] == "SUCCESS":
+            # Clean up session
+            for key in ['pending_user', 'verification_code', 'code_generated_at', 'verification_attempts']:
+                if key in request.session:
+                    del request.session[key]
+            return redirect("index")
+        else:
+            messages.error(request, "Failed to log in after verification.")
+            return redirect("login_view")
+
+    # GET request – show form
+    messages_list = get_messages(request)
+    for msg in messages_list:
+        context['error'] = msg
+    return render(request, "html/email_verification.html", context)
+
+
 # MARK: Post Form View
 def post_form_view(request, context={}, post_id=None):
     session_response = session_service.check_session(request)
@@ -119,7 +170,7 @@ def post_form_view(request, context={}, post_id=None):
     else:
         messages.error(request, "Session Expired! Please login.")
         return redirect("login_view")
-    
+
     if post_id != None:
         post_response = post_service.get_post_by_id(post_id)
         if post_response["status"] == "SUCCESS":
@@ -134,6 +185,8 @@ def filtered_words_api(request):
     return JsonResponse(response)
 
 # MARK: Post View
+
+
 def post_view(request, post_id, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -171,7 +224,7 @@ def user_profile_view(request, context={}):
         return redirect("login_view")
     # else:
     #     return redirect('index')
-    
+
     user_response = user_service.get_user_by_id(context["user_info"]["UserID"])
     if user_response["status"] == "SUCCESS":
         context["user_data"] = user_response["data"]
@@ -179,6 +232,8 @@ def user_profile_view(request, context={}):
     return render(request, "html/user_profile_view.html", context)
 
 # MARK: User Manage Post View
+
+
 def user_manage_post_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -242,30 +297,9 @@ def user_manage_comment_view(request, context={}):
 
     return render(request, "html/user_manage_comment_view.html", context)
 
-# MARK: Mail Test
-
-
-def mail_template(request):
-    context = {}
-
-    if request.method == "POST":
-        address = request.POST.get("address")
-        subject = request.POST.get("subject")
-        message = request.POST.get("message")
-
-        if address and subject and message:
-            try:
-                send_mail(subject, message,
-                          settings.EMAIL_HOST_USER, [address])
-                context["result"] = "Email sent successfully"
-            except Exception as e:
-                context["result"] = f"Error sending email: {e}"
-        else:
-            context["result"] = "All fields are required"
-
-    return render(request, "html/mail_template.html", context)
 
 # MARK: Chat View
+
 
 @xframe_options_exempt
 def chat_view(request, other_user):
@@ -341,7 +375,8 @@ def chat_home_view(request):
     if partners:
         return redirect('chat_view', other_user=partners[0])
 
-    return render(request, 'chat_landing.html', { 'error': 'No chats yet.' })
+    return render(request, 'chat_landing.html', {'error': 'No chats yet.'})
+
 
 @xframe_options_exempt
 def start_chat_view(request):
@@ -713,6 +748,7 @@ def manage_filtered_words_view(request):
     context['FILTER_CONTENT_MAX_LENGTH'] = FILTER_CONTENT_MAX_LENGTH
 
     return render(request, "html/filtered_words_manage.html", context)
+
 
 def admin_portal(request):
     session_response = session_service.check_session(request)
