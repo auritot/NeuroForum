@@ -21,11 +21,6 @@ services:
   web:
     build: .
     restart: unless-stopped
-    # command: gunicorn --bind 0.0.0.0:8000 neuroforum_django.wsgi:application
-
-    # command: >
-    #   # sh -c "python manage.py collectstatic --noinput &&
-    #          daphne -b 0.0.0.0 -p 8000 neuroforum_django.asgi:application"
 
     command: >
       sh -c "python manage.py migrate &&  
@@ -47,12 +42,6 @@ services:
       DB_PORT: ${DB_PORT}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY}
-      # EMAIL_BACKEND: ${EMAIL_BACKEND}
-      # EMAIL_HOST: ${EMAIL_HOST}
-      # EMAIL_PORT: ${EMAIL_PORT}
-      # EMAIL_USE_TLS: ${EMAIL_USE_TLS}
-      # EMAIL_HOST_USER: ${EMAIL_HOST_USER}
-      # EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
       DEBUG: "False"
 
 volumes:
