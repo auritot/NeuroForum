@@ -214,6 +214,11 @@ def process_change_password(request, context={}):
     if newConfirmPassword != newPassword:
         messages.error(request, "Passwords does not match.")
         return redirect("user_profile_view")
+    
+    is_valid, error = validate_password_nist(newPassword)
+    if not is_valid:
+        messages.error(request, error)
+        return redirect("user_profile_view")
 
     user_response = user_service.get_user_by_id(context["user_info"]["UserID"])
     if user_response["status"] == "SUCCESS":

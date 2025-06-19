@@ -29,7 +29,7 @@ urlpatterns = [
     path("chat/start/", views.start_chat_view, name="start_chat"),
     path("chat/landing/", views.chat_landing_or_redirect_view, name="chat_landing"),
     path("chat/<str:other_user>/", views.chat_view, name="chat_view"),
-    #     path("delete_chat/<str:username>/", views.delete_chat, name="delete_chat"),
+    path("forgot-password/", views.forgot_password_view, name="forgot_password_view"),
     # MARK: Process
     # User Related
     path("login/authenticate", user_process.process_login, name="process_login"),

@@ -17,6 +17,8 @@ from django.utils import timezone
 from datetime import timedelta, datetime
 
 import re
+import random
+import string
 
 # Constants for validation
 FILTER_CONTENT_REGEX = r"^[\w '.@*-]+$"
@@ -117,13 +119,15 @@ def register_view(request, context={}):
 
 # MARK: Email Verification View
 
-def email_verification(request, context={}):
+def email_verification(request):
+    error = None
     if request.method == "POST":
-        code = request.POST.get("code")
+        code = request.POST.get("code", "").strip()
         session_code = request.session.get("verification_code")
         attempts = request.session.get("verification_attempts", 0)
         code_generated_at = request.session.get("code_generated_at")
 
+        # check expiry
         if not code_generated_at or timezone.now() > datetime.fromisoformat(code_generated_at) + timedelta(minutes=5):
             messages.error(request, "Verification code expired.")
             return redirect("login_view")
@@ -139,30 +143,35 @@ def email_verification(request, context={}):
             messages.error(request, f"Incorrect code. Attempt {attempts}/3.")
             return redirect("email_verification")
 
-        # Success – log the user in
-        email = request.session.get('pending_user')
+        # Determine purpose
+        email = request.session.get("pending_user") or request.session.get("reset_email")
         response = user_service.get_user_by_email(email)
+
         if response["status"] != "SUCCESS":
             messages.error(request, "User not found.")
             return redirect("login_view")
 
         user_data = response["data"]
-        session_response = session_service.setup_session(request, user_data)
-        if session_response["status"] == "SUCCESS":
-            # Clean up session
-            for key in ['pending_user', 'verification_code', 'code_generated_at', 'verification_attempts']:
-                if key in request.session:
-                    del request.session[key]
-            return redirect("index")
-        else:
-            messages.error(request, "Failed to log in after verification.")
-            return redirect("login_view")
 
-    # GET request – show form
-    messages_list = get_messages(request)
-    for msg in messages_list:
-        context['error'] = msg
-    return render(request, "html/email_verification.html", context)
+        # Setup session only if it's a registration
+        if "pending_user" in request.session:
+            # Registration: Log in the user
+            session_response = session_service.setup_session(request, user_data)
+            if session_response["status"] != "SUCCESS":
+                messages.error(request, "Failed to log in after verification.")
+                return redirect("login_view")
+            redirect_target = "index"
+        else:
+            # Password reset: move to reset password form
+            redirect_target = "process_change_password"
+
+        # Clean up session keys
+        for key in ['pending_user', 'reset_email', 'verification_code', 'code_generated_at', 'verification_attempts']:
+            request.session.pop(key, None)
+
+        return redirect(redirect_target)
+
+    return render(request, "html/email_verification.html")
 
 
 # MARK: Post Form View
@@ -302,6 +311,38 @@ def user_manage_comment_view(request, context={}):
 
     return render(request, "html/user_manage_comment_view.html", context)
 
+
+# MARK: Forgot Password View
+
+def forgot_password_view(request):
+    context = {}
+
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip()
+        from forum.services import user_service
+
+        user_check = user_service.get_user_by_email(email)
+        if user_check["status"] != "SUCCESS":
+            context["error"] = "No account found with that email."
+            return render(request, "html/forgot_password_view.html", context)
+
+        otp = generate_otp()
+        request.session["reset_email"] = email
+        request.session["reset_otp"] = otp
+        request.session["otp_created_at"] = timezone.now().isoformat()
+
+        send_mail(
+            subject="Your Password Reset Code",
+            message=f"Your password reset code is: {otp}",
+            from_email=None,
+            recipient_list=[email],
+            fail_silently=True,
+        )
+
+        context["message"] = "A reset code has been sent to your email."
+        return redirect("email_verification")
+
+    return render(request, "html/forgot_password_view.html", context)
 
 # MARK: Chat View
 
