@@ -122,55 +122,73 @@ def register_view(request, context={}):
 # MARK: Email Verification View
 
 def email_verification(request):
-    error = None
     if request.method == "POST":
         code = request.POST.get("code", "").strip()
         session_code = request.session.get("verification_code")
         attempts = request.session.get("verification_attempts", 0)
         code_generated_at_str = request.session.get("code_generated_at")
 
-        # check expiry
-        if code_generated_at_str:
+        if not session_code or not code_generated_at_str:
+            messages.error(request, "Verification session is invalid or expired.")
+            return redirect("login_view")
+
+        # Check code expiration (5 minutes window)
+        try:
             code_generated_at = timezone.datetime.fromisoformat(code_generated_at_str)
             if timezone.is_naive(code_generated_at):
                 code_generated_at = timezone.make_aware(code_generated_at)
-
             if timezone.now() > code_generated_at + timedelta(minutes=5):
-                error = "Verification code has expired."
+                messages.error(request, "Your verification code has expired. Please request a new one.")
+                for key in ['verification_code', 'code_generated_at', 'verification_attempts']:
+                    request.session.pop(key, None)
+                if 'reset_email' in request.session:
+                    return redirect("forgot_password_view")
                 return redirect("login_view")
+        except Exception:
+            messages.error(request, "Session error. Please try again.")
+            return redirect("login_view")
 
+        # Check wrong code
         if code != session_code:
             attempts += 1
-            request.session['verification_attempts'] = attempts
+            request.session["verification_attempts"] = attempts
             if attempts >= 3:
-                # Lock out the account (you can add user_service.lock_account(email) here)
-                messages.error(
-                    request, "Too many failed attempts. Account temporarily locked.")
+                messages.error(request, "Too many failed attempts. Account temporarily locked.")
                 return redirect("login_view")
             messages.error(request, f"Incorrect code. Attempt {attempts}/3.")
             return redirect("email_verification")
 
-        # Determine purpose
+        # Determine if it's a registration or password reset flow
         email = request.session.get("pending_user") or request.session.get("reset_email")
-        response = user_service.get_user_by_email(email)
+        if not email:
+            messages.error(request, "Session expired or invalid.")
+            return redirect("login_view")
 
+        response = user_service.get_user_by_email(email)
         if response["status"] != "SUCCESS":
             messages.error(request, "User not found.")
             return redirect("login_view")
 
         user_data = response["data"]
 
-        # Setup session only if it's a registration
+        # Flow branching
         if "pending_user" in request.session:
-            # Registration: Log in the user
+            # Registration flow: log in the user
             session_response = session_service.setup_session(request, user_data)
             if session_response["status"] != "SUCCESS":
-                messages.error(request, "Failed to log in after verification.")
+                messages.error(request, "Verification succeeded, but failed to log in.")
                 return redirect("login_view")
+            messages.success(request, "Your account has been verified and you're now logged in.")
             redirect_target = "index"
+
+        elif "reset_email" in request.session:
+            # Forgot password flow: send to reset password form
+            request.session["verified_for_reset"] = True
+            messages.success(request, "Verification successful. Please reset your password.")
+            redirect_target = "reset_password_view"
         else:
-            # Password reset: move to reset password form
-            redirect_target = "process_change_password"
+            messages.error(request, "Session state unclear. Please try again.")
+            return redirect("login_view")
 
         # Clean up session keys
         for key in ['pending_user', 'reset_email', 'verification_code', 'code_generated_at', 'verification_attempts']:
@@ -179,6 +197,7 @@ def email_verification(request):
         return redirect(redirect_target)
 
     return render(request, "html/email_verification.html")
+
 
 
 # MARK: Post Form View
