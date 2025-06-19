@@ -385,7 +385,7 @@ def reset_password_view(request):
         return redirect("forgot_password_view")
 
     if request.method == "POST":
-        new_password = request.POST.get("new_password")
+        new_password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
 
         if new_password != confirm_password:
