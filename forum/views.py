@@ -173,7 +173,7 @@ def email_verification(request):
         user_data = response["data"]
 
         # Flow branching
-        if "pending_user" in request.session:
+        if request.session.get("pending_user"):
             # Registration flow: log in the user
             session_response = session_service.setup_session(request, user_data)
             if session_response["status"] != "SUCCESS":
@@ -182,7 +182,7 @@ def email_verification(request):
             messages.success(request, "Your account has been verified and you're now logged in.")
             redirect_target = "index"
 
-        elif "reset_email" in request.session:
+        elif request.session.get("reset_email"):
             # Forgot password flow: send to reset password form
             request.session["verified_for_reset"] = True
             messages.success(request, "Verification successful. Please reset your password.")
@@ -373,9 +373,14 @@ def forgot_password_view(request):
 
 # MARK: Reset Password View
 def reset_password_view(request):
+    
     user_email = request.session.get("reset_email")
     if not user_email:
         messages.error(request, "Session expired. Please restart the reset process.")
+        return redirect("forgot_password_view")
+    
+    if not request.session.get("verified_for_reset"):
+        messages.error(request, "You must verify your email before resetting your password.")
         return redirect("forgot_password_view")
 
     if request.method == "POST":
@@ -393,14 +398,14 @@ def reset_password_view(request):
             user = UserAccount.objects.get(Email=user_email)
             user.Password = new_password  # hash if needed
             user.save()
-            for key in ['pending_user', 'verification_code', 'code_generated_at']:
+            for key in ['pending_user', 'verification_code', 'code_generated_at', 'verified_for_reset']:
                 request.session.pop(key, None)
             messages.success(request, "Password has been reset successfully. You may now log in.")
             return redirect("login_view")
         except UserAccount.DoesNotExist:
             return render(request, "reset_password_view.html", {"error": "User not found."})
 
-    for key in ['reset_email', 'verification_code', 'code_generated_at']:
+    for key in ['reset_email', 'verification_code', 'code_generated_at', 'verified_for_reset']:
         request.session.pop(key, None)
 
     return render(request, "reset_password_view.html")
