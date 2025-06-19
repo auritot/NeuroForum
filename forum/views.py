@@ -354,8 +354,8 @@ def forgot_password_view(request):
 
         otp = user_process.generate_verification_code()
         request.session["reset_email"] = email
-        request.session["reset_otp"] = otp
-        request.session["otp_created_at"] = timezone.now().isoformat()
+        request.session["verification_code"] = otp  # Correct key
+        request.session["code_generated_at"] = timezone.now().isoformat()  # Correct key
 
         send_mail(
             subject="Your Password Reset Code",
