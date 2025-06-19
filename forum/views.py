@@ -16,7 +16,7 @@ from django.contrib.messages import get_messages
 from django.utils import timezone
 from datetime import timedelta, datetime
 from .processes import user_process
-from pwd_utils import validate_password_nist
+from .pwd_utils import validate_password_nist
 
 import re
 import random
