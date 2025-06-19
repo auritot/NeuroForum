@@ -2,7 +2,6 @@ import logging  # Add this import at the top of the file
 import traceback
 from django.db import connection
 from django.contrib.auth.hashers import check_password, make_password
-from django.contrib.auth import authenticate
 from .. import utilities
 
 user_col = ["UserID", "Username", "Email",
@@ -11,13 +10,6 @@ user_col = ["UserID", "Username", "Email",
 # MARK: Login Authentication
 def authenticate_user(email, password):
     try:
-
-        user = authenticate(username=email, password=password)
-
-        if user is None:
-            return utilities.response("INVALID", "User login was unsuccessfully")
-
-
         with connection.cursor() as cursor:
             cursor.execute(
                 """ SELECT * FROM forum_useraccount WHERE Email = %s; """,
@@ -25,15 +17,13 @@ def authenticate_user(email, password):
             )
 
             result = cursor.fetchone()
-
             if result is None:
                 return utilities.response("NOT_FOUND", "User not found")
-            
 
             user_data = dict(zip(user_col, result))
 
-            # if not check_password(password, user_data["Password"]):
-            #     return utilities.response("INVALID", "User login was unsuccessfully")
+            if not check_password(password, user_data["Password"]):
+                return utilities.response("INVALID", "User login was unsuccessfully")
 
         return utilities.response("SUCCESS", "User login was successfully", user_data)
 

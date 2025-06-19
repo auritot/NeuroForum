@@ -16,7 +16,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from sshtunnel import SSHTunnelForwarder
-from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -93,7 +92,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'channels',
     'cryptography',
-    'axes'
 ]
 
 ASGI_APPLICATION = 'neuroforum_django.asgi.application'
@@ -110,7 +108,6 @@ CHANNEL_LAYERS = {
 }
 
 MIDDLEWARE = [
-    'axes.middleware.AxesMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -119,16 +116,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-AUTHENTICATION_BACKENDS = [
-    'axes.backends.AxesBackend',
-    'forum.auth_backends.CustomUserAccountBackend',
-]
-
-AXES_FAILURE_LIMIT = 5  # Lock out after 5 failed attempts
-AXES_COOLOFF_TIME = timedelta(hours=1)
-AXES_LOCKOUT_PARAMETERS = ['username', 'ip_address']
-AXES_ENABLED = True
 
 ROOT_URLCONF = 'neuroforum_django.urls'
 
@@ -183,6 +170,7 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

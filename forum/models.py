@@ -18,18 +18,6 @@ class UserAccount(models.Model):
     def is_authenticated(self):
         return True
     
-    @property
-    def is_active(self):
-        return True
-
-    @property
-    def is_anonymous(self):
-        return False
-
-    def get_username(self):
-        return self.Email
-
-
 class Post(models.Model):
     PostID = models.AutoField(primary_key=True)
     Title = models.CharField(max_length=255)
