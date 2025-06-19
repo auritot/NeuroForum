@@ -17,6 +17,17 @@ class UserAccount(models.Model):
     @property
     def is_authenticated(self):
         return True
+    
+    @property
+    def is_active(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
+    def get_username(self):
+        return self.Email
 
 
 class Post(models.Model):
