@@ -10,10 +10,13 @@ from django.contrib.auth.decorators import user_passes_test
 from django.urls import reverse  # Added for reversing URLs
 from urllib.parse import urlencode  # Added for encoding query parameters
 import re
+import random
+import string
 
 from django.views.decorators.http import require_POST
 from .services import session_service, utilities
 from .services.db_services import user_service, post_service, comment_service, ContentFiltering_service
+from .pwd_utils import validate_password_nist
 from django.contrib.messages import get_messages
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -106,6 +109,54 @@ def register_view(request, context={}):
     messages = get_messages(request)
     for message in messages:
         context["error"] = message
+
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "").strip()
+
+        is_valid, error = validate_password_nist(password)
+        if not is_valid:
+            context["error"] = error
+            return render(request, 'html/register_view.html', {
+                'RECAPTCHA_PUBLIC_KEY': settings.RECAPTCHA_PUBLIC_KEY,
+                **context,
+            })
+        
+        # Check if email already exists
+        if user_service.get_user_by_email(email)["status"] == "SUCCESS":
+            context["error"] = "Email already registered."
+            return render(request, 'html/register_view.html', {
+                'RECAPTCHA_PUBLIC_KEY': settings.RECAPTCHA_PUBLIC_KEY,
+                **context,
+            })
+        
+        # Generate a 6-digit verification code
+        code = ''.join(random.choices(string.digits, k=6))
+
+        # Insert user with unverified code
+        insert_response = user_service.insert_new_user(
+            username=username,
+            email=email,
+            password=password,
+            role="member",
+            emailVerificationCode=code
+        )
+
+        # Save pending session and send email
+        request.session["pending_user"] = email
+        request.session["verification_code"] = code
+        request.session["code_generated_at"] = timezone.now().isoformat()
+
+        send_mail(
+            subject="Verify your email",
+            message=f"Your verification code is: {code}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=True,
+        )
+
+        return redirect("email_verification")
 
     # return render(request, "html/register_view.html", context)
     return render(request, 'html/register_view.html', {
