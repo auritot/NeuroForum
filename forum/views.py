@@ -127,12 +127,17 @@ def email_verification(request):
         code = request.POST.get("code", "").strip()
         session_code = request.session.get("verification_code")
         attempts = request.session.get("verification_attempts", 0)
-        code_generated_at = request.session.get("code_generated_at")
+        code_generated_at_str = request.session.get("code_generated_at")
 
         # check expiry
-        if not code_generated_at or timezone.now() > datetime.fromisoformat(code_generated_at) + timedelta(minutes=5):
-            messages.error(request, "Verification code expired.")
-            return redirect("login_view")
+        if code_generated_at_str:
+            code_generated_at = timezone.datetime.fromisoformat(code_generated_at_str)
+            if timezone.is_naive(code_generated_at):
+                code_generated_at = timezone.make_aware(code_generated_at)
+
+            if timezone.now() > code_generated_at + timedelta(minutes=5):
+                error = "Verification code has expired."
+                return redirect("login_view")
 
         if code != session_code:
             attempts += 1
