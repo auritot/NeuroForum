@@ -192,8 +192,9 @@ def email_verification(request):
             return redirect("login_view")
 
         # Clean up session keys
-        for key in ['pending_user', 'reset_email', 'verification_code', 'code_generated_at', 'verification_attempts']:
-            request.session.pop(key, None)
+        if request.session.get("pending_user"):
+            for key in ['pending_user', 'verification_code', 'code_generated_at', 'verification_attempts']:
+                request.session.pop(key, None)
 
         return redirect(redirect_target)
 
