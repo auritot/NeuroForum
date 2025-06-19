@@ -384,21 +384,21 @@ def reset_password_view(request):
             confirm_password = request.POST.get("confirm_password")
 
             if new_password != confirm_password:
-                return render(request, "reset_password_view.html", {"error": "Passwords do not match."})
+                return render(request, "html/reset_password_view.html", {"error": "Passwords do not match."})
 
             status, msg = validate_password_nist(new_password)
             if not status:
-                return render(request, "reset_password_view.html", {"error": msg})
+                return render(request, "html/reset_password_view.html", {"error": msg})
 
             # Fetch user by email
             response = get_user_by_email(user_email)
             if response["status"] != "SUCCESS":
-                return render(request, "reset_password_view.html", {"error": "User not found."})
+                return render(request, "html/reset_password_view.html", {"error": "User not found."})
 
             user_id = response["data"]["UserID"]
             update_response = update_user_password(user_id, new_password)
             if update_response["status"] != "SUCCESS":
-                return render(request, "reset_password_view.html", {"error": "Password reset failed."})
+                return render(request, "html/reset_password_view.html", {"error": "Password reset failed."})
 
             # Clean up session
             for key in ['reset_email', 'verification_code', 'code_generated_at', 'verified_for_reset']:
@@ -411,7 +411,7 @@ def reset_password_view(request):
             print("Password reset error:", e)
             return HttpResponse("Server error during password reset", status=500)
         
-    return render(request, "reset_password_view.html")
+    return render(request, "html/reset_password_view.html")
 
 
 # MARK: Chat View
