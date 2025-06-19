@@ -127,7 +127,7 @@ AUTHENTICATION_BACKENDS = [
 
 AXES_FAILURE_LIMIT = 5  # Lock out after 5 failed attempts
 AXES_COOLOFF_TIME = timedelta(hours=1)
-AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
+AXES_LOCKOUT_PARAMETERS = ['username', 'ip_address']
 
 ROOT_URLCONF = 'neuroforum_django.urls'
 
