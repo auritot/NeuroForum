@@ -15,7 +15,9 @@
                             {% csrf_token %}
                             <div class="mb-3">
                                 <label for="code" class="form-label">Verification Code</label>
-                                <input type="text" class="form-control" id="code" name="code" required>
+                                <input type="text" class="form-control" id="code" name="code" 
+                                    pattern="\d{6}" maxlength="6" inputmode="numeric" required
+                                    title="Please enter the 6-digit OTP.">
                             </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary">Verify</button>
