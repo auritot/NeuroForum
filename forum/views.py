@@ -9,10 +9,6 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import user_passes_test
 from django.urls import reverse  # Added for reversing URLs
 from urllib.parse import urlencode  # Added for encoding query parameters
-import re
-import random
-import string
-
 from django.views.decorators.http import require_POST
 from .services import session_service, utilities
 from .services.db_services import user_service, post_service, comment_service, ContentFiltering_service
@@ -20,6 +16,10 @@ from .pwd_utils import validate_password_nist
 from django.contrib.messages import get_messages
 from django.utils import timezone
 from datetime import timedelta, datetime
+
+import re
+import random
+import string
 
 
 # Constants for validation
@@ -45,8 +45,8 @@ def validate_filter_content(content):
 
     return True, ""
 
-# MARK: Index View
 
+# MARK: Index View
 
 def index(request, context={}):
     session_response = session_service.check_session(request)
@@ -83,6 +83,7 @@ def index(request, context={}):
 
 
 # MARK: Login View
+
 def login_view(request, context={}):
     messages = get_messages(request)
     for message in messages:
@@ -105,6 +106,7 @@ def logout_view(request, context={}):
 
 
 # MARK: Register View
+
 def register_view(request, context={}):
     messages = get_messages(request)
     for message in messages:
@@ -143,13 +145,20 @@ def register_view(request, context={}):
             emailVerificationCode=code
         )
 
-        # Save pending session and send email
-        request.session["pending_user"] = email
-        request.session["verification_code"] = code
-        request.session["code_generated_at"] = timezone.now().isoformat()
+        if insert_response["status"] != "SUCCESS":
+            context["error"] = insert_response.get("message", "Failed to register.")
+            return render(request, 'html/register_view.html', {
+                'RECAPTCHA_PUBLIC_KEY': settings.RECAPTCHA_PUBLIC_KEY,
+                **context,
+            })
+
+        request.session["otp_email"] = email
+        request.session["otp_code"] = str(code)
+        request.session["otp_generated_at"] = timezone.now().isoformat()
+        request.session["otp_attempts"] = 0
 
         send_mail(
-            subject="Verify your email",
+            subject="Your NeuroForum Verification Code",
             message=f"Your verification code is: {code}",
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],
@@ -164,6 +173,8 @@ def register_view(request, context={}):
         **context,
     })
 
+
+# MARK: Email Verification View
 
 def email_verification(request, context={}):
     if request.method == "POST":
@@ -214,6 +225,7 @@ def email_verification(request, context={}):
 
 
 # MARK: Post Form View
+
 def post_form_view(request, context={}, post_id=None):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -235,8 +247,8 @@ def filtered_words_api(request):
     # Return full response (status, message, data) as JSON
     return JsonResponse(response)
 
-# MARK: Post View
 
+# MARK: Post View
 
 def post_view(request, post_id, context={}):
     session_response = session_service.check_session(request)
@@ -266,6 +278,7 @@ def post_view(request, post_id, context={}):
 
 
 # MARK: User Profile View
+
 def user_profile_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -282,8 +295,8 @@ def user_profile_view(request, context={}):
 
     return render(request, "html/user_profile_view.html", context)
 
-# MARK: User Manage Post View
 
+# MARK: User Manage Post View
 
 def user_manage_post_view(request, context={}):
     session_response = session_service.check_session(request)
@@ -315,8 +328,8 @@ def user_manage_post_view(request, context={}):
 
     return render(request, "html/user_manage_post_view.html", context)
 
-# MARK: User Manage Comment View
 
+# MARK: User Manage Comment View
 
 def user_manage_comment_view(request, context={}):
     session_response = session_service.check_session(request)
@@ -351,7 +364,6 @@ def user_manage_comment_view(request, context={}):
 
 # MARK: Chat View
 
-
 @xframe_options_exempt
 def chat_view(request, other_user):
     session_response = session_service.check_session(request)
@@ -377,13 +389,6 @@ def chat_view(request, other_user):
     # Load unread count if available
     a, b = sorted([username.lower(), other_user.lower()])
     room_name = f"private_{a}_{b}"
-
-    # unread_count = 0
-    # try:
-    #     unread_obj = ChatUnread.objects.get(user__Username__iexact=username, room__name=room_name)
-    #     unread_count = unread_obj.unread_count
-    # except ChatUnread.DoesNotExist:
-    #     pass
 
     return render(request, "html/chat_inner.html", {
         "user_info": user_info,
@@ -452,27 +457,8 @@ def start_chat_view(request):
 
     return redirect(f"/chat/{username}/")
 
-# @xframe_options_exempt
-# def delete_chat(request, username):
-#     # only accept AJAX POST
-#     if request.method != "POST" or request.headers.get("x-requested-with") != "XMLHttpRequest":
-#         return JsonResponse({"error":"Invalid request"}, status=400)
 
-#     me = request.user
-#     other = UserAccount.objects.filter(Username__iexact=username).first()
-#     if not other:
-#         return JsonResponse({"error":"User not found"}, status=404)
-
-#     # build the private‐chat room name without creating it
-#     a, b = sorted([me.Username.lower(), other.Username.lower()])
-#     room_name = f"private_{a}_{b}"
-
-#     # delete if it exists (no extra creation step)
-#     ChatRoom.objects.filter(name=room_name).delete()
-#     return JsonResponse({"success": True})
-
-# MARK: Manage Filtered Words View
-
+# MARK: Filtered Words View
 
 def manage_filtered_words_view(request):
     from .services.db_services import ContentFiltering_service

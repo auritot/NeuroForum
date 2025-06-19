@@ -47,8 +47,10 @@
                                              name="confirmPassword" placeholder="Confirm password" required>
                                    </div>
 
-                                   <div class="mb-3">
-                                        <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}"></div>
+                                   <div class="mb-3" text-center>
+                                        <div class="d-inline-block">
+                                             <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}"></div>
+                                        </div>
                                         {% if recaptcha_error %}
                                         <p class="text-danger mt-1">{{ recaptcha_error }}</p>
                                         {% endif %}
