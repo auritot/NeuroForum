@@ -123,94 +123,82 @@ def register_view(request, context={}):
 
 def email_verification(request):
     if request.method == "POST":
-        code_entered = request.POST.get("code")
-        code_expected = request.session.get("verification_code")
-        pending_user_id = request.session.get("pending_user")
-        generated_at_str = request.session.get("code_generated_at")
+        code = request.POST.get("code", "").strip()
+        session_code = request.session.get("verification_code")
         attempts = request.session.get("verification_attempts", 0)
-        purpose = request.session.get("verification_purpose")
+        code_generated_at_str = request.session.get("code_generated_at")
 
-        # Defensive check: missing critical data
-        if not all([code_entered, code_expected, generated_at_str, purpose]):
-            messages.error(request, "Session expired or invalid. Please request a new code.")
-            _clear_verification_session(request)
+        # Check if session exists
+        if not session_code or not code_generated_at_str:
+            messages.error(request, "Verification session is invalid or expired.")
             return redirect("login_view")
 
+        # Check code expiration (5 minutes window)
         try:
-            generated_at = datetime.fromisoformat(generated_at_str)
-        except ValueError:
-            messages.error(request, "Invalid code timestamp. Please try again.")
-            _clear_verification_session(request)
+            code_generated_at = timezone.datetime.fromisoformat(code_generated_at_str)
+            if timezone.is_naive(code_generated_at):
+                code_generated_at = timezone.make_aware(code_generated_at)
+            if timezone.now() > code_generated_at + timedelta(minutes=5):
+                messages.error(request, "Your verification code has expired. Please request a new one.")
+                for key in ['verification_code', 'code_generated_at', 'verification_attempts']:
+                    request.session.pop(key, None)
+                if 'reset_email' in request.session:
+                    return redirect("forgot_password_view")
+                return redirect("login_view")
+        except Exception:
+            messages.error(request, "There was an error validating your session.")
             return redirect("login_view")
 
-        # Check expiry (5 minutes)
-        if timezone.now() - generated_at > timedelta(minutes=5):
-            messages.error(request, "Verification code has expired. Please request a new one.")
-            _clear_verification_session(request)
+        # Check wrong code
+        if code != session_code:
+            attempts += 1
+            request.session["verification_attempts"] = attempts
+            if attempts >= 3:
+                messages.error(request, "Too many failed attempts. Please try again later.")
+                return redirect("login_view")
+            messages.error(request, f"Incorrect code. Attempt {attempts}/3.")
+            return redirect("email_verification")
+
+        # Determine if it's a registration or password reset flow
+        email = request.session.get("pending_user") or request.session.get("reset_email")
+        if not email:
+            messages.error(request, "Verification session is incomplete. Please try again.")
             return redirect("login_view")
 
-        # Check failed attempts
-        if attempts >= 4:
-            messages.error(request, "Too many incorrect attempts. Please request a new code.")
-            _clear_verification_session(request)
+        response = user_service.get_user_by_email(email)
+        if response["status"] != "SUCCESS":
+            messages.error(request, "Account not found for this verification.")
             return redirect("login_view")
 
-        # Increment failed attempts
-        if code_entered != code_expected:
-            request.session["verification_attempts"] = attempts + 1
-            messages.error(request, f"Incorrect code. {4 - attempts} attempts left.")
-            return render(request, "email_verification.html")
+        user_data = response["data"]
 
-        # Success: valid code
-        if purpose == "forgot":
-            request.session["allow_password_reset"] = True
-            _clear_verification_session(request, keep_keys=["reset_email", "allow_password_reset"])
-            return redirect("reset_password_view")
+        # Flow branching
+        if "pending_user" in request.session:
+            # Registration flow: log in the user
+            session_response = session_service.setup_session(request, user_data)
+            if session_response["status"] != "SUCCESS":
+                messages.error(request, "Verification succeeded, but failed to log in.")
+                return redirect("login_view")
+            messages.success(request, "Your account has been verified and you're now logged in.")
+            redirect_target = "index"
 
-        # For login/registration: we need the pending user
-        if not pending_user_id:
-            messages.error(request, "Missing user session. Please try again.")
-            _clear_verification_session(request)
+        elif "reset_email" in request.session:
+            # Forgot password flow: send to reset password form
+            request.session["verified_for_reset"] = True
+            messages.success(request, "Verification successful. Please reset your password.")
+            redirect_target = "reset_password_view"
+        else:
+            messages.error(request, "Session state unclear. Please try again.")
             return redirect("login_view")
 
-        try:
-            user = UserAccount.objects.get(UserID=pending_user_id)
-        except UserAccount.DoesNotExist:
-            messages.error(request, "Account not found. Please try again.")
-            _clear_verification_session(request)
-            return redirect("login_view")
+        # Clean up session keys
+        for key in ['pending_user', 'reset_email', 'verification_code', 'code_generated_at', 'verification_attempts']:
+            request.session.pop(key, None)
 
-        # Proceed to login the user
-        session_response = session_service.setup_session(request, {
-            "UserID": user.UserID,
-            "Username": user.Username,
-            "Email": user.Email,
-            "Role": user.Role,
-        })
+        return redirect(redirect_target)
 
-        if session_response["status"] == "SUCCESS":
-            _clear_verification_session(request)
-            return redirect("index")
+    return render(request, "html/email_verification.html")
 
-        messages.error(request, "Verification succeeded, but login failed. Please try again.")
-        _clear_verification_session(request)
-        return redirect("login_view")
-
-    # GET request
-    return render(request, "email_verification.html")
-
-
-
-# Helper: Clean session
-def _clear_verification_session(request, keep_keys=None):
-    keys_to_clear = [
-        'pending_user', 'verification_code', 'code_generated_at',
-        'verification_attempts', 'verification_purpose'
-    ]
-    for key in keys_to_clear:
-        if keep_keys and key in keep_keys:
-            continue
-        request.session.pop(key, None)
 
 
 # MARK: Post Form View
