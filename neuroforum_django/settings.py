@@ -16,6 +16,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from sshtunnel import SSHTunnelForwarder
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -92,6 +93,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'channels',
     'cryptography',
+    'axes'
 ]
 
 ASGI_APPLICATION = 'neuroforum_django.asgi.application'
@@ -108,6 +110,7 @@ CHANNEL_LAYERS = {
 }
 
 MIDDLEWARE = [
+    'axes.middleware.AxesMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -116,6 +119,15 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+AXES_FAILURE_LIMIT = 5  # Lock out after 5 failed attempts
+AXES_COOLOFF_TIME = timedelta(hours=1)
+AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
 
 ROOT_URLCONF = 'neuroforum_django.urls'
 
