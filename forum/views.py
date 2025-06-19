@@ -321,7 +321,6 @@ def forgot_password_view(request):
 
     if request.method == "POST":
         email = request.POST.get("email", "").strip()
-        from forum.services import user_service
 
         user_check = user_service.get_user_by_email(email)
         if user_check["status"] != "SUCCESS":
