@@ -23,7 +23,8 @@ def process_login(request):
         return redirect('login_view')
 
     email = utilities.sanitize_input(request.POST.get("email"))
-    password = utilities.sanitize_input(request.POST.get("password"))
+    # password = utilities.sanitize_input(request.POST.get("password"))
+    password = request.POST.get("password", "")
 
     if not utilities.validate_email(email):
         messages.error(request, "Enter a valid email.")
