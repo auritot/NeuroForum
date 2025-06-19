@@ -15,6 +15,8 @@ from .services.db_services import user_service, post_service, comment_service, C
 from django.contrib.messages import get_messages
 from django.utils import timezone
 from datetime import timedelta, datetime
+from .processes import user_process
+from pwd_utils import validate_password_nist
 
 import re
 import random
@@ -326,7 +328,7 @@ def forgot_password_view(request):
             context["error"] = "No account found with that email."
             return render(request, "html/forgot_password_view.html", context)
 
-        otp = generate_otp()
+        otp = user_process.generate_verification_code()
         request.session["reset_email"] = email
         request.session["reset_otp"] = otp
         request.session["otp_created_at"] = timezone.now().isoformat()
@@ -343,6 +345,41 @@ def forgot_password_view(request):
         return redirect("email_verification")
 
     return render(request, "html/forgot_password_view.html", context)
+
+
+# MARK: Reset Password View
+def reset_password_view(request):
+    user_email = request.session.get("reset_email")
+    if not user_email:
+        messages.error(request, "Session expired. Please restart the reset process.")
+        return redirect("forgot_password_view")
+
+    if request.method == "POST":
+        new_password = request.POST.get("new_password")
+        confirm_password = request.POST.get("confirm_password")
+
+        if new_password != confirm_password:
+            return render(request, "reset_password_view.html", {"error": "Passwords do not match."})
+
+        password_check = validate_password_nist(new_password)
+        if password_check["status"] != "PASS":
+            return render(request, "reset_password_view.html", {"error": password_check["message"]})
+
+        try:
+            user = UserAccount.objects.get(Email=user_email)
+            user.Password = new_password  # hash if needed
+            user.save()
+            for key in ['pending_user', 'verification_code', 'code_generated_at']:
+                request.session.pop(key, None)
+            messages.success(request, "Password has been reset successfully. You may now log in.")
+            return redirect("login_view")
+        except UserAccount.DoesNotExist:
+            return render(request, "reset_password_view.html", {"error": "User not found."})
+
+    for key in ['reset_email', 'verification_code', 'code_generated_at']:
+        request.session.pop(key, None)
+
+    return render(request, "reset_password_view.html")
 
 # MARK: Chat View
 

@@ -30,6 +30,7 @@ urlpatterns = [
     path("chat/landing/", views.chat_landing_or_redirect_view, name="chat_landing"),
     path("chat/<str:other_user>/", views.chat_view, name="chat_view"),
     path("forgot-password/", views.forgot_password_view, name="forgot_password_view"),
+    path("reset_password/", views.reset_password_view, name="reset_password_view"),
     # MARK: Process
     # User Related
     path("login/authenticate", user_process.process_login, name="process_login"),
