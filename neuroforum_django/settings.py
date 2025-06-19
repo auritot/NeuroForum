@@ -122,12 +122,13 @@ MIDDLEWARE = [
 
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesBackend',
-    'django.contrib.auth.backends.ModelBackend',
+    'forum.auth_backends.CustomUserAccountBackend',
 ]
 
 AXES_FAILURE_LIMIT = 5  # Lock out after 5 failed attempts
 AXES_COOLOFF_TIME = timedelta(hours=1)
 AXES_LOCKOUT_PARAMETERS = ['username', 'ip_address']
+AXES_ENABLED = True
 
 ROOT_URLCONF = 'neuroforum_django.urls'
 

@@ -2,6 +2,9 @@ import logging  # Add this import at the top of the file
 import traceback
 from django.db import connection
 from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth import authenticate
+from axes.helpers import get_client_username
+from axes.attempts import is_already_locked, log_login_failure, log_login_success
 from .. import utilities
 
 user_col = ["UserID", "Username", "Email",
@@ -10,6 +13,13 @@ user_col = ["UserID", "Username", "Email",
 # MARK: Login Authentication
 def authenticate_user(email, password):
     try:
+
+        request = None
+
+        # Check if IP/username is already locked
+        if is_already_locked(request, credentials={"username": email}):
+            return utilities.response("LOCKED", "Too many failed attempts. Try again later.")
+
         with connection.cursor() as cursor:
             cursor.execute(
                 """ SELECT * FROM forum_useraccount WHERE Email = %s; """,
@@ -17,14 +27,19 @@ def authenticate_user(email, password):
             )
 
             result = cursor.fetchone()
+
             if result is None:
+                log_login_failure(request, credentials={"username": email})
                 return utilities.response("NOT_FOUND", "User not found")
 
             user_data = dict(zip(user_col, result))
 
             if not check_password(password, user_data["Password"]):
+                log_login_failure(request, credentials={"username": email})
                 return utilities.response("INVALID", "User login was unsuccessfully")
 
+        # Success — log to django-axes
+        log_login_success(request, credentials={"username": email})
         return utilities.response("SUCCESS", "User login was successfully", user_data)
 
     except Exception as e:
