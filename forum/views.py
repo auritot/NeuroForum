@@ -308,6 +308,41 @@ def user_manage_post_view(request, context={}):
     return render(request, "html/user_manage_post_view.html", context)
 
 
+# MARK: Admin Manage Post View
+def admin_manage_post_view(request, context={}):
+    session_response = session_service.check_session(request)
+    if session_response["status"] == "SUCCESS":
+        context["user_info"] = session_response["data"]
+    else:
+        messages.error(request, "Session Expired! Please login.")
+        return redirect("login_view")
+
+    if context["user_info"]["Role"] != "admin":
+        messages.error(request, "Invalid Access!")
+        return redirect("login_view")
+
+    per_page = 10
+    current_page = int(request.GET.get("page", 1))
+
+    total_post_count = 0
+
+    post_count_response = post_service.get_total_post_count()
+    if post_count_response["status"] == "SUCCESS":
+        # total_post_count: int = post_count_response["data"]["total_post_count"]
+        total_post_count = post_count_response["data"]["total_post_count"]
+
+    pagination_data = utilities.get_pagination_data(
+        current_page, per_page, total_post_count)
+
+    posts_response = post_service.get_posts_for_page(
+        pagination_data["start_index"], per_page)
+    if posts_response["status"] == "SUCCESS":
+        context["posts"] = posts_response["data"]["posts"]
+
+    context.update(pagination_data)
+
+    return render(request, "html/admin_manage_post_view.html", context)
+
 # MARK: User Manage Comment View
 
 def user_manage_comment_view(request, context={}):
@@ -320,11 +355,10 @@ def user_manage_comment_view(request, context={}):
     # else:
     #     return redirect('index')
 
-    per_page = 2
+    per_page = 10
     current_page = int(request.GET.get("page", 1))
 
-    comment_count_response = comment_service.get_total_comment_count_by_user_id(
-        context["user_info"]["UserID"])
+    comment_count_response = comment_service.get_total_comment_count(context["user_info"]["UserID"])
     if comment_count_response["status"] == "SUCCESS":
         total_comment_count: int = comment_count_response["data"]["total_comment_count"]
 
@@ -340,6 +374,37 @@ def user_manage_comment_view(request, context={}):
 
     return render(request, "html/user_manage_comment_view.html", context)
 
+
+# MARK: Admin Manage Comment View
+def admin_manage_comment_view(request, context={}):
+    session_response = session_service.check_session(request)
+    if session_response["status"] == "SUCCESS":
+        context["user_info"] = session_response["data"]
+    else:
+        messages.error(request, "Session Expired! Please login.")
+        return redirect("login_view")
+    
+    if context["user_info"]["Role"] != "admin":
+        messages.error(request, "Invalid Access!")
+        return redirect("login_view")
+
+    per_page = 10
+    current_page = int(request.GET.get("page", 1))
+
+    comment_count_response = comment_service.get_total_comment_count()
+    if comment_count_response["status"] == "SUCCESS":
+        total_comment_count: int = comment_count_response["data"]["total_comment_count"]
+
+    pagination_data = utilities.get_pagination_data(
+        current_page, per_page, total_comment_count)
+
+    comments_response = comment_service.get_comments_for_page(pagination_data["start_index"], per_page)
+    if comments_response["status"] == "SUCCESS":
+        context["comments"] = comments_response["data"]["comments"]
+
+    context.update(pagination_data)
+
+    return render(request, "html/admin_manage_comment_view.html", context)
 
 # MARK: Forgot Password View
 

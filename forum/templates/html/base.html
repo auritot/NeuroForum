@@ -17,41 +17,43 @@
      <link href="{% static 'css/styles.css' %}" rel="stylesheet">
 
      <style>
-        .alert-animated {
-            animation-duration: 0.5s;
-            animation-fill-mode: both;
-        }
+          .alert-animated {
+               animation-duration: 0.5s;
+               animation-fill-mode: both;
+          }
 
-        .fade-in {
-            animation-name: fadeIn;
-        }
+          .fade-in {
+               animation-name: fadeIn;
+          }
 
-        .fade-out {
-            animation-name: fadeOut;
-        }
+          .fade-out {
+               animation-name: fadeOut;
+          }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+          @keyframes fadeIn {
+               from {
+                    opacity: 0;
+                    transform: translateY(-20px);
+               }
 
-        @keyframes fadeOut {
-            from {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            to {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-        }
-    </style>
+               to {
+                    opacity: 1;
+                    transform: translateY(0);
+               }
+          }
+
+          @keyframes fadeOut {
+               from {
+                    opacity: 1;
+                    transform: translateY(0);
+               }
+
+               to {
+                    opacity: 0;
+                    transform: translateY(-20px);
+               }
+          }
+     </style>
 
      {% block extra_css %}{% endblock %}
      {% block extra_js %}{% endblock %}
@@ -68,11 +70,22 @@
 
                <div class="collapse navbar-collapse" id="navbarContent">
                     <!-- #MARK: Left links -->
-                    <!-- <ul class="navbar-nav me-auto">
+                    <ul class="navbar-nav me-auto">
+                         {% if user_info.Role == "admin" %}
                          <li class="nav-item">
-                              <a class="nav-link" href="about.html">About</a>
+                              <a href="{% url 'admin_manage_post_view' %}" class="nav-link">Manage Posts</a>
                          </li>
-                    </ul> -->
+                         <li class="nav-item">
+                              <a href="{% url 'admin_manage_comment_view' %}" class="nav-link">Manage Comments</a>
+                         </li>
+                         <li class="nav-item">
+                              <a href="{% url 'manage_wordfilter' %}" class="nav-link">Manage Filters</a>
+                         </li>
+                         <li class="nav-item">
+                              <a href="{% url 'admin_portal' %}" class="nav-link">Manage Users</a>
+                         </li>
+                         {% endif %}
+                    </ul>
 
                     <!-- #MARK: Right links -->
                     <ul class="navbar-nav ms-auto align-items-center">
@@ -80,14 +93,6 @@
                          <li class="nav-item me-3">
                               <a href={% url 'create_post_view' %} class="btn btn-primary">Create Post</a>
                          </li>
-                         {% if user_info.Role == "admin" %}
-                         <li class="nav-item me-3">
-                            <a href="{% url 'manage_wordfilter' %}" class="btn btn-danger">Manage Filters</a>
-                         </li>
-                         <li class="nav-item me-3">
-                              <a href="{% url 'admin_portal' %}" class="btn btn-warning">Manage Users</a>
-                         </li>
-                         {% endif %}
                          <li class="nav-item me-3">
                               <button id="chat-btn" class="chat-btn btn border-0 bg-transparent p-0">
                                    <img src="{% static 'icons/chat.png' %}" alt="Chat" />
@@ -112,7 +117,8 @@
      <div class="container mt-4">
           {% if messages %}
           {% for message in messages %}
-          <div class="alert alert-{{ message.tags }} alert-dismissible fade show alert-animated fade-in" role="alert" id="flash-message-{{ forloop.counter }}">
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show alert-animated fade-in" role="alert"
+               id="flash-message-{{ forloop.counter }}">
                {{ message }}
                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
@@ -143,27 +149,26 @@
                <div id="chat-sidebar" class="chat-sidebar p-3">
                     <h6 class="mb-2">Start New Chat</h6>
                     <form method="get" action="{% url 'start_chat' %}">
-                         <input id="sidebarUsernameIframe" type="text" name="username" placeholder="Enter username" required class="form-control mb-2">
+                         <input id="sidebarUsernameIframe" type="text" name="username" placeholder="Enter username"
+                              required class="form-control mb-2">
                          <button id="sidebarFindBtnIframe" type="submit" class="btn btn-find w-100">Find!</button>
                     </form>
                     <h6 class="mt-3">Existing Chats</h6>
                     <hr class="my-2" />
                     <ul class="list-unstyled" id="chat-partner-list">
                          {% for partner in chat_partners %}
-                              <li>
-                                   <a href="#"
-                                        class="chat-thread-link"
-                                        data-user="{{ partner|lower }}">
-                                        {{ partner|title }}
-                                   </a>
+                         <li>
+                              <a href="#" class="chat-thread-link" data-user="{{ partner|lower }}">
+                                   {{ partner|title }}
+                              </a>
 
-                                   <!-- <button class="btn btn-sm btn-link text-danger delete-chat"
+                              <!-- <button class="btn btn-sm btn-link text-danger delete-chat"
                                              data-user="{{ partner|lower }}" title="Delete chat">
                                         &times;
                                    </button> -->
-                              </li>
+                         </li>
                          {% empty %}
-                              <li class="text-white-50">No chats yet</li>
+                         <li class="text-white-50">No chats yet</li>
                          {% endfor %}
                     </ul>
 
@@ -171,12 +176,12 @@
                <iframe id="chat-frame" class="chat-frame loading"></iframe>
           </div>
      </div>
-<script src="{% static 'js/chat_init.js' %}"></script>
-<script src="{% static 'js/ContentFiltering.js' %}"></script>
-<script src="{% static 'js/alerts.js' %}"></script>
+     <script src="{% static 'js/chat_init.js' %}"></script>
+     <script src="{% static 'js/ContentFiltering.js' %}"></script>
+     <script src="{% static 'js/alerts.js' %}"></script>
 
-    {% block scripts %}{% endblock %}
-    <div id="chat-overlay"></div>
+     {% block scripts %}{% endblock %}
+     <div id="chat-overlay"></div>
 </body>
 
 </html>

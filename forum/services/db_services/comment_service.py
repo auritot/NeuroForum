@@ -89,17 +89,22 @@ def get_comment_by_id(comment_id):
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
-# MARK: Get Total Comment Count by UserID
-def get_total_comment_count_by_user_id(userID):
+# MARK: Get Total Comment Count
+def get_total_comment_count(userID=None):
     try:
+        base_query = """ SELECT COUNT(*) FROM forum_comment """
+        where_clauses = []
+        params = []
+        
+        if userID:
+            where_clauses.append("UserID_id = %s")
+            params.append(userID)
+
+        if where_clauses:
+            base_query += " WHERE " + " AND ".join(where_clauses)
+
         with connection.cursor() as cursor:
-            cursor.execute(
-                """ 
-                SELECT COUNT(*) FROM forum_comment
-                WHERE UserID_id = %s;
-                """, 
-                [userID]
-            )
+            cursor.execute(base_query, params)
 
             result = cursor.fetchone()
             total_comment_count = result[0] if result else 0

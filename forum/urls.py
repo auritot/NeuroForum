@@ -64,5 +64,6 @@ urlpatterns = [
          views.change_user_role, name="change_user_role"),
     path("admin_portal/delete/<int:user_id>/",
          views.delete_user, name="delete_user"),
-
+    path("admin_manage_posts/", views.admin_manage_post_view, name="admin_manage_post_view"),
+    path("admin_manage_comments/", views.admin_manage_comment_view, name="admin_manage_comment_view"),
 ]
