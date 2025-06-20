@@ -46,7 +46,7 @@ def process_login(request):
         try:
             send_mail(subject, message, settings.EMAIL_HOST_USER, [email])
         except Exception as e:
-            messages.error(request, f": {e}")
+            messages.error(request, f"Failed to send verification email: {e}")
             return redirect("login_view")
 
         return redirect("email_verification")
