@@ -66,6 +66,6 @@ urlpatterns = [
          views.delete_user, name="delete_user"),
     path("admin_manage_posts/", views.admin_manage_post_view, name="admin_manage_post_view"),
     path("admin_manage_comments/", views.admin_manage_comment_view, name="admin_manage_comment_view"),
+    
     path("search/", post_process.process_search_posts, name="search_posts"),
-
 ]
