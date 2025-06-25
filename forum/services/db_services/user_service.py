@@ -1,6 +1,6 @@
 import logging  # Add this import at the top of the file
 import traceback
-from django.db import connection
+from django.db import connection, transaction
 from django.contrib.auth.hashers import check_password, make_password
 from .. import utilities
 
@@ -37,17 +37,18 @@ logger = logging.getLogger(__name__)
 
 
 def insert_new_user(username, email, password, role, emailVerificationCode):
-    try:
-        hash_password = make_password(password)
+    hash_password = make_password(password)
 
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                INSERT INTO forum_useraccount (Username, Email, Password, Role, EmailVerificationCode)
-                VALUES (%s, %s, %s, %s, %s);
-                """,
-                [username, email, hash_password, role, emailVerificationCode],
-            )
+    try:
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO forum_useraccount (Username, Email, Password, Role, EmailVerificationCode)
+                    VALUES (%s, %s, %s, %s, %s);
+                    """,
+                    [username, email, hash_password, role, emailVerificationCode],
+                )
 
         return utilities.response("SUCCESS", "User account successfully created")
 
@@ -123,15 +124,15 @@ def get_user_by_id(user_id):
 # MARK: Upate User Profile
 def update_user_profile(user_id, username, email):
     try:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                UPDATE forum_useraccount
-                SET Username = %s, Email = %s
-                WHERE UserID = %s;
-                """,
-                [username, email, user_id],
-            )
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE forum_useraccount SET Username = %s, Email = %s
+                    WHERE UserID = %s;
+                    """,
+                    [username, email, user_id],
+                )
 
         return utilities.response("SUCCESS", "User Profile updated successfully")
     
@@ -140,17 +141,15 @@ def update_user_profile(user_id, username, email):
     
 # MARK: Upate User Password
 def update_user_password(user_id, password):
-    try:
-        hash_password = make_password(password)
+    hash_password = make_password(password)
 
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                UPDATE forum_useraccount
-                SET Password = %s WHERE UserID = %s;
-                """,
-                [hash_password, user_id],
-            )
+    try:
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """ UPDATE forum_useraccount SET Password = %s WHERE UserID = %s; """,
+                    [hash_password, user_id],
+                )
 
         return utilities.response("SUCCESS", "User Profile updated successfully")
     

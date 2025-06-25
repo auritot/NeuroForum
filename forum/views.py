@@ -11,7 +11,7 @@ from django.urls import reverse  # Added for reversing URLs
 from urllib.parse import urlencode  # Added for encoding query parameters
 from django.views.decorators.http import require_POST
 from .services import session_service, utilities
-from .services.db_services import user_service, post_service, comment_service, ContentFiltering_service
+from .services.db_services import user_service, post_service, comment_service, ContentFiltering_service, log_service
 from django.contrib.messages import get_messages
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -48,7 +48,6 @@ def validate_filter_content(content):
 
 
 # MARK: Index View
-
 def index(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -405,6 +404,36 @@ def admin_manage_comment_view(request, context={}):
     context.update(pagination_data)
 
     return render(request, "html/admin_manage_comment_view.html", context)
+
+# MARK: Admin View log
+def admin_logs_view(request, context={}):
+    session_response = session_service.check_session(request)
+    if session_response["status"] == "SUCCESS":
+        context["user_info"] = session_response["data"]
+    else:
+        messages.error(request, "Session Expired! Please login.")
+        return redirect("login_view")
+    
+    if context["user_info"]["Role"] != "admin":
+        messages.error(request, "Invalid Access!")
+        return redirect("login_view")
+
+    per_page = 25
+    current_page = int(request.GET.get("page", 1))
+
+    log_count_response = log_service.get_total_log_count()
+    if log_count_response["status"] == "SUCCESS":
+        total_log_count: int = log_count_response["data"]["total_log_count"]
+
+    pagination_data = utilities.get_pagination_data(current_page, per_page, total_log_count)
+
+    logs_response = log_service.get_logs_for_page(pagination_data["start_index"], per_page)
+    if logs_response["status"] == "SUCCESS":
+        context["logs"] = logs_response["data"]["logs"]
+
+    context.update(pagination_data)
+
+    return render(request, "html/admin_logs_view.html", context)
 
 # MARK: Forgot Password View
 

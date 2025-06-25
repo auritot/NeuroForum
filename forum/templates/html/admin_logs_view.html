@@ -1,0 +1,37 @@
+{% extends 'html/base.html' %}
+
+{% block content %}
+<main class="container mt-5">
+    <h2 class="mb-4">View all logs</h2>
+    {% if logs %}
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Log Content</th>
+                <th>Timestamp</th>
+                <th>Performed By</th>
+                <th>Username</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.LogID }}</td>
+                <td>{{ log.LogContent }}</td>
+                <td>{{ log.Timestamp }}</td>
+                <td>{{ log.PerformedBy }}</td>
+                <td>{{ log.Username }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="card text-center shadow-sm mb-4 position-relative">
+        <div class="card-body">
+            <p class="mb-0 text-muted">No logs available at the moment!</p>
+        </div>
+    </div>
+    {% endif %}
+</main>
+{% endblock %}
