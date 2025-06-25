@@ -72,3 +72,27 @@ def process_update_post(request, post_id, context={}):
             return redirect('post_view', post_id=post_id)
 
     return redirect('post_view', post_id=post_id)
+
+# MARK: Process Search Query
+def process_search_posts(request, context={}):
+    session_response = session_service.check_session(request)
+
+    if session_response["status"] == "SUCCESS":
+        context["user_info"] = session_response["data"]
+    else:
+        messages.error(request, "Session Expired! Please login.")
+        return redirect("login_view")
+
+    search_query = request.GET.get("q", "")
+    start_index = int(request.GET.get("start", 0))
+    per_page = 10  # or use dynamic pagination
+
+    response = post_service.search_posts_by_keyword(search_query, start_index, per_page)
+
+    if response["status"] == "SUCCESS":
+        context["posts"] = response["data"]["posts"]
+    else:
+        context["posts"] = []
+
+    context["search_query"] = search_query
+    return render(request, "search_results.html", context)

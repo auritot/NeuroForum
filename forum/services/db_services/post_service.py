@@ -156,3 +156,38 @@ def delete_post_by_id(postID):
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
+# MARK: Search Posts by Keyword
+def search_posts_by_keyword(keyword, start_index=0, per_page=10, userID=None):
+    try:
+        search_term = f"%{keyword}%"
+
+        base_query = """
+            SELECT p.*, u.Username, COUNT(c.CommentID) AS CommentCount
+            FROM forum_post p
+            JOIN forum_useraccount u ON p.UserID_id = u.UserID
+            LEFT JOIN forum_comment c ON c.PostID_id = p.PostID
+            WHERE (p.Title LIKE %s OR p.PostContent LIKE %s)
+        """
+        params = [search_term, search_term]
+
+        if userID:
+            base_query += " AND p.UserID_id = %s"
+            params.append(userID)
+
+        base_query += """
+            GROUP BY p.PostID, u.UserID
+            ORDER BY p.Timestamp DESC
+            LIMIT %s, %s;
+        """
+        params.extend([start_index, per_page])
+
+        with connection.cursor() as cursor:
+            cursor.execute(base_query, params)
+            results = cursor.fetchall()
+            posts = [dict(zip(post_username_comment_count_col, row)) for row in results]
+            post_data = {"posts": posts}
+
+        return utilities.response("SUCCESS", "Search results retrieved", post_data)
+
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")

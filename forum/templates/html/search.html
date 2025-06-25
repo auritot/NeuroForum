@@ -1,0 +1,184 @@
+{% extends 'html/base.html' %}
+{% load static %}
+
+{% block title %}NeuroForum{% endblock %}
+
+{% load static %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
+
+{% block content %}
+<main>
+  <div class="container my-5">
+    <div class="row">
+      <!-- #MARK: Left Section -->
+      <div class="col-md-9">
+        <!-- #MARK: Search bar -->
+        <form class="mb-3" method="get" action="{% url 'search_posts' %}">
+        <div class="input-group">
+            <input
+            type="text"
+            class="form-control"
+            name="q"
+            value="{{ search_query|default:'' }}"
+            placeholder="Search posts..."
+            />
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+        </form>
+
+        <!-- #MARK: Filter bar -->
+        <form class="mb-4">
+          <div class="row g-2 align-items-center">
+            <div class="col-sm-4">
+              <select class="form-select">
+                <option selected disabled>Category</option>
+                <option>Technology</option>
+                <option>News</option>
+                <option>Entertainment</option>
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <select class="form-select">
+                <option selected disabled>Date</option>
+                <option>Newest First</option>
+                <option>Oldest First</option>
+              </select>
+            </div>
+            <div class="col-sm-4 d-grid">
+              <button class="btn btn-outline-secondary" type="submit">Apply Filters</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- #MARK: Posts -->
+        <div class="mb-4" id="postList">
+          {% for post in posts %}
+          <div class="card mb-4 position-relative">
+            <a class="text-decoration-none text-dark" href="{% url 'post_view' post_id=post.PostID %}">
+              <div class="card-body">
+                <h5 class="card-title mb-0"><b>{{ post.Title }}</b></h5>
+                <small class="text-muted mt-0">@{{ post.Username }}</small>
+                <p class="card-text my-2">{{ post.PostContent|truncatewords:20 }}</p>
+                <small class="text-muted">
+                  Posted on {{ post.Timestamp|date:"M d, Y H:i" }} • {{ post.CommentCount }} comments
+                </small>
+              </div>
+            </a>
+            <!-- #MARK: Post Dropdown Menu -->
+            {% if post.UserID_id == user_info.UserID %}
+            <div class="dropdown position-absolute top-0 end-0 m-2">
+              <button class="border-0 bg-transparent p-0 me-2" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <i class="bi bi-three-dots fs-5 text-secondary"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href={% url 'edit_post_view' post_id=post.PostID %}>Edit</a></li>
+                <li><a class="dropdown-item text-danger" href={% url 'process_delete_post' post_id=post.PostID %}>Delete
+                  </a>
+                </li>
+              </ul>
+            </div>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p>No posts found.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- #MARK: Right Sidebar -->
+      <div class="col-md-3">
+        <div class="card mb-4">
+          <div class="card-header">NeuroForum!</div>
+          <div class="card-body">
+            <p class="card-text">
+              An open space for ideas, questions, and conversations—on any topic, from anyone. Jump in, share your
+              thoughts, and connect with a curious community.
+            </p>
+          </div>
+        </div>
+
+        <!-- <div class="card">
+          <div class="card-header">Another Widget</div>
+          <div class="card-body">
+            <ul class="list-unstyled">
+              <li><a href="#">Link One</a></li>
+              <li><a href="#">Link Two</a></li>
+              <li><a href="#">Link Three</a></li>
+            </ul>
+          </div>
+        </div> -->
+      </div>
+    </div>
+
+    <!-- #MARK: Post Pagination -->
+    <div class="mt-3">
+      <nav aria-label="Post pagination">
+        <ul class="pagination justify-content-center">
+          <!-- #MARK: Previous Page Link -->
+          {% if previous_page %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1&search={{ search_query }}" aria-label="First">
+              <span aria-hidden="true">&#60;&#60;</span>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ previous_page }}&search={{ search_query }}" aria-label="Previous">
+              <span aria-hidden="true">&#60;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="First">
+              <span aria-hidden="true">&#60;&#60;</span>
+            </a>
+          </li>
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Previous">
+              <span aria-hidden="true">&#60;</span>
+            </a>
+          </li>
+          {% endif %}
+
+          <!-- #MARK: Page Number Links -->
+          {% for page_num in page_range %}
+          <li class="page-item {% if page_num == current_page %}active{% endif %}">
+            <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+          </li>
+          {% endfor %}
+
+          <!-- #MARK: Next Page Link -->
+          {% if next_page %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ next_page }}&search={{ search_query }}" aria-label="Next">
+              <span aria-hidden="true">&#62;</span>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ total_pages }}&search={{ search_query }}" aria-label="Last">
+              <span aria-hidden="true">&#62;&#62;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Next">
+              <span aria-hidden="true">&#62;</span>
+            </a>
+          </li>
+          <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="Last">
+              <span aria-hidden="true">&#62;&#62;</span>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </div>
+</main>
+{% endblock %}
