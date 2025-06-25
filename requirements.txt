@@ -1,4 +1,4 @@
-Django==5.2.1
+Django>=5.2.3
 python-dotenv>=1.0.0
 mysqlclient>=1.4.3
 channels==4.2.2
