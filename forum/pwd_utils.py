@@ -20,6 +20,9 @@ def is_password_compromised(password):
 def validate_password_nist(password):
     if len(password) < 8:
         return False, "Password must be at least 8 characters long."
+    
+    if len(password) > 64:
+        return False, "Password must not exceed 64 characters."
 
     compromise_count = is_password_compromised(password)
     if compromise_count > 0:

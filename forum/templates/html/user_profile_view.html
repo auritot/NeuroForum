@@ -65,15 +65,15 @@
               {% csrf_token %}
               <div class="mb-3">
                 <label for="password" class="form-label">Old Password</label>
-                <input type="password" class="form-control" id="oldPassword" name="oldPassword">
+                <input type="password" class="form-control" id="oldPassword" name="oldPassword" maxlength="64">
               </div>
               <div class="mb-3">
                 <label for="password" class="form-label">New Password</label>
-                <input type="password" class="form-control" id="newPassword" name="newPassword">
+                <input type="password" class="form-control" id="newPassword" name="newPassword" maxlength="64">
               </div>
               <div class="mb-3">
                 <label for="password" class="form-label">Confirm New Password</label>
-                <input type="password" class="form-control" id="newConfirmPassword" name="newConfirmPassword">
+                <input type="password" class="form-control" id="newConfirmPassword" name="newConfirmPassword" maxlength="64">
               </div>
               <div class="d-grid">
                 <button type="submit" class="btn btn-primary">Change Password</button>
