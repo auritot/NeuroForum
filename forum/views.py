@@ -982,3 +982,23 @@ def delete_user(request, user_id):
     user.delete()
     messages.success(request, f"Deleted user {user.Username}.")
     return redirect("admin_portal")
+
+# MARK: Search Posts View
+def search_posts_view(request):
+    context = {}
+    session_response = session_service.check_session(request)
+
+    if session_response["status"] == "SUCCESS":
+        context["user_info"] = session_response["data"]
+    else:
+        context["user_info"] = None  # Explicitly handle anonymous users
+
+    search_query = request.GET.get("q", "")
+    start_index = int(request.GET.get("start", 0))
+    per_page = 10
+
+    response = post_service.search_posts_by_keyword(search_query, start_index, per_page)
+    context["posts"] = response["data"]["posts"] if response["status"] == "SUCCESS" else []
+    context["search_query"] = search_query
+
+    return render(request, "html/search.html", context)
