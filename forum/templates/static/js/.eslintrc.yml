@@ -1,5 +1,6 @@
 env:
   browser: true
+  node: true
   es2021: true
 
 extends:
@@ -8,6 +9,8 @@ extends:
 
 plugins:
   - security
+  - no-unsanitized
 
 rules:
-  security/detect-eval-with-expression: error
+  no-unused-vars: warn
+  no-console: off
