@@ -1,8 +1,8 @@
 import requests
 
 def is_password_compromised(password):
-    import hashlib
-    sha1 = hashlib.sha1(password.encode('utf-8')).hexdigest().upper()
+    import hashlib # nosec B324
+    sha1 = hashlib.sha1(password.encode('utf-8')).hexdigest().upper() # nosec B324
     prefix = sha1[:5]
     suffix = sha1[5:]
     
