@@ -5,6 +5,11 @@ on: [push, pull_request]
 jobs:
   eslint:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: forum/templates/static/js
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -12,12 +17,12 @@ jobs:
       - name: Cache Node.js modules
         uses: actions/cache@v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+          path: forum/templates/static/js/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('forum/templates/static/js/package-lock.json') }}
           restore-keys: ${{ runner.os }}-node-modules
 
       - name: Install Node.js dependencies
-        run: npm install
+        run: npm ci
 
       - name: Create reports directory
         run: mkdir -p reports
@@ -34,4 +39,4 @@ jobs:
       - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: reports/eslint-results.sarif
+          sarif_file: forum/templates/static/js/reports/eslint-results.sarif
