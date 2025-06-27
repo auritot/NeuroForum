@@ -14,29 +14,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Cache Node.js modules
-        uses: actions/cache@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
-          path: forum/templates/static/js/node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('forum/templates/static/js/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-node-modules
+          node-version: '20'
 
-      - name: Install Node.js dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Create reports directory
-        run: mkdir -p reports
-
-      - name: Install ESLint SARIF Formatter
-        run: npm install @microsoft/eslint-formatter-sarif --save-dev
-
-      - name: Run ESLint with SARIF output
-        run: npx eslint . --format @microsoft/eslint-formatter-sarif --output-file reports/eslint-results.sarif || true
-
-      - name: Debug ESLint Output
-        run: cat reports/eslint-results.sarif || echo "No SARIF report generated"
-
-      - name: Upload SARIF report
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: forum/templates/static/js/reports/eslint-results.sarif
+      - name: Run ESLint and show results in GitHub Actions log
+        run: npx eslint . || true
