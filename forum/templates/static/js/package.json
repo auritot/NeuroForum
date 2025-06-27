@@ -1,9 +1,10 @@
 {
   "name": "js",
   "version": "1.0.0",
+  "type": "module",
   "main": "alerts.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint . --format @microsoft/eslint-formatter-sarif --output-file reports/eslint-results.sarif"
   },
   "keywords": [],
   "author": "",
@@ -11,9 +12,8 @@
   "description": "",
   "devDependencies": {
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
-    "eslint": "^8.56.0",
-    "eslint-plugin-no-unsanitized": "^4.1.2",
-    "eslint-plugin-security": "^3.0.1",
-    "eslint-plugin-security-node": "^1.1.4"
+    "eslint": "^8.57.0",
+    "eslint-plugin-security": "^1.7.1",
+    "eslint-plugin-no-unsanitized": "^4.1.2"
   }
 }
