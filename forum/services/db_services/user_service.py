@@ -157,20 +157,32 @@ def update_user_password(user_id, password):
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
-# MARK: Upate User Role
+# MARK: Update User Role
 def update_user_role(user_id, role, performed_by):
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
+                # Fetch username first
                 cursor.execute(
-                    """ UPDATE forum_useraccount SET Role = %s WHERE UserID = %s; """,
-                    [role, user_id],
+                    "SELECT Username FROM forum_useraccount WHERE UserID = %s;",
+                    [user_id]
+                )
+                result = cursor.fetchone()
+                if not result:
+                    return utilities.response("ERROR", "User not found")
+
+                username = result[0]
+
+                # Perform role update
+                cursor.execute(
+                    "UPDATE forum_useraccount SET Role = %s WHERE UserID = %s;",
+                    [role, user_id]
                 )
 
-                log_service.log_action(f"Updated user role to {role} for: {user_id}", performed_by)
+                log_service.log_action(f"Updated user role to {role} for: {username}", performed_by)
 
-        return utilities.response("SUCCESS", "User Role updated successfully")
-    
+        return utilities.response("SUCCESS", f"{username}'s role successfully updated to {role}")
+
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
@@ -179,14 +191,26 @@ def delete_user_by_id(user_id, performed_by):
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
+                # First, get the username before deletion
+                cursor.execute(
+                    """ SELECT Username FROM forum_useraccount WHERE UserID = %s; """,
+                    [user_id],
+                )
+                result = cursor.fetchone()
+                if not result:
+                    return utilities.response("ERROR", "User not found")
+
+                username = result[0]
+
+                # Then, delete the user
                 cursor.execute(
                     """ DELETE FROM forum_useraccount WHERE UserID = %s; """,
                     [user_id],
                 )
 
-                log_service.log_action(f"Deleted user account: {user_id}", performed_by)
+                log_service.log_action(f"Deleted user account: {username} (ID: {user_id})", performed_by)
 
-        return utilities.response("SUCCESS", "User deleted successfully")
-    
+        return utilities.response("SUCCESS", f"User '{username}' deleted successfully")
+
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
