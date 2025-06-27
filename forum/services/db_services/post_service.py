@@ -114,7 +114,10 @@ def insert_new_post(postTitle, postDescription, allowComments, userID):
                     [postTitle, postDescription, timestamp, commentStatus, userID],
                 )
 
-        return utilities.response("SUCCESS", "Post created successfully")
+                cursor.execute("SELECT LAST_INSERT_ID();")
+                post_id = cursor.fetchone()[0]
+
+        return utilities.response("SUCCESS", "Post created successfully", {"post_id": post_id})
 
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")

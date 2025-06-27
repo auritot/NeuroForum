@@ -22,7 +22,7 @@ def process_create_post(request, context={}):
     )
 
     if response["status"] == "SUCCESS":
-        return redirect("index")
+        return redirect('post_view', post_id=response["data"]["post_id"])
 
     return redirect("index")
 

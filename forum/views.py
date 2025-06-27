@@ -932,7 +932,7 @@ def manage_filtered_words_view(request):
 
     return render(request, "html/filtered_words_manage.html", context)
 
-
+# Admin User Portal
 def admin_portal(request):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":

@@ -3,6 +3,7 @@ import traceback
 from django.db import connection, transaction
 from django.contrib.auth.hashers import check_password, make_password
 from .. import utilities
+from . import log_service
 
 user_col = ["UserID", "Username", "Email",
             "Password", "Role", "EmailVerificationCode"]
@@ -151,7 +152,41 @@ def update_user_password(user_id, password):
                     [hash_password, user_id],
                 )
 
-        return utilities.response("SUCCESS", "User Profile updated successfully")
+        return utilities.response("SUCCESS", "User Password updated successfully")
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    
+# MARK: Upate User Role
+def update_user_role(user_id, role, performed_by):
+    try:
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """ UPDATE forum_useraccount SET Role = %s WHERE UserID = %s; """,
+                    [role, user_id],
+                )
+
+                log_service.log_action(f"Updated user role to {role} for: {user_id}", performed_by)
+
+        return utilities.response("SUCCESS", "User Role updated successfully")
+    
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    
+# MARK: Delete User by ID
+def delete_user_by_id(user_id, performed_by):
+    try:
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """ DELETE FROM forum_useraccount WHERE UserID = %s; """,
+                    [user_id],
+                )
+
+                log_service.log_action(f"Deleted user account: {user_id}", performed_by)
+
+        return utilities.response("SUCCESS", "User deleted successfully")
     
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
