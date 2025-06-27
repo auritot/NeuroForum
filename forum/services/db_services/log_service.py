@@ -5,14 +5,14 @@ from datetime import datetime
 log_username_col = ["LogID", "Timestamp", "LogContent", "Category", "UserID_id"]
 
 # MARK: Log Action
-def log_action(logContent, performedBy):
+def log_action(logContent, user_id):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
 
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                """ INSERT INTO forum_logs (Timestamp, LogContent, PerformedBy) VALUES (%s, %s, %s); """,
-                [timestamp, logContent, performedBy],
+                """ INSERT INTO forum_logs (Timestamp, LogContent, Category, UserID_id) VALUES (%s, %s, %s, %s); """,
+                [timestamp, logContent, "User Action", user_id],
             )
 
         return utilities.response("SUCCESS", "Log successfullly recorded")
