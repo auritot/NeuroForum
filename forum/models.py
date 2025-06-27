@@ -53,7 +53,8 @@ class Logs(models.Model):
     LogID = models.AutoField(primary_key=True)
     Timestamp = models.DateTimeField(auto_now_add=True)
     LogContent = models.CharField(max_length=255)
-    PerformedBy = models.CharField(max_length=255, null=True)
+    Category = models.CharField(max_length=50, default='uncategorized')
+    UserID = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.Timestamp}: {self.LogContent}"
