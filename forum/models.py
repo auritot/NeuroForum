@@ -53,7 +53,7 @@ class Logs(models.Model):
     LogID = models.AutoField(primary_key=True)
     Timestamp = models.DateTimeField(auto_now_add=True)
     LogContent = models.CharField(max_length=255)
-    Category = models.CharField(max_length=50, default='uncategorized')
+    Category = models.CharField(max_length=50)
     UserID = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
 
     def __str__(self):
