@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', (event) => {
+document.addEventListener('DOMContentLoaded', () => {
   const alerts = document.querySelectorAll('.alert-animated.fade-in');
   alerts.forEach((alert) => {
     setTimeout(() => {

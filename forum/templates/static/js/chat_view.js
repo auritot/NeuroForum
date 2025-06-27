@@ -1,18 +1,18 @@
 // static/js/chat_view.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  const chatForm  = document.querySelector("#chat-form");
+  const chatForm = document.querySelector("#chat-form");
   const chatInput = document.querySelector("#chat-input");
-  const chatBox   = document.querySelector("#chat-box");
+  const chatBox = document.querySelector("#chat-box");
 
   // Pull <main data-...> attributes
-  const mainEl     = document.querySelector("main");
+  const mainEl = document.querySelector("main");
   const currentUser = (mainEl.dataset.currentUser || "").trim().toLowerCase();
-  const otherUser   = (mainEl.dataset.otherUser   || "").trim().toLowerCase();
+  const otherUser = (mainEl.dataset.otherUser || "").trim().toLowerCase();
 
   // Build the proper WSS/WS URL.  If the page is HTTPS, use wss://, otherwise ws://
   const wsProtocol = (window.location.protocol === "https:") ? "wss://" : "ws://";
-  const wsUrl      = wsProtocol + window.location.host + "/ws/chat/" + otherUser + "/";
+  const wsUrl = wsProtocol + window.location.host + "/ws/chat/" + otherUser + "/";
 
   const chatSocket = new WebSocket(wsUrl);
 
@@ -24,23 +24,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const alignClass = isSelf ? "justify-content-end" : "justify-content-start";
     const bubbleType = isSelf ? "self" : "other";
 
-    // We expect data.timestamp == "HH:MM dd/mm/YYYY"
-    const timeHtml = data.timestamp
-      ? `<br><small class="timestamp">${data.timestamp}</small>`
-      : "";
+    // Create wrapper div
+    const wrapperDiv = document.createElement("div");
+    wrapperDiv.classList.add("d-flex", alignClass, "mb-2");
 
-    const msgHtml = `
-      <div class="d-flex ${alignClass} mb-2">
-        <div class="chat-bubble ${bubbleType}">
-          <small><strong>${data.sender}</strong></small><br>
-          ${data.message}
-          ${timeHtml}
-        </div>
-      </div>`;
+    // Create chat bubble div
+    const bubbleDiv = document.createElement("div");
+    bubbleDiv.classList.add("chat-bubble", bubbleType);
 
-    parentEl.insertAdjacentHTML("beforeend", msgHtml);
+    // Sender
+    const senderEl = document.createElement("small");
+    const senderStrong = document.createElement("strong");
+    senderStrong.textContent = data.sender;
+    senderEl.appendChild(senderStrong);
+    bubbleDiv.appendChild(senderEl);
+    bubbleDiv.appendChild(document.createElement("br"));
+
+    // Message
+    const messageText = document.createTextNode(data.message);
+    bubbleDiv.appendChild(messageText);
+
+    // Timestamp (optional)
+    if (data.timestamp) {
+      bubbleDiv.appendChild(document.createElement("br"));
+      const timeSmall = document.createElement("small");
+      timeSmall.classList.add("timestamp");
+      timeSmall.textContent = data.timestamp;
+      bubbleDiv.appendChild(timeSmall);
+    }
+
+    // Combine and insert
+    wrapperDiv.appendChild(bubbleDiv);
+    parentEl.appendChild(wrapperDiv);
     parentEl.scrollTop = parentEl.scrollHeight;
   }
+
 
   chatSocket.addEventListener("message", (event) => {
     let data;
