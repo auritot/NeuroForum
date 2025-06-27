@@ -6,6 +6,10 @@ jobs:
   eslint:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: forum/templates/static/js
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -13,13 +17,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'  # or whatever version you're using
+          node-version: '20'
 
-      - name: Install Dependencies
+      - name: Install Node Modules
         run: npm install
 
       - name: Ensure ESLint is Executable
         run: chmod +x ./node_modules/.bin/eslint
 
-      - name: Run ESLint via npx
+      - name: Run ESLint
         run: npx eslint . || true
