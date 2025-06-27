@@ -1,25 +1,25 @@
-name: ESLint Scan
+name: ESLint Code Analysis
 
 on: [push, pull_request]
 
 jobs:
   eslint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: forum/templates/static/js
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'  # or whatever version you're using
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install
+
+      - name: Ensure ESLint is Executable
+        run: chmod +x ./node_modules/.bin/eslint
 
       - name: Run ESLint via npx
         run: npx eslint . || true
