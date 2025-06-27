@@ -1,9 +1,9 @@
-name: ESLint Code Analysis
+name: ESLint Code Scan
 
 on: [push, pull_request]
 
 jobs:
-  eslint:
+  eslint-scan:
     runs-on: ubuntu-latest
 
     defaults:
@@ -11,10 +11,10 @@ jobs:
         working-directory: forum/templates/static/js
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -22,5 +22,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint and show results in GitHub Actions log
-        run: npx eslint . || true
+      - name: Run ESLint and generate SARIF (non-blocking)
+        run: |
+          mkdir -p reports
+          npx eslint . --format=@microsoft/eslint-formatter-sarif --output-file=reports/eslint-results.sarif || true
+
+      - name: Upload SARIF to GitHub Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: forum/templates/static/js/reports/eslint-results.sarif
