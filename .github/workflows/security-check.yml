@@ -25,7 +25,7 @@ jobs:
           pip install safety bandit
 
       - name: Run Safety (Vulnerability DB Check)
-        run: safety check --full-report -r requirements.txt
+        run: safety scan -r requirements.txt
 
       - name: Run Bandit (Static Code Analysis)
         run: bandit -r . -ll
