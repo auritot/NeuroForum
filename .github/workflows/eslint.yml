@@ -1,36 +1,25 @@
-name: ESLint Security Check
+name: ESLint Scan
 
 on: [push, pull_request]
 
 jobs:
-  eslint-security:
+  eslint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: forum/templates/static/js
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Cache Node Modules
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
+      - name: Install dependencies
+        run: npm install
 
-    - name: Install Dependencies
-      run: npm install
-
-    - name: Create Report Folder
-      run: mkdir -p reports
-
-    - name: Run ESLint with SARIF Output
-      run: npm run lint || true
-
-    - name: Show Report (for debug)
-      run: cat reports/eslint-results.sarif || echo "No SARIF output generated"
+      - name: Run ESLint
+        run: npx eslint . || true
