@@ -2,7 +2,7 @@ from django.db import connection
 from .. import utilities
 from datetime import datetime
 
-log_username_col = ["LogID", "Timestamp", "LogContent", "PerformedBy", "Username"]
+log_username_col = ["LogID", "Timestamp", "LogContent", "Category", "UserID_id"]
 
 # MARK: Log Action
 def log_action(logContent, performedBy):
