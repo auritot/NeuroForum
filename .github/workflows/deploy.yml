@@ -45,11 +45,14 @@ jobs:
           echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}" >> .env
           echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}" >> .env
 
-          docker system prune -af
-          docker volume prune -f
-          docker builder prune -af
+          # docker system prune -af
+          # docker volume prune -f
+          # docker builder prune -af
 
+          echo "🧹 Cleaning up NeuroForum-related containers and images only..."
           docker-compose down --remove-orphans
+          docker image prune -af --filter "until=24h" || true
+
           docker-compose pull
           docker-compose build --no-cache
           docker-compose up -d
