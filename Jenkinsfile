@@ -1,20 +1,23 @@
 pipeline {
     agent any
+
     environment {
-        // Use Jenkins secrets or environment injection here
-        MYSQL_DATABASE = credentials('mysql-db')
-        MYSQL_USER = credentials('mysql-user')
-        MYSQL_PASSWORD = credentials('mysql-pass')
-        MYSQL_ROOT_PASSWORD = credentials('mysql-root-pass')
         DB_PORT = '3306'
-        DJANGO_SECRET_KEY = credentials('django-secret')
-        SSH_PRIVATE_KEY = credentials('ssh-private-key')
+        DEBUG = 'False'
     }
 
     stages {
         stage('Prepare .env') {
             steps {
-                writeFile file: '.env', text: """
+                withCredentials([
+                    string(credentialsId: 'mysql-db', variable: 'MYSQL_DATABASE'),
+                    string(credentialsId: 'mysql-user', variable: 'MYSQL_USER'),
+                    string(credentialsId: 'mysql-pass', variable: 'MYSQL_PASSWORD'),
+                    string(credentialsId: 'mysql-root-pass', variable: 'MYSQL_ROOT_PASSWORD'),
+                    string(credentialsId: 'django-secret', variable: 'DJANGO_SECRET_KEY'),
+                    string(credentialsId: 'ssh-private-key', variable: 'SSH_PRIVATE_KEY')
+                ]) {
+                    writeFile file: '.env', text: """
 MYSQL_DATABASE=${MYSQL_DATABASE}
 MYSQL_USER=${MYSQL_USER}
 MYSQL_PASSWORD=${MYSQL_PASSWORD}
@@ -23,8 +26,9 @@ DB_HOST=db
 DB_PORT=${DB_PORT}
 DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
 SSH_PRIVATE_KEY="${SSH_PRIVATE_KEY}"
-DEBUG=False
+DEBUG=${DEBUG}
 """
+                }
             }
         }
 
