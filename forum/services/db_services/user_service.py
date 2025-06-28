@@ -6,9 +6,11 @@ from .. import utilities
 from . import log_service
 
 user_col = ["UserID", "Username", "Email",
-            "Password", "Role", "EmailVerificationCode"]
+            "Password", "Role"]
 
 # MARK: Login Authentication
+
+
 def authenticate_user(email, password):
     try:
         with connection.cursor() as cursor:
@@ -37,7 +39,7 @@ logger = logging.getLogger(__name__)
 # MARK: User Registration
 
 
-def insert_new_user(username, email, password, role, emailVerificationCode):
+def insert_new_user(username, email, password, role):
     hash_password = make_password(password)
 
     try:
@@ -45,10 +47,10 @@ def insert_new_user(username, email, password, role, emailVerificationCode):
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO forum_useraccount (Username, Email, Password, Role, EmailVerificationCode)
-                    VALUES (%s, %s, %s, %s, %s);
+                    INSERT INTO forum_useraccount (Username, Email, Password, Role)
+                    VALUES (%s, %s, %s, %s);
                     """,
-                    [username, email, hash_password, role, emailVerificationCode],
+                    [username, email, hash_password, role],
                 )
 
         return utilities.response("SUCCESS", "User account successfully created")
@@ -63,6 +65,8 @@ def insert_new_user(username, email, password, role, emailVerificationCode):
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Get User by Email
+
+
 def get_user_by_email(email):
     try:
         with connection.cursor() as cursor:
@@ -83,6 +87,8 @@ def get_user_by_email(email):
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Get User by Username
+
+
 def get_user_by_username(username):
     try:
         with connection.cursor() as cursor:
@@ -101,8 +107,10 @@ def get_user_by_username(username):
 
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
-    
+
 # MARK: Get User by ID
+
+
 def get_user_by_id(user_id):
     try:
         with connection.cursor() as cursor:
@@ -123,6 +131,8 @@ def get_user_by_id(user_id):
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Upate User Profile
+
+
 def update_user_profile(user_id, username, email):
     try:
         with transaction.atomic():
@@ -136,11 +146,13 @@ def update_user_profile(user_id, username, email):
                 )
 
         return utilities.response("SUCCESS", "User Profile updated successfully")
-    
+
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
-    
+
 # MARK: Upate User Password
+
+
 def update_user_password(user_id, password):
     hash_password = make_password(password)
 
@@ -153,11 +165,13 @@ def update_user_password(user_id, password):
                 )
 
         return utilities.response("SUCCESS", "User Password updated successfully")
-    
+
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
-    
+
 # MARK: Update User Role
+
+
 def update_user_role(user_id, role, performed_by):
     try:
         with transaction.atomic():
@@ -179,14 +193,17 @@ def update_user_role(user_id, role, performed_by):
                     [role, user_id]
                 )
 
-                log_service.log_action(f"Updated user role to {role} for: {username}", performed_by)
+                log_service.log_action(
+                    f"Updated user role to {role} for: {username}", performed_by)
 
         return utilities.response("SUCCESS", f"{username}'s role successfully updated to {role}")
 
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
-    
+
 # MARK: Delete User by ID
+
+
 def delete_user_by_id(user_id, performed_by):
     try:
         with transaction.atomic():
@@ -208,7 +225,8 @@ def delete_user_by_id(user_id, performed_by):
                     [user_id],
                 )
 
-                log_service.log_action(f"Deleted user account: {username} (ID: {user_id})", performed_by)
+                log_service.log_action(
+                    f"Deleted user account: {username} (ID: {user_id})", performed_by)
 
         return utilities.response("SUCCESS", f"User '{username}' deleted successfully")
 

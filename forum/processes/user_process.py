@@ -68,7 +68,8 @@ def process_register(request):
     username = utilities.sanitize_input(request.POST.get("username"))
     email = utilities.sanitize_input(request.POST.get("email"))
     password = utilities.sanitize_input(request.POST.get("password"))
-    confirmPassword = utilities.sanitize_input(request.POST.get("confirmPassword"))
+    confirmPassword = utilities.sanitize_input(
+        request.POST.get("confirmPassword"))
 
     # captcha validation
     recaptcha_response = request.POST.get('g-recaptcha-response')
@@ -107,7 +108,7 @@ def process_register(request):
     if confirmPassword != password:
         messages.error(request, "Passwords does not match.")
         return redirect("register_view")
-    
+
     is_valid, error = validate_password_nist(password)
     if not is_valid:
         messages.error(request, error)
@@ -126,9 +127,10 @@ def process_register(request):
     if email_response["status"] == "SUCCESS":
         messages.error(request, "Email has already been used.")
         return redirect("register_view")
-    
+
     otp_code = generate_verification_code()
-    response = user_service.insert_new_user(username, email, password, "member", otp_code)
+    response = user_service.insert_new_user(
+        username, email, password, "member")
 
     # response = user_service.insert_new_user(
     #     username, email, password, "member", "test")
@@ -214,7 +216,7 @@ def process_change_password(request, context={}):
     if newConfirmPassword != newPassword:
         messages.error(request, "Passwords does not match.")
         return redirect("user_profile_view")
-    
+
     is_valid, error = validate_password_nist(newPassword)
     if not is_valid:
         messages.error(request, error)
