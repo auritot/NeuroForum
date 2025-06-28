@@ -40,7 +40,7 @@ DEBUG=${DEBUG}
 
         stage('Run Tests') {
             steps {
-                sh 'docker-compose exec -T web python manage.py test || true'
+                sh 'docker-compose exec -T web python manage.py test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner --output-file=test-results.xml || true'
             }
         }
 
