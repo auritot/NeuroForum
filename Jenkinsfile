@@ -54,8 +54,8 @@ DEBUG=${DEBUG}
     post {
         always {
             script {
-                if (fileExists('test-results.xml')) {
-                    junit 'test-results.xml'
+                if (fileExists('reports/test-results.xml')) {
+                    junit 'reports/test-results.xml'
                 } else {
                     echo 'No test results file found.'
                 }
