@@ -1,0 +1,14 @@
+FROM jenkins/jenkins:lts
+
+USER root
+
+# Install Docker CLI and Compose
+RUN apt-get update && apt-get install -y \
+    docker.io \
+    docker-compose \
+    && apt-get clean
+
+# Add Jenkins user to the Docker group
+RUN usermod -aG docker jenkins
+
+USER jenkins
