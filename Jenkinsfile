@@ -5,6 +5,7 @@ pipeline {
         MYSQL_DATABASE = credentials('mysql-db')
         MYSQL_USER = credentials('mysql-user')
         MYSQL_PASSWORD = credentials('mysql-pass')
+        MYSQL_ROOT_PASSWORD = credentials('mysql-root-pass')
         DB_PORT = '3306'
         DJANGO_SECRET_KEY = credentials('django-secret')
         SSH_PRIVATE_KEY = credentials('ssh-private-key')
