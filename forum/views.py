@@ -417,17 +417,24 @@ def admin_logs_view(request, context={}):
     if context["user_info"]["Role"] != "admin":
         messages.error(request, "Invalid Access!")
         return redirect("login_view")
+    
+    search = request.GET.get("search", "")
+    context["search"] = search
+    category = request.GET.get("category", "")
+    context["category"] = category
+    sort_by = request.GET.get("sort_by", "newest")
+    context["sort_by"] = sort_by
 
     per_page = 25
     current_page = int(request.GET.get("page", 1))
 
-    log_count_response = log_service.get_total_log_count()
+    log_count_response = log_service.get_total_log_count(search, category)
     if log_count_response["status"] == "SUCCESS":
         total_log_count: int = log_count_response["data"]["total_log_count"]
 
     pagination_data = utilities.get_pagination_data(current_page, per_page, total_log_count)
 
-    logs_response = log_service.get_logs_for_page(pagination_data["start_index"], per_page)
+    logs_response = log_service.get_logs_for_page(pagination_data["start_index"], per_page, sort_by, search, category)
     if logs_response["status"] == "SUCCESS":
         context["logs"] = logs_response["data"]["logs"]
 

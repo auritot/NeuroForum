@@ -22,10 +22,25 @@ def log_action(logContent, user_id, isSystem=False, isError=False):
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
 # MARK: Get Total Log Count
-def get_total_log_count():
+def get_total_log_count(search, category):
+    base_query = """ SELECT COUNT(*) FROM forum_logs """
+    where_clauses = []
+    params = []
+
+    if search:
+        where_clauses.append("UserID_id = %s")
+        params.append(search)
+
+    if category:
+        where_clauses.append("Category = %s")
+        params.append(category)
+
+    if where_clauses:
+        base_query += " WHERE " + " AND ".join(where_clauses)
+
     try:
         with connection.cursor() as cursor:
-            cursor.execute(""" SELECT COUNT(*) FROM forum_logs """)
+            cursor.execute(base_query, params)
 
             result = cursor.fetchone()
             total_log_count = result[0] if result else 0
@@ -37,17 +52,34 @@ def get_total_log_count():
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
 # MARK: Get Logs for page
-def get_logs_for_page(start_index, per_page):
+def get_logs_for_page(start_index, per_page, sort_by, search, category):
+    timestamp_order = "DESC" if sort_by == "newest" else "ASC"
+
+    base_query = """ SELECT * FROM forum_logs """
+    where_clauses = []
+    params = []
+
+    if search:
+        where_clauses.append("UserID_id = %s")
+        params.append(search)
+
+    if category:
+        where_clauses.append("Category = %s")
+        params.append(category)
+
+    if where_clauses:
+        base_query += " WHERE " + " AND ".join(where_clauses)
+
+    base_query += f"""
+                ORDER BY Timestamp {timestamp_order}
+                LIMIT %s, %s;
+                """
+
+    params.extend([start_index, per_page])
+
     try:
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT l.*, u.Username FROM forum_logs l
-                JOIN forum_useraccount u ON l.PerformedBy = u.UserID
-                ORDER BY l.Timestamp DESC LIMIT %s, %s;
-                """, 
-                [start_index, per_page]
-            )
+            cursor.execute(base_query, params)
 
             results = cursor.fetchall()
             logs = [dict(zip(log_username_col, row)) for row in results]
