@@ -7,22 +7,16 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/auritot/NeuroForum.git'
-            }
-        }
-
         stage('Start Docker Services') {
             steps {
                 sh 'docker-compose up -d --build'
-                sh 'sleep 10'  // give time for db/redis/migrations
+                sh 'sleep 10'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'docker-compose exec web pytest --junitxml=test-results.xml || true'
+                sh 'docker-compose exec web pytest --ds=neuroforum_django.settings --junitxml=test-results.xml || true'
             }
         }
 
