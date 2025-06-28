@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DB_PORT = '3306'
         DEBUG = 'False'
     }
 
@@ -23,7 +22,6 @@ MYSQL_USER=${MYSQL_USER}
 MYSQL_PASSWORD=${MYSQL_PASSWORD}
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
 DB_HOST=db
-DB_PORT=${DB_PORT}
 DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
 SSH_PRIVATE_KEY="${SSH_PRIVATE_KEY}"
 DEBUG=${DEBUG}
@@ -40,7 +38,7 @@ DEBUG=${DEBUG}
 
         stage('Run Tests') {
             steps {
-                sh 'docker-compose exec -T web python manage.py test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner --output-file=test-results.xml || true'
+                sh 'docker-compose exec -T web python manage.py test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner --output-file=reports/test-results.xml || true'
             }
         }
 
