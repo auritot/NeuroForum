@@ -30,23 +30,20 @@ DEBUG=${DEBUG}
             }
         }
 
-        stage('Start Docker Services') {
-            steps {
-                sh 'docker-compose up -d --build'
-            }
-        }
+        // Removed "Start Docker Services" to avoid conflicting containers
 
         stage('Run Tests') {
             steps {
-                sh 'docker-compose exec -T web python manage.py test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner --output-file=reports/test-results.xml || true'
+                sh 'docker exec neuroforum_django_web_1 python manage.py test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner --output-file=/app/reports/test-results.xml || true'
             }
         }
 
-        stage('Tear Down') {
-            steps {
-                sh 'docker-compose down'
-            }
-        }
+        // Optional: remove if you don’t want to stop running containers
+        // stage('Tear Down') {
+        //     steps {
+        //         sh 'docker-compose down'
+        //     }
+        // }
     }
 
     post {
