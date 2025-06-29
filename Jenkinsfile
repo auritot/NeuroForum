@@ -41,7 +41,7 @@ pipeline {
                 docker exec neuroforum_django_web_1 \
                 python manage.py test \
                 --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
-                > reports/test-results.xml || true
+                > reports/TEST-results.xml || true
                 '''
             }
         }
@@ -51,7 +51,7 @@ pipeline {
         always {
             script {
                 if (fileExists('reports/test-results.xml')) {
-                    junit 'reports/test-results.xml'
+                    junit 'reports/TEST-*.xml'
                     currentBuild.result = 'SUCCESS' // force override
                 } else {
                     echo 'No test results file found.'
