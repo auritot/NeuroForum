@@ -41,19 +41,17 @@ pipeline {
                 docker exec neuroforum_django_web_1 \
                 python manage.py test \
                 --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
-                --output-file=reports/test-results.xml || true
+                > reports/test-results.xml || true
                 '''
-
             }
         }
-
     }
 
     post {
         always {
             script {
-                if (fileExists('reports/TEST-*.xml')) {
-                    junit 'reports/TEST-*.xml'
+                if (fileExists('reports/test-results.xml')) {
+                    junit 'reports/test-results.xml'
                 } else {
                     echo 'No test results file found.'
                 }
