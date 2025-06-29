@@ -16,6 +16,7 @@ pipeline {
                         string(credentialsId: 'mysql-root-pass', variable: 'MYSQL_ROOT_PASSWORD'),
                         string(credentialsId: 'django-secret', variable: 'DJANGO_SECRET_KEY'),
                         string(credentialsId: 'ssh-private-key', variable: 'SSH_PRIVATE_KEY')
+                        string(credentialsId: 'fernet-key', variable: 'FERNET_KEY')
                     ]) {
                         script {
                             def envMap = [
@@ -26,6 +27,7 @@ pipeline {
                                 'DB_HOST': 'db',
                                 'DJANGO_SECRET_KEY': DJANGO_SECRET_KEY,
                                 'SSH_PRIVATE_KEY': SSH_PRIVATE_KEY,
+                                'FERNET_KEY': FERNET_KEY,
                                 'DEBUG': DEBUG
                             ]
                             def envContent = envMap.collect { k, v -> "${k}=${v}" }.join("\n")
