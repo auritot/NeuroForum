@@ -36,12 +36,14 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
-                docker exec -e TEST_OUTPUT_DIR=/app/reports neuroforum_django_web_1 \
+                docker exec neuroforum_django_web_1 \
                 python manage.py test \
-                --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner || true
+                --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
+                > reports/test-results.xml || true
                 '''
             }
         }
+
     }
 
     post {
