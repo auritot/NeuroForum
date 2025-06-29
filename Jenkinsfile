@@ -29,6 +29,7 @@ pipeline {
                                     'MYSQL_PASSWORD': MYSQL_PASSWORD,
                                     'MYSQL_ROOT_PASSWORD': MYSQL_ROOT_PASSWORD,
                                     'DB_HOST': 'db',
+                                    'DB_PORT': '3306',
                                     'DJANGO_SECRET_KEY': DJANGO_SECRET_KEY,
                                     'SSH_PRIVATE_KEY': SSH_PRIVATE_KEY,
                                     'FERNET_KEY': FERNET_KEY,
