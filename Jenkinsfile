@@ -39,6 +39,7 @@ pipeline {
 
                             docker exec \
                                 -e FERNET_KEY=${FERNET_KEY} \
+                                -e DJANGO_SETTINGS_MODULE=neuroforum_django.settings \
                                 neuroforum_django_web_1 \
                                 python -m xmlrunner discover \
                                 -s . \
@@ -46,6 +47,7 @@ pipeline {
 
                             docker cp neuroforum_django_web_1:/tmp/test-reports reports/test-reports
                         """
+
                     }
                 }
             }
