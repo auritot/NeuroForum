@@ -56,10 +56,10 @@ services:
       - JENKINS_OPTS=--prefix=/jenkins
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - neuroforum_django_jenkins_home:/var/jenkins_home
+      - jenkins_home:/var/jenkins_home
 
 volumes:
   db_data:
-  neuroforum_django_jenkins_home:
+  jenkins_home:
 
 
