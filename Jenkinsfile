@@ -53,7 +53,7 @@ pipeline {
                 if (fileExists('reports/TEST-results.xml')) {
                     catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
                          junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml', skipPublishingChecks: true
-                         currentBuild.result = 'SUCCESS'
+                         
                     }
 
                     // Log skipped test count
@@ -61,11 +61,13 @@ pipeline {
                     def skippedCount = xml.count('<skipped')
                     echo "Skipped tests: ${skippedCount}"
 
+                    currentBuild.result = 'SUCCESS'
+
                 } else {
                     echo 'No test results file found.'
                     currentBuild.result = 'FAILURE'
                 }
-                currentBuild.result = 'SUCCESS'
+                // currentBuild.result = 'SUCCESS'
             }
         }
     }
