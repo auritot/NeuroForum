@@ -43,11 +43,15 @@ pipeline {
                 sh '''
                 mkdir -p reports/test-reports
 
-                docker exec neuroforum_django_web_1 \
-                python -m xmlrunner discover \
-                -s . \
-                -o /tmp/test-reports
+                # Run tests inside container with FERNET_KEY injected
+                docker exec \
+                    -e FERNET_KEY=$FERNET_KEY \
+                    neuroforum_django_web_1 \
+                    python -m xmlrunner discover \
+                    -s . \
+                    -o /tmp/test-reports
 
+                # Copy test reports from container to Jenkins workspace
                 docker cp neuroforum_django_web_1:/tmp/test-reports reports/test-reports
                 '''
             }
