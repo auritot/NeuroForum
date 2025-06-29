@@ -7,6 +7,9 @@ pipeline {
 
     stages {
         stage('Prepare .env') {
+            agent {
+                label 'any'
+                retries 2
             steps {
                 withCredentials([
                     string(credentialsId: 'mysql-db', variable: 'MYSQL_DATABASE'),
