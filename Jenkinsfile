@@ -17,7 +17,7 @@ pipeline {
                     string(credentialsId: 'ssh-private-key', variable: 'SSH_PRIVATE_KEY')
                 ]) {
                     script {
-                        def envContent = 
+                        def envContent =
                             "MYSQL_DATABASE=${MYSQL_DATABASE}\n" +
                             "MYSQL_USER=${MYSQL_USER}\n" +
                             "MYSQL_PASSWORD=${MYSQL_PASSWORD}\n" +
@@ -36,10 +36,9 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
-                docker exec neuroforum_django_web_1 \
+                docker exec -e TEST_OUTPUT_DIR=/app/reports neuroforum_django_web_1 \
                 python manage.py test \
-                --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
-                -- output_dir=/app/reports || true
+                --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner || true
                 '''
             }
         }
@@ -48,8 +47,8 @@ pipeline {
     post {
         always {
             script {
-                if (fileExists('reports/test-results.xml')) {
-                    junit 'reports/test-results.xml'
+                if (fileExists('reports/TEST-*.xml')) {
+                    junit 'reports/TEST-*.xml'
                 } else {
                     echo 'No test results file found.'
                 }

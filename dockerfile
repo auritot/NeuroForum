@@ -15,9 +15,11 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY . /app
-# COPY requirements.txt /app/requirements.txt
+
+COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . /app
 
 # Copy and set executable permission on entrypoint
 # COPY startup.sh /app/startup.sh
