@@ -112,7 +112,6 @@ def register_view(request, context={}):
     for message in messages:
         context["error"] = message
 
-    # return render(request, "html/register_view.html", context)
     return render(request, 'html/register_view.html', {
         'RECAPTCHA_PUBLIC_KEY': settings.RECAPTCHA_PUBLIC_KEY,
         **context,
@@ -128,70 +127,111 @@ def email_verification(request):
         attempts = request.session.get("verification_attempts", 0)
         code_generated_at_str = request.session.get("code_generated_at")
 
-        # Check if session exists
+        performed_by = 1
+        email = request.session.get(
+            "pending_user") or request.session.get("reset_email")
+        if email:
+            response = user_service.get_user_by_email(email)
+            if response["status"] == "SUCCESS":
+                performed_by = response["data"]["UserID"]
+
         if not session_code or not code_generated_at_str:
-            messages.error(request, "Verification session is invalid or expired.")
+            msg = "Verification session is invalid or expired."
+            messages.error(request, msg)
+            log_service.log_action(
+                msg, performed_by, isSystem=False, isError=True)
             return redirect("login_view")
 
-        # Check code expiration (5 minutes window)
         try:
-            code_generated_at = timezone.datetime.fromisoformat(code_generated_at_str)
+            code_generated_at = timezone.datetime.fromisoformat(
+                code_generated_at_str)
             if timezone.is_naive(code_generated_at):
                 code_generated_at = timezone.make_aware(code_generated_at)
             if timezone.now() > code_generated_at + timedelta(minutes=5):
-                messages.error(request, "Your verification code has expired. Please request a new one.")
+                msg = "Your verification code has expired. Please request a new one."
+                messages.error(request, msg)
+                log_service.log_action(
+                    msg, performed_by, isSystem=False, isError=True)
                 for key in ['verification_code', 'code_generated_at', 'verification_attempts']:
                     request.session.pop(key, None)
                 if 'reset_email' in request.session:
                     return redirect("forgot_password_view")
                 return redirect("login_view")
-        except Exception:
-            messages.error(request, "There was an error validating your session.")
+
+        except Exception as e:
+            msg = f"There was an error validating your session: {e}"
+            messages.error(
+                request, "There was an error validating your session.")
+            log_service.log_action(
+                msg, performed_by, isSystem=True, isError=True)
             return redirect("login_view")
 
-        # Check wrong code
         if code != session_code:
             attempts += 1
             request.session["verification_attempts"] = attempts
+            msg = f"Incorrect code. Attempt {attempts}/3."
+            messages.error(request, msg)
+            log_service.log_action(
+                msg, performed_by, isSystem=False, isError=True)
             if attempts >= 3:
-                messages.error(request, "Too many failed attempts. Please try again later.")
+                final_msg = "Too many failed attempts. Please try again later."
+                messages.error(request, final_msg)
+                log_service.log_action(
+                    final_msg, performed_by, isSystem=False, isError=True)
                 return redirect("login_view")
-            messages.error(request, f"Incorrect code. Attempt {attempts}/3.")
             return redirect("email_verification")
 
-        # Determine if it's a registration or password reset flow
-        email = request.session.get("pending_user") or request.session.get("reset_email")
         if not email:
-            messages.error(request, "Verification session is incomplete. Please try again.")
+            msg = "Verification session is incomplete. Please try again."
+            messages.error(request, msg)
+            log_service.log_action(
+                msg, performed_by, isSystem=True, isError=True)
             return redirect("login_view")
 
         response = user_service.get_user_by_email(email)
         if response["status"] != "SUCCESS":
+            msg = f"Account not found for verification: {email}"
             messages.error(request, "Account not found for this verification.")
+            log_service.log_action(
+                msg, performed_by, isSystem=True, isError=True)
             return redirect("login_view")
 
         user_data = response["data"]
+        performed_by = user_data["UserID"]
 
-        # Flow branching
         if request.session.get("pending_user"):
-            # Registration flow: log in the user
-            session_response = session_service.setup_session(request, user_data)
+            session_response = session_service.setup_session(
+                request, user_data)
             if session_response["status"] != "SUCCESS":
-                messages.error(request, "Verification succeeded, but failed to log in.")
+                msg = f"Verification succeeded for '{email}', but failed to log in."
+                messages.error(
+                    request, "Verification succeeded, but failed to log in.")
+                log_service.log_action(
+                    msg, performed_by, isSystem=True, isError=True)
                 return redirect("login_view")
-            messages.success(request, "Your account has been verified and you're now logged in.")
+            msg = f"Email verification for '{email}' succeeded, user logged in."
+            messages.success(
+                request, "Your account has been verified and you're now logged in.")
+            log_service.log_action(
+                msg, performed_by, isSystem=False, isError=False)
             redirect_target = "index"
 
         elif request.session.get("reset_email"):
-            # Forgot password flow: send to reset password form
             request.session["verified_for_reset"] = True
-            messages.success(request, "Verification successful. Please reset your password.")
+            msg = f"Verification for '{email}' succeeded, proceeding to password reset."
+            messages.success(
+                request, "Verification successful. Please reset your password.")
+            log_service.log_action(
+                msg, performed_by, isSystem=False, isError=False)
             redirect_target = "reset_password_view"
+
         else:
+            msg = "Verification failed: unclear session state."
             messages.error(request, "Session state unclear. Please try again.")
+            log_service.log_action(
+                msg, performed_by, isSystem=True, isError=True)
             return redirect("login_view")
 
-        # Clean up session keys
         if request.session.get("pending_user"):
             for key in ['pending_user', 'verification_code', 'code_generated_at', 'verification_attempts']:
                 request.session.pop(key, None)
@@ -199,7 +239,6 @@ def email_verification(request):
         return redirect(redirect_target)
 
     return render(request, "html/email_verification.html")
-
 
 
 # MARK: Post Form View
@@ -344,6 +383,7 @@ def admin_manage_post_view(request, context={}):
 
 # MARK: User Manage Comment View
 
+
 def user_manage_comment_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -357,7 +397,8 @@ def user_manage_comment_view(request, context={}):
     per_page = 10
     current_page = int(request.GET.get("page", 1))
 
-    comment_count_response = comment_service.get_total_comment_count(context["user_info"]["UserID"])
+    comment_count_response = comment_service.get_total_comment_count(
+        context["user_info"]["UserID"])
     if comment_count_response["status"] == "SUCCESS":
         total_comment_count: int = comment_count_response["data"]["total_comment_count"]
 
@@ -382,7 +423,7 @@ def admin_manage_comment_view(request, context={}):
     else:
         messages.error(request, "Session Expired! Please login.")
         return redirect("login_view")
-    
+
     if context["user_info"]["Role"] != "admin":
         messages.error(request, "Invalid Access!")
         return redirect("login_view")
@@ -397,7 +438,8 @@ def admin_manage_comment_view(request, context={}):
     pagination_data = utilities.get_pagination_data(
         current_page, per_page, total_comment_count)
 
-    comments_response = comment_service.get_comments_for_page(pagination_data["start_index"], per_page)
+    comments_response = comment_service.get_comments_for_page(
+        pagination_data["start_index"], per_page)
     if comments_response["status"] == "SUCCESS":
         context["comments"] = comments_response["data"]["comments"]
 
@@ -406,6 +448,8 @@ def admin_manage_comment_view(request, context={}):
     return render(request, "html/admin_manage_comment_view.html", context)
 
 # MARK: Admin View log
+
+
 def admin_logs_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -413,11 +457,11 @@ def admin_logs_view(request, context={}):
     else:
         messages.error(request, "Session Expired! Please login.")
         return redirect("login_view")
-    
+
     if context["user_info"]["Role"] != "admin":
         messages.error(request, "Invalid Access!")
         return redirect("login_view")
-    
+
     search = request.GET.get("search", "")
     context["search"] = search
     category = request.GET.get("category", "")
@@ -432,9 +476,11 @@ def admin_logs_view(request, context={}):
     if log_count_response["status"] == "SUCCESS":
         total_log_count: int = log_count_response["data"]["total_log_count"]
 
-    pagination_data = utilities.get_pagination_data(current_page, per_page, total_log_count)
+    pagination_data = utilities.get_pagination_data(
+        current_page, per_page, total_log_count)
 
-    logs_response = log_service.get_logs_for_page(pagination_data["start_index"], per_page, sort_by, search, category)
+    logs_response = log_service.get_logs_for_page(
+        pagination_data["start_index"], per_page, sort_by, search, category)
     if logs_response["status"] == "SUCCESS":
         context["logs"] = logs_response["data"]["logs"]
 
@@ -443,6 +489,7 @@ def admin_logs_view(request, context={}):
     return render(request, "html/admin_logs_view.html", context)
 
 # MARK: Forgot Password View
+
 
 def forgot_password_view(request):
     context = {}
@@ -458,7 +505,8 @@ def forgot_password_view(request):
         otp = user_process.generate_verification_code()
         request.session["reset_email"] = email
         request.session["verification_code"] = otp  # Correct key
-        request.session["code_generated_at"] = timezone.now().isoformat()  # Correct key
+        request.session["code_generated_at"] = timezone.now(
+        ).isoformat()  # Correct key
 
         send_mail(
             subject="Your Password Reset Code",
@@ -505,13 +553,14 @@ def reset_password_view(request):
             for key in ['reset_email', 'verification_code', 'code_generated_at', 'verified_for_reset']:
                 request.session.pop(key, None)
 
-            messages.success(request, "Password has been reset successfully. You may now log in.")
+            messages.success(
+                request, "Password has been reset successfully. You may now log in.")
             return redirect("login_view")
 
         except Exception as e:
             print("Password reset error:", e)
             return HttpResponse("Server error during password reset", status=500)
-        
+
     return render(request, "html/reset_password_view.html")
 
 
@@ -940,6 +989,8 @@ def manage_filtered_words_view(request):
     return render(request, "html/filtered_words_manage.html", context)
 
 # Admin User Portal
+
+
 def admin_portal(request):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
@@ -1001,6 +1052,8 @@ def delete_user(request, user_id):
     return redirect("admin_portal")
 
 # MARK: Search Posts View
+
+
 def search_posts_view(request):
     context = {}
     session_response = session_service.check_session(request)
@@ -1014,7 +1067,8 @@ def search_posts_view(request):
     start_index = int(request.GET.get("start", 0))
     per_page = 10
 
-    response = post_service.search_posts_by_keyword(search_query, start_index, per_page)
+    response = post_service.search_posts_by_keyword(
+        search_query, start_index, per_page)
     context["posts"] = response["data"]["posts"] if response["status"] == "SUCCESS" else []
     context["search_query"] = search_query
 
