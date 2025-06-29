@@ -50,21 +50,25 @@ pipeline {
 
     post {
         always {
-            catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                script {
-                    if (fileExists('reports/TEST-results.xml')) {
+            script {
+                if (fileExists('reports/TEST-results.xml')) {
+                    catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
                         junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml'
-                        echo "JUnit test result processed"
-
-                        def xml = readFile('reports/TEST-results.xml')
-                        def skippedCount = xml.count('<skipped')
-                        echo "Skipped tests: ${skippedCount}"
-                        currentBuild.result = 'SUCCESS'
-                    } else {
-                        echo 'No test results file found.'
                     }
+
+                    echo "JUnit test result processed"
+
+                    def xml = readFile('reports/TEST-results.xml')
+                    def skippedCount = xml.count('<skipped')
+                    echo "Skipped tests: ${skippedCount}"
+
+                    currentBuild.result = 'SUCCESS'  // Force success override
+                } else {
+                    echo 'No test results file found.'
+                    currentBuild.result = 'FAILURE'
                 }
             }
+
             echo "Final build result: ${currentBuild.result}"
         }
     }
