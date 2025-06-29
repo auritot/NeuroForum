@@ -39,14 +39,14 @@ pipeline {
                 sh '''
                 mkdir -p reports
 
-                # Run tests inside the container and generate XML inside the container's filesystem
+                # Run tests inside the container, writing individual XMLs to output dir
                 docker exec neuroforum_django_web_1 \
                 python manage.py test \
                 --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
-                --output-file=/tmp/TEST-results.xml
+                --output-dir=/tmp/test-reports
 
-                # Copy test result from container to Jenkins workspace
-                docker cp neuroforum_django_web_1:/tmp/TEST-results.xml reports/TEST-results.xml
+                # Copy all test results into Jenkins workspace
+                docker cp neuroforum_django_web_1:/tmp/test-reports reports/test-reports
                 '''
             }
         }
@@ -55,20 +55,20 @@ pipeline {
     post {
         always {
             script {
-                if (fileExists('reports/TEST-results.xml')) {
+                if (fileExists('reports/test-reports')) {
                     catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                        junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml'
+                        junit allowEmptyResults: false, testResults: 'reports/test-reports/*.xml'
                     }
 
                     echo "JUnit test result processed"
 
-                    def xml = readFile('reports/TEST-results.xml')
-                    def skippedCount = xml.count('<skipped')
+                    def combinedXml = sh(script: "cat reports/test-reports/*.xml", returnStdout: true)
+                    def skippedCount = combinedXml.count('<skipped')
                     echo "Skipped tests: ${skippedCount}"
 
-                    currentBuild.result = 'SUCCESS'  // Force success override
+                    currentBuild.result = 'SUCCESS'
                 } else {
-                    echo 'No test results file found.'
+                    echo 'No test results found.'
                     currentBuild.result = 'FAILURE'
                 }
             }
