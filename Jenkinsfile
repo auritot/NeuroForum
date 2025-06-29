@@ -50,7 +50,7 @@ pipeline {
     post {
         always {
             script {
-                if (fileExists('reports/test-results.xml')) {
+                if (fileExists('reports/TEST-results.xml')) {
                     junit 'reports/TEST-*.xml'
                     currentBuild.result = 'SUCCESS' // force override
                 } else {
