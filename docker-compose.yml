@@ -8,7 +8,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
 
@@ -16,7 +16,7 @@ services:
     image: redis:7
     restart: unless-stopped
     ports:
-      - "6380:6379"
+      - "6379:6379"
 
   web:
     build: .
@@ -50,8 +50,8 @@ services:
       context: .
       dockerfile: Dockerfile.jenkins
     ports:
-      - "8081:8080"
-      - "50001:50000"
+      - "8080:8080"
+      - "50000:50000"
     environment:
       - JENKINS_OPTS=--prefix=/jenkins
     volumes:

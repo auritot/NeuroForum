@@ -1,9 +1,5 @@
 pipeline {
     agent any
-
-    options {
-        retry(2)
-    }
     
     environment {
         DEBUG = 'False'
@@ -43,16 +39,20 @@ pipeline {
                             }
 
                             sh '''
-                                mkdir -p reports/test-reports
-
+                                # Ensure the container is running
+                                docker-compose up -d web
+                                
+                                # Wait a moment for it to be ready
+                                sleep 5
+                                
+                                # Then run your existing docker exec commands
                                 docker exec \
                                     -e FERNET_KEY=$FERNET_KEY \
                                     -e DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE \
                                     neuroforum_django_web_1 \
-                                    sh -c "mkdir -p /tmp/test-reports && python manage.py test --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner output_file='/tmp/test-reports/results.xml'"
-
-                                docker cp neuroforum_django_web_1:/tmp/test-reports/results.xml reports/test-reports/
+                                    sh -c "mkdir -p /tmp/test-reports && python -m xmlrunner discover -s . -o /tmp/test-reports"
                             '''
+
                         }
                     }
                 }
