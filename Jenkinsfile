@@ -51,7 +51,7 @@ pipeline {
         always {
             script {
                 if (fileExists('reports/TEST-results.xml')) {
-                    junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml'
+                    junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml', skipPublishingChecks: true
                     currentBuild.result = currentBuild.result ?: 'SUCCESS'
                 } else {
                     echo 'No test results file found.'
