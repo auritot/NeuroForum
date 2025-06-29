@@ -50,24 +50,24 @@ pipeline {
     post {
         always {
             script {
-                if (fileExists('reports/TEST-results.xml')) {
+                def testFile = 'reports/TEST-results.xml'
+                if (fileExists(testFile)) {
+                    def testResult
                     catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                         junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml', skipPublishingChecks: true
-                         
+                        testResult = junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml'
                     }
 
-                    // Log skipped test count
-                    def xml = readFile('reports/TEST-results.xml')
+                    def xml = readFile(testFile)
                     def skippedCount = xml.count('<skipped')
                     echo "Skipped tests: ${skippedCount}"
 
-                    currentBuild.result = 'SUCCESS'
-
+                    if (testResult.failCount == 0 && testResult.skipCount == 0) {
+                        currentBuild.result = 'SUCCESS'
+                    }
                 } else {
                     echo 'No test results file found.'
                     currentBuild.result = 'FAILURE'
                 }
-                // currentBuild.result = 'SUCCESS'
             }
         }
     }
