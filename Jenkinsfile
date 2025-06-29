@@ -39,7 +39,7 @@ pipeline {
                 docker exec neuroforum_django_web_1 \
                 python manage.py test \
                 --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
-                --output-dir=/app/reports || true
+                -- output_dir=/app/reports || true
                 '''
             }
         }
