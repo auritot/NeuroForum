@@ -15,7 +15,7 @@ pipeline {
                         string(credentialsId: 'mysql-pass', variable: 'MYSQL_PASSWORD'),
                         string(credentialsId: 'mysql-root-pass', variable: 'MYSQL_ROOT_PASSWORD'),
                         string(credentialsId: 'django-secret', variable: 'DJANGO_SECRET_KEY'),
-                        string(credentialsId: 'ssh-private-key', variable: 'SSH_PRIVATE_KEY')
+                        string(credentialsId: 'ssh-private-key', variable: 'SSH_PRIVATE_KEY'),
                         string(credentialsId: 'fernet-key', variable: 'FERNET_KEY')
                     ]) {
                         script {
