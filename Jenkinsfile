@@ -52,7 +52,7 @@ pipeline {
             script {
                 if (fileExists('reports/TEST-results.xml')) {
                     catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                         junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml', propagate: false, 
+                         junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml', propagate: false 
                     }
 
                     // Log skipped test count
