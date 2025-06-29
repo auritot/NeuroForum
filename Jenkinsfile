@@ -16,21 +16,22 @@ pipeline {
                     string(credentialsId: 'django-secret', variable: 'DJANGO_SECRET_KEY'),
                     string(credentialsId: 'ssh-private-key', variable: 'SSH_PRIVATE_KEY')
                 ]) {
-                    writeFile file: '.env', text: """
-MYSQL_DATABASE=${MYSQL_DATABASE}
-MYSQL_USER=${MYSQL_USER}
-MYSQL_PASSWORD=${MYSQL_PASSWORD}
-MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-DB_HOST=db
-DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-SSH_PRIVATE_KEY="${SSH_PRIVATE_KEY}"
-DEBUG=${DEBUG}
-"""
+                    script {
+                        def envContent = 
+                            "MYSQL_DATABASE=${MYSQL_DATABASE}\n" +
+                            "MYSQL_USER=${MYSQL_USER}\n" +
+                            "MYSQL_PASSWORD=${MYSQL_PASSWORD}\n" +
+                            "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}\n" +
+                            "DB_HOST=db\n" +
+                            "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}\n" +
+                            "SSH_PRIVATE_KEY=\"${SSH_PRIVATE_KEY}\"\n" +
+                            "DEBUG=${DEBUG}\n"
+
+                        writeFile file: '.env', text: envContent
+                    }
                 }
             }
         }
-
-        // Removed "Start Docker Services" to avoid conflicting containers
 
         stage('Run Tests') {
             steps {
@@ -38,17 +39,10 @@ DEBUG=${DEBUG}
                 docker exec neuroforum_django_web_1 \
                 python manage.py test \
                 --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
-                --output-file=/app/reports/test-results.xml || true
+                --output-dir=/app/reports || true
                 '''
             }
         }
-
-        // Optional: remove if you don’t want to stop running containers
-        // stage('Tear Down') {
-        //     steps {
-        //         sh 'docker-compose down'
-        //     }
-        // }
     }
 
     post {
