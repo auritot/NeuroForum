@@ -6,7 +6,7 @@ pipeline {
     }
 
     stages {
-        stage('Prepare .env') {
+        stage('Prepare & Run') {
             steps {
                 retry(2) {
                     withCredentials([
@@ -33,25 +33,21 @@ pipeline {
                             def envContent = envMap.collect { k, v -> "${k}=${v}" }.join("\n")
                             writeFile file: '.env', text: envContent
                         }
+
+                        sh """
+                            mkdir -p reports/test-reports
+
+                            docker exec \
+                                -e FERNET_KEY=${FERNET_KEY} \
+                                neuroforum_django_web_1 \
+                                python -m xmlrunner discover \
+                                -s . \
+                                -o /tmp/test-reports
+
+                            docker cp neuroforum_django_web_1:/tmp/test-reports reports/test-reports
+                        """
                     }
                 }
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                sh """
-                    mkdir -p reports/test-reports
-
-                    docker exec \
-                        -e FERNET_KEY=${FERNET_KEY} \
-                        neuroforum_django_web_1 \
-                        python -m xmlrunner discover \
-                        -s . \
-                        -o /tmp/test-reports
-
-                    docker cp neuroforum_django_web_1:/tmp/test-reports reports/test-reports
-                """
             }
         }
     }
