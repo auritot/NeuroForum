@@ -17,17 +17,18 @@ pipeline {
                     string(credentialsId: 'ssh-private-key', variable: 'SSH_PRIVATE_KEY')
                 ]) {
                     script {
-                        def envContent =
-                            "MYSQL_DATABASE=${MYSQL_DATABASE}\n" +
-                            "MYSQL_USER=${MYSQL_USER}\n" +
-                            "MYSQL_PASSWORD=${MYSQL_PASSWORD}\n" +
-                            "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}\n" +
-                            "DB_HOST=db\n" +
-                            "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}\n" +
-                            "SSH_PRIVATE_KEY=\"${SSH_PRIVATE_KEY}\"\n" +
-                            "DEBUG=${DEBUG}\n"
+                        def envMap = [
+                            'MYSQL_DATABASE': MYSQL_DATABASE,
+                            'MYSQL_USER': MYSQL_USER,
+                            'MYSQL_PASSWORD': MYSQL_PASSWORD,
+                            'MYSQL_ROOT_PASSWORD': MYSQL_ROOT_PASSWORD,
+                            'DB_HOST': 'db',
+                            'DJANGO_SECRET_KEY': DJANGO_SECRET_KEY,
+                            'SSH_PRIVATE_KEY': SSH_PRIVATE_KEY,
+                            'DEBUG': DEBUG
+                        ]
 
-                        writeFile file: '.env', text: envContent
+                        def envContent = envMap.collect { k, v -> "${k}=${v}" }.join("\\n")
                     }
                 }
             }
@@ -36,11 +37,13 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
+                mkdir -p reports
                 docker exec neuroforum_django_web_1 \
                 python manage.py test \
                 --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
-                > reports/test-results.xml || true
+                --output-file=reports/test-results.xml || true
                 '''
+
             }
         }
 
