@@ -64,28 +64,26 @@ pipeline {
 
     post {
         always {
-            node {
-                script {
-                    if (fileExists('reports/test-reports')) {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                            junit allowEmptyResults: false, testResults: 'reports/test-reports/*.xml'
-                        }
-
-                        echo "JUnit test result processed"
-
-                        def combinedXml = sh(script: "cat reports/test-reports/*.xml", returnStdout: true)
-                        def skippedCount = combinedXml.count('<skipped')
-                        echo "Skipped tests: ${skippedCount}"
-
-                        currentBuild.result = 'SUCCESS'
-                    } else {
-                        echo 'No test results found.'
-                        currentBuild.result = 'FAILURE'
+            script {
+                if (fileExists('reports/test-reports')) {
+                    catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                        junit allowEmptyResults: false, testResults: 'reports/test-reports/*.xml'
                     }
-                }
 
-                echo "Final build result: ${currentBuild.result}"
+                    echo "JUnit test result processed"
+
+                    def combinedXml = sh(script: "cat reports/test-reports/*.xml", returnStdout: true)
+                    def skippedCount = combinedXml.count('<skipped')
+                    echo "Skipped tests: ${skippedCount}"
+
+                    currentBuild.result = 'SUCCESS'
+                } else {
+                    echo 'No test results found.'
+                    currentBuild.result = 'FAILURE'
+                }
             }
+
+            echo "Final build result: ${currentBuild.result}"
         }
     }
 }
