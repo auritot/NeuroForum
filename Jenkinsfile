@@ -39,16 +39,14 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
-                mkdir -p reports
+                mkdir -p reports/test-reports
 
-                # Run tests inside the container and generate XML report
                 docker exec neuroforum_django_web_1 \
-                python manage.py test \
-                --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
-                --output-file=/tmp/TEST-results.xml
+                python -m xmlrunner discover \
+                -s . \
+                -o /tmp/test-reports
 
-                # Copy the result from container to host
-                docker cp neuroforum_django_web_1:/tmp/TEST-results.xml reports/TEST-results.xml
+                docker cp neuroforum_django_web_1:/tmp/test-reports reports/test-reports
                 '''
             }
         }
