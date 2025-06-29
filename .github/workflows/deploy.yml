@@ -47,7 +47,6 @@ jobs:
 
           echo "🧹 Cleaning up NeuroForum-related containers and images only..."
           docker-compose down --remove-orphans
-          docker image prune -af --filter "until=24h" || true
 
           # Prune containers, networks, dangling images
           docker container prune -f || true
@@ -56,7 +55,11 @@ jobs:
           docker builder prune -af || true
 
           docker-compose pull
-          docker-compose build --no-cache
+          docker-compose build
+
+          #  use --no-cache when you're debugging or want a full rebuild
+          # docker-compose build --no-cache
+
           docker-compose up -d
 
           sleep 10
