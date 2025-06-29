@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.utils import timezone
 from .models import UserAccount, Post, Comment, Filtering, Logs, ChatRoom, ChatSession, ChatMessage
 from django.urls import reverse
+from django.conf import settings
 
 
 class PostModelTest(TestCase):
@@ -94,7 +95,7 @@ class ViewTestBasic(TestCase):
 
     def test_register_view(self):
         response = self.client.get(reverse("register_view"))
-        self.assertContains(response, "RECAPTCHA")
+        self.assertContains(response, settings.RECAPTCHA_PUBLIC_KEY)
 
     def test_login_view(self):
         response = self.client.get(reverse("login_view"))

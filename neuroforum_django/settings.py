@@ -16,6 +16,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from sshtunnel import SSHTunnelForwarder
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -222,3 +223,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ReCaptcha settings
 RECAPTCHA_PUBLIC_KEY = os.getenv('RECAPTCHA_PUBLIC_KEY')
 RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY')
+
+
+if 'test' in sys.argv:
+    RECAPTCHA_PUBLIC_KEY = 'dummy-public-key'
+    RECAPTCHA_PRIVATE_KEY = 'dummy-private-key'
