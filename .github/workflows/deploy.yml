@@ -60,7 +60,7 @@ jobs:
           #  use --no-cache when you're debugging or want a full rebuild
           # docker-compose build --no-cache
 
-          docker-compose up -d
+          docker-compose up -d --build
 
           sleep 10
 
