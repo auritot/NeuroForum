@@ -34,7 +34,12 @@ DEBUG=${DEBUG}
 
         stage('Run Tests') {
             steps {
-                sh 'docker exec neuroforum_django_web_1 python manage.py test --testrunner xmlrunner.extra.djangotestrunner.XMLTestRunner --output-file=/app/reports/test-results.xml || true'
+                sh '''
+                docker exec neuroforum_django_web_1 \
+                python manage.py test \
+                --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
+                --output-dir=/app/reports || true
+                '''
             }
         }
 
