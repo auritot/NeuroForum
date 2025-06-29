@@ -27,8 +27,8 @@ pipeline {
                             'SSH_PRIVATE_KEY': SSH_PRIVATE_KEY,
                             'DEBUG': DEBUG
                         ]
-
-                        def envContent = envMap.collect { k, v -> "${k}=${v}" }.join("\\n")
+                        def envContent = envMap.collect { k, v -> "${k}=${v}" }.join("\n")
+                        writeFile file: '.env', text: envContent
                     }
                 }
             }
@@ -41,7 +41,7 @@ pipeline {
                 docker exec neuroforum_django_web_1 \
                 python manage.py test \
                 --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
-                > reports/TEST-results.xml || true
+                > reports/TEST-results.xml
                 '''
             }
         }
@@ -51,10 +51,11 @@ pipeline {
         always {
             script {
                 if (fileExists('reports/TEST-results.xml')) {
-                    junit 'reports/TEST-*.xml'
-                    currentBuild.result = 'SUCCESS' // force override
+                    junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml'
+                    currentBuild.result = currentBuild.result ?: 'SUCCESS'
                 } else {
                     echo 'No test results file found.'
+                    currentBuild.result = 'FAILURE'
                 }
             }
         }
