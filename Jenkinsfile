@@ -48,12 +48,18 @@ pipeline {
     }
 
     post {
-        always {
+        success {
             script {
                 if (fileExists('reports/TEST-results.xml')) {
                     junit allowEmptyResults: false, testResults: 'reports/TEST-*.xml', skipPublishingChecks: true
+                    // FORCE success if test XML was parsed
                     currentBuild.result = 'SUCCESS'
-                } else {
+                }
+            }
+        }
+        always {
+            script {
+                if (!fileExists('reports/TEST-results.xml')) {
                     echo 'No test results file found.'
                     currentBuild.result = 'FAILURE'
                 }
