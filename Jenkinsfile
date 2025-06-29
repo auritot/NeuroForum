@@ -41,14 +41,14 @@ pipeline {
                 sh '''
                 mkdir -p reports
 
-                # Run tests inside the container, writing individual XMLs to output dir
+                # Run tests inside the container and generate XML report
                 docker exec neuroforum_django_web_1 \
                 python manage.py test \
                 --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
-                --output-dir=/tmp/test-reports
+                --output-file=/tmp/TEST-results.xml
 
-                # Copy all test results into Jenkins workspace
-                docker cp neuroforum_django_web_1:/tmp/test-reports reports/test-reports
+                # Copy the result from container to host
+                docker cp neuroforum_django_web_1:/tmp/TEST-results.xml reports/TEST-results.xml
                 '''
             }
         }
