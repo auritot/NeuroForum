@@ -49,9 +49,9 @@ pipeline {
                                     -e FERNET_KEY=$FERNET_KEY \
                                     -e DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE \
                                     neuroforum_django_web_1 \
-                                    python -m xmlrunner discover \
-                                    -s . \
-                                    -o /tmp/test-reports
+                                    python manage.py test \
+                                    --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner \
+                                    --output-dir=/tmp/test-reports
 
                                 docker cp neuroforum_django_web_1:/tmp/test-reports reports/test-reports
                             '''
