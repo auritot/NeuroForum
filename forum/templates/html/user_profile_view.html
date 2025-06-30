@@ -19,11 +19,11 @@
         </div>
         <div class="card mb-4">
           <div class="list-group list-group-flush text-center">
-            <a href={% url 'user_profile_view' %} class="list-group-item list-group-item-action">
+            <a href="{% url 'user_profile_view' %}" class="list-group-item list-group-item-action">
               Update Profile</a>
-            <a href={% url 'user_manage_post_view' %} class="list-group-item list-group-item-action">
+            <a href="{% url 'user_manage_post_view' %}" class="list-group-item list-group-item-action">
               Manage Posts</a>
-            <a href={% url 'user_manage_comment_view' %} class="list-group-item list-group-item-action">
+            <a href="{% url 'user_manage_comment_view' %}" class="list-group-item list-group-item-action">
               Manage Comments</a>
             <form action="{% url 'logout_view' %}" method="post" style="display: inline;">
               {% csrf_token %}

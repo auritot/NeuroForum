@@ -59,11 +59,11 @@ def process_delete_post(request, post_id, context={}):
 
     if response["status"] == "SUCCESS":
         messages.success(request, response["message"])
-        return redirect('post_view', post_id=post_id)
+        return redirect('index')
     else:
         messages.error(request, "A problem has occurred. Please try again.")
         if context["user_info"]["Role"] == "admin": return redirect('admin_manage_post_view')
-        else: return redirect('index')
+        else: return redirect('post_view', post_id=post_id)
 
 # MARK: Update Post by ID
 def process_update_post(request, post_id, context={}):

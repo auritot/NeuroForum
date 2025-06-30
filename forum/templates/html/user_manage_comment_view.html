@@ -19,11 +19,11 @@
                 </div>
                 <div class="card mb-4">
                     <div class="list-group list-group-flush text-center">
-                        <a href={% url 'user_profile_view' %} class="list-group-item list-group-item-action">
+                        <a href="{% url 'user_profile_view' %}" class="list-group-item list-group-item-action">
                             Update Profile</a>
-                        <a href={% url 'user_manage_post_view' %} class="list-group-item list-group-item-action">
+                        <a href="{% url 'user_manage_post_view' %}" class="list-group-item list-group-item-action">
                             Manage Posts</a>
-                        <a href={% url 'user_manage_comment_view' %} class="list-group-item list-group-item-action">
+                        <a href="{% url 'user_manage_comment_view' %}" class="list-group-item list-group-item-action">
                             Manage Comments</a>
                         <a href="#" class=" list-group-item list-group-item-action text-danger">
                             Logout</a>
@@ -46,19 +46,6 @@
                         <a class="text-decoration-none text-dark"
                             href="{% url 'post_view' post_id=comment.PostID_id%}?page={{ comment.PageNumberInPost }}#comment-{{ comment.CommentPosition }}">
                             <p class="mb-2 comment-content">{{ comment.CommentContents|linebreaksbr }}</p>
-                            <!-- Edit Form (initially hidden) -->
-                            <!-- <form class="edit-comment-form d-none mt-2" method="POST" action="">
-                            {% csrf_token %}
-                            <div class="mb-2">
-                                <textarea class="form-control auto-expand" id="editCommentText" name="editCommentText"
-                                    rows="1" required>{{ comment.CommentContents|linebreaksbr }}
-                                        </textarea>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2">
-                                <button type="button" class="btn btn-secondary btn-sm cancel-edit">Cancel</button>
-                                <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                            </div>
-                        </form> -->
                             <small class="text-muted">Commented on {{ comment.Timestamp|date:"M d, Y H:i" }}</small>
                         </a>
 
@@ -71,9 +58,12 @@
                                 <i class="bi bi-three-dots fs-5 text-secondary"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a href="#" class="dropdown-item edit-comment-btn">Edit</a></li>
                                 <li>
-                                    <a class="dropdown-item text-danger" href="">Delete
+                                    <a href="{% url 'post_view' post_id=comment.PostID_id%}?page={{ comment.PageNumberInPost }}#comment-{{ comment.CommentPosition }}"
+                                        class="dropdown-item edit-comment-btn">Edit</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'process_delete_comment' post_id=comment.PostID_id comment_id=comment.CommentID %}">Delete
                                     </a>
                                 </li>
                             </ul>
