@@ -1013,18 +1013,8 @@ def change_user_role(request, user_id):
     user_info = session_response["data"]
     if user_info["Role"].lower() != "admin":
         return redirect("/")
-
-    performed_by = session_response["data"]["UserID"]
-    role = request.POST.get("role")
-
-    result = user_service.update_user_role(user_id, role, performed_by)
-
-    if result["status"] == "SUCCESS":
-        messages.success(request, result["message"])
-    else:
-        messages.error(request, result["message"])
-
-    return redirect("admin_portal")
+    
+    return user_process.process_update_user_role(request, user_id)
 
 
 @require_POST
@@ -1037,22 +1027,9 @@ def delete_user(request, user_id):
     if user_info["Role"].lower() != "admin":
         return redirect("/")
 
-    performed_by = session_response["data"]["UserID"]
-    if str(performed_by) == str(user_id):
-        messages.error(request, "You cannot delete yourself.")
-        return redirect("admin_portal")
-
-    result = user_service.delete_user_by_id(user_id, performed_by)
-
-    if result["status"] == "SUCCESS":
-        messages.success(request, result["message"])
-    else:
-        messages.error(request, result["message"])
-
-    return redirect("admin_portal")
+    return user_process.process_delete_user(request, user_id)
 
 # MARK: Search Posts View
-
 
 def search_posts_view(request):
     context = {}
