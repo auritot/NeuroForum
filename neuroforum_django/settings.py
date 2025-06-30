@@ -139,13 +139,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'neuroforum_django.wsgi.application'
 
 # Create the SSH tunnel
-if DEBUG:
+IS_GITHUB_CI = os.getenv("CI") == "true"
+
+if DEBUG and not IS_GITHUB_CI:
     tunnel = create_ssh_tunnel()
     db_host = tunnel.local_bind_host
     db_port = tunnel.local_bind_port
 else:
     db_host = os.getenv('DB_HOST')
     db_port = os.getenv('DB_PORT', '3306')
+
 
 DATABASES = {
     'default': {

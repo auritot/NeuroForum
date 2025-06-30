@@ -47,6 +47,7 @@ jobs:
           echo "EMAIL_PORT=${{ secrets.EMAIL_PORT }}" >> .env
           echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}" >> .env
           echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}" >> .env
+          echo "CI=false" >> .env
 
           echo "🧹 Cleaning up NeuroForum-related containers and images only..."
           docker-compose down --remove-orphans
