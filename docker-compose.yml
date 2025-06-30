@@ -46,21 +46,8 @@ services:
       SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY}
       DEBUG: "False"
 
-  jenkins:
-    build:
-      context: .
-      dockerfile: Dockerfile.jenkins
-    ports:
-      - "8081:8080"
-      - "50001:50000"
-    environment:
-      - JENKINS_OPTS=--prefix=/jenkins
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - jenkins_home:/var/jenkins_home
-
 volumes:
   db_data:
-  jenkins_home:
+
 
 
