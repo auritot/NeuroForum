@@ -246,3 +246,56 @@ def process_change_password(request, context={}):
         return redirect("user_profile_view")
 
     return redirect("user_profile_view")
+
+# MARK: Process Update User Role
+def process_update_user_role(request, user_id):
+    session_response = session_service.check_session(request)
+    if session_response["status"] != "SUCCESS":
+        messages.error(request, "Session expired. Please log in.")
+        return redirect("login_view")
+
+    role = utilities.sanitize_input(request.POST.get("role"))
+    performed_by = session_response["data"]["UserID"]
+
+    user_response = user_service.get_user_by_id(user_id)
+    if user_response["status"] != "SUCCESS":
+        messages.error(request, "User not found.")
+        return redirect("admin_portal")
+
+    result = user_service.update_user_role(user_id, role, performed_by)
+    if result["status"] == "SUCCESS":
+        username = user_response["data"]["Username"]
+        messages.success(request, f"Updated role for {username} to {role}.")
+    else:
+        messages.error(request, result["message"])
+
+    return redirect("admin_portal")
+
+# MARK: Process Delete User
+def process_delete_user(request, user_id):
+    session_response = session_service.check_session(request)
+    if session_response["status"] != "SUCCESS":
+        messages.error(request, "Session expired. Please log in.")
+        return redirect("login_view")
+
+    performed_by = session_response["data"]["UserID"]
+
+    # Prevent self-deletion
+    if str(performed_by) == str(user_id):
+        messages.error(request, "You cannot delete yourself.")
+        return redirect("admin_portal")
+
+    user_response = user_service.get_user_by_id(user_id)
+    if user_response["status"] != "SUCCESS":
+        messages.error(request, "User not found.")
+        return redirect("admin_portal")
+
+    username = user_response["data"]["Username"]
+    result = user_service.delete_user_by_id(user_id, performed_by)
+
+    if result["status"] == "SUCCESS":
+        messages.success(request, f"User '{username}' deleted successfully.")
+    else:
+        messages.error(request, result["message"])
+
+    return redirect("admin_portal")
