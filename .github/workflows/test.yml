@@ -14,6 +14,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          DJANGO_TEST_DATABASE: test_neuroforum_database
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
@@ -32,6 +33,7 @@ jobs:
 
     env:
       MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+      DJANGO_TEST_DATABASE: test_neuroforum_database
       MYSQL_USER: ${{ secrets.MYSQL_USER }}
       MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
