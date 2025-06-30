@@ -18,6 +18,7 @@ from datetime import timedelta, datetime
 from .processes import user_process
 from .pwd_utils import validate_password_nist
 from .services.db_services.user_service import get_user_by_email, update_user_password
+from django.views.decorators.csrf import csrf_protect
 
 import re
 import random
@@ -48,6 +49,7 @@ def validate_filter_content(content):
 
 
 # MARK: Index View
+@csrf_protect
 def index(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -83,7 +85,7 @@ def index(request, context={}):
 
 
 # MARK: Login View
-
+@csrf_protect
 def login_view(request, context={}):
     messages = get_messages(request)
     for message in messages:
@@ -106,7 +108,7 @@ def logout_view(request, context={}):
 
 
 # MARK: Register View
-
+@csrf_protect
 def register_view(request, context={}):
     messages = get_messages(request)
     for message in messages:
@@ -119,7 +121,7 @@ def register_view(request, context={}):
 
 
 # MARK: Email Verification View
-
+@csrf_protect
 def email_verification(request):
     if request.method == "POST":
         code = request.POST.get("code", "").strip()
@@ -242,7 +244,7 @@ def email_verification(request):
 
 
 # MARK: Post Form View
-
+@csrf_protect
 def post_form_view(request, context={}, post_id=None):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -295,7 +297,7 @@ def post_view(request, post_id, context={}):
 
 
 # MARK: User Profile View
-
+@csrf_protect
 def user_profile_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -314,7 +316,7 @@ def user_profile_view(request, context={}):
 
 
 # MARK: User Manage Post View
-
+@csrf_protect
 def user_manage_post_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -347,6 +349,7 @@ def user_manage_post_view(request, context={}):
 
 
 # MARK: Admin Manage Post View
+@csrf_protect
 def admin_manage_post_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -383,7 +386,7 @@ def admin_manage_post_view(request, context={}):
 
 # MARK: User Manage Comment View
 
-
+@csrf_protect
 def user_manage_comment_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -416,6 +419,7 @@ def user_manage_comment_view(request, context={}):
 
 
 # MARK: Admin Manage Comment View
+@csrf_protect
 def admin_manage_comment_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -449,7 +453,7 @@ def admin_manage_comment_view(request, context={}):
 
 # MARK: Admin View log
 
-
+@csrf_protect
 def admin_logs_view(request, context={}):
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
@@ -490,7 +494,7 @@ def admin_logs_view(request, context={}):
 
 # MARK: Forgot Password View
 
-
+@csrf_protect
 def forgot_password_view(request):
     context = {}
 
@@ -523,6 +527,7 @@ def forgot_password_view(request):
 
 
 # MARK: Reset Password View
+@csrf_protect
 def reset_password_view(request):
 
     user_email = request.session.get("reset_email")
@@ -565,7 +570,7 @@ def reset_password_view(request):
 
 
 # MARK: Chat View
-
+@csrf_protect
 @xframe_options_exempt
 def chat_view(request, other_user):
     session_response = session_service.check_session(request)
@@ -598,7 +603,7 @@ def chat_view(request, other_user):
         # "unread_count": unread_count,
     })
 
-
+@csrf_protect
 @xframe_options_exempt
 def chat_landing_or_redirect_view(request):
     session_response = session_service.check_session(request)
@@ -618,7 +623,7 @@ def chat_landing_or_redirect_view(request):
 
     return render(request, "html/chat_landing.html", {"user_info": user_info})
 
-
+@csrf_protect
 @xframe_options_exempt
 def chat_home_view(request):
     session_response = session_service.check_session(request)
@@ -635,7 +640,7 @@ def chat_home_view(request):
 
     return render(request, 'chat_landing.html', {'error': 'No chats yet.'})
 
-
+@csrf_protect
 @xframe_options_exempt
 def start_chat_view(request):
     session = session_service.check_session(request)

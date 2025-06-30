@@ -49,6 +49,15 @@ CSRF_TRUSTED_ORIGINS = [
     "https://neuroforum.ddns.net"
 ]
 
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_DOMAIN = "neuroforum.ddns.net"
+CSRF_COOKIE_SECURE = True
+
+SECURE_HSTS_SECONDS = 31536000         # Enforce HTTPS with HSTS
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
 def create_ssh_tunnel():
     """

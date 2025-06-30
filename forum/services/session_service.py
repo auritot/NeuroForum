@@ -8,6 +8,10 @@ def setup_session(request, user_data):
         request.session["UserID"] = user_data["UserID"]
         request.session["Role"] = user_data["Role"]
         request.session["Username"] = user_data["Username"]
+
+        request.session["IP"] = request.META.get("REMOTE_ADDR")
+        request.session["UserAgent"] = request.META.get("HTTP_USER_AGENT")
+
         request.session.set_expiry(3600)
         request.session.save()
 
@@ -29,7 +33,12 @@ def update_session(request, username):
 # MARK: Check Session
 def check_session(request):
     try:
-        if "UserID" in request.session and "Role" in request.session:
+        if (
+            "UserID" in request.session and 
+            "Role" in request.session and
+            request.session.get("IP") == request.META.get("REMOTE_ADDR") and
+            request.session.get("UserAgent") == request.META.get("HTTP_USER_AGENT")
+        ):
             user_info = {
                 "UserID": request.session["UserID"],
                 "Role": request.session["Role"],
