@@ -73,13 +73,13 @@ def create_ssh_tunnel():
     return tunnel
 
 
-if DEBUG:
-    tunnel = create_ssh_tunnel()
-    db_host = tunnel.local_bind_host
-    db_port = tunnel.local_bind_port
-else:
-    db_host = os.getenv('DB_HOST')
-    db_port = os.getenv('DB_PORT', '3306')
+# if DEBUG:
+#     tunnel = create_ssh_tunnel()
+#     db_host = tunnel.local_bind_host
+#     db_port = tunnel.local_bind_port
+# else:
+#     db_host = os.getenv('DB_HOST')
+#     db_port = os.getenv('DB_PORT', '3306')
 
 # Application definition
 INSTALLED_APPS = [
@@ -224,10 +224,9 @@ LOGIN_URL = "/login/"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ReCaptcha settings
-RECAPTCHA_PUBLIC_KEY = os.getenv('RECAPTCHA_PUBLIC_KEY')
-RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY')
+RECAPTCHA_PUBLIC_KEY = os.getenv('RECAPTCHA_PUBLIC_KEY', 'dummy-public-key')
+RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY', 'dummy-private-key')
 
 
-if 'test' in sys.argv:
-    RECAPTCHA_PUBLIC_KEY = 'dummy-public-key'
-    RECAPTCHA_PRIVATE_KEY = 'dummy-private-key'
+if 'test' in sys.argv: 
+    DATABASES['default']['NAME'] = 'test_neuroforum'
