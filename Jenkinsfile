@@ -34,24 +34,23 @@ pipeline {
                             "DJANGO_SETTINGS_MODULE=neuroforum_django.settings"
                         ]) {
                             node {
-                                // Write env file
-                                def envMap = [
-                                    'MYSQL_DATABASE': MYSQL_DATABASE,
-                                    'MYSQL_USER': MYSQL_USER,
-                                    'MYSQL_PASSWORD': MYSQL_PASSWORD,
-                                    'MYSQL_ROOT_PASSWORD': MYSQL_ROOT_PASSWORD,
-                                    'DB_HOST': 'db',
-                                    'DB_PORT': '3306',
-                                    'DJANGO_SECRET_KEY': DJANGO_SECRET_KEY,
-                                    'SSH_PRIVATE_KEY': SSH_PRIVATE_KEY,
-                                    'FERNET_KEY': FERNET_KEY,
-                                    'DEBUG': DEBUG
-                                ]
-                                def envContent = envMap.collect { k, v -> "${k}=${v}" }.join("\n")
-                                writeFile file: '.env', text: envContent
+                                script {
+                                    def envMap = [
+                                        'MYSQL_DATABASE': MYSQL_DATABASE,
+                                        'MYSQL_USER': MYSQL_USER,
+                                        'MYSQL_PASSWORD': MYSQL_PASSWORD,
+                                        'MYSQL_ROOT_PASSWORD': MYSQL_ROOT_PASSWORD,
+                                        'DB_HOST': 'db',
+                                        'DB_PORT': '3306',
+                                        'DJANGO_SECRET_KEY': DJANGO_SECRET_KEY,
+                                        'SSH_PRIVATE_KEY': SSH_PRIVATE_KEY,
+                                        'FERNET_KEY': FERNET_KEY,
+                                        'DEBUG': DEBUG
+                                    ]
+                                    def envContent = envMap.collect { k, v -> "${k}=${v}" }.join("\n")
+                                    writeFile file: '.env', text: envContent
 
-                                // Prevent port conflict with override
-                                writeFile file: 'docker-compose.override.yml', text: '''
+                                    writeFile file: 'docker-compose.override.yml', text: '''
 services:
   db:
     ports: []
@@ -59,18 +58,19 @@ services:
   redis:
     ports: []
 '''
+                                }
+
+                                sh '''
+                                    docker-compose up -d web
+                                    sleep 5
+
+                                    docker exec \
+                                        -e FERNET_KEY=$FERNET_KEY \
+                                        -e DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE \
+                                        neuroforum_django_web_1 \
+                                        sh -c "mkdir -p /tmp/test-reports && python -m xmlrunner discover -s . -o /tmp/test-reports"
+                                '''
                             }
-
-                            sh '''
-                                docker-compose up -d web
-                                sleep 5
-
-                                docker exec \
-                                    -e FERNET_KEY=$FERNET_KEY \
-                                    -e DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE \
-                                    neuroforum_django_web_1 \
-                                    sh -c "mkdir -p /tmp/test-reports && python -m xmlrunner discover -s . -o /tmp/test-reports"
-                            '''
                         }
                     }
                 }
@@ -99,7 +99,6 @@ services:
                         currentBuild.result = 'FAILURE'
                     }
 
-                    // Cleanup override
                     sh 'rm -f docker-compose.override.yml'
                 }
 
