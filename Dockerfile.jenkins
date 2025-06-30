@@ -1,14 +1,16 @@
+# Dockerfile.jenkins
+
 FROM jenkins/jenkins:lts
 
 USER root
 
-# Install Docker CLI and Compose
-RUN apt-get update && apt-get install -y \
-    docker.io \
-    docker-compose \
-    && apt-get clean
+# Install docker and docker-compose
+RUN apt-get update && \
+    apt-get install -y curl docker.io && \
+    curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose
 
-# Add Jenkins user to the Docker group
+# Optional: Add Jenkins user to docker group
 RUN usermod -aG docker jenkins
 
 USER jenkins
