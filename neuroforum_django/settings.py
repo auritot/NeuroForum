@@ -232,4 +232,4 @@ RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY', 'dummy-private-key')
 
 
 if 'test' in sys.argv: 
-    DATABASES['default']['NAME'] = 'test_neuroforum'
+    DATABASES['default']['NAME'] = 'test_neuroforum_database'
