@@ -76,6 +76,16 @@ jobs:
         python manage.py makemigrations --noinput
         python manage.py migrate --noinput
 
+    - name: Create test database manually
+      run: |
+        sudo apt-get install -y mysql-client
+        mysql -h 127.0.0.1 -P 3306 -u root -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${DJANGO_TEST_DATABASE}; GRANT ALL PRIVILEGES ON ${DJANGO_TEST_DATABASE}.* TO '${MYSQL_USER}'@'%'; FLUSH PRIVILEGES;"
+      env:
+        MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+        DJANGO_TEST_DATABASE: test_neuroforum_database
+        MYSQL_USER: ${{ secrets.MYSQL_USER }}
+
+
     - name: Run tests and generate XML report
       env:
         DJANGO_SETTINGS_MODULE: neuroforum_django.settings
