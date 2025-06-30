@@ -93,7 +93,7 @@ jobs:
         TEST_OUTPUT_DIR: reports/test-reports
       run: |
         mkdir -p reports/test-reports
-        python manage.py test --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner
+        python manage.py test --keepdb --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
