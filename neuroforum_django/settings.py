@@ -162,7 +162,7 @@ DATABASES = {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
         'TEST': {
-            'NAME': 'test_neuroforum',
+            'NAME': 'test_neuroforum_database',
         }
     }
 }
