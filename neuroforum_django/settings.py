@@ -157,10 +157,13 @@ DATABASES = {
         'USER': os.getenv('MYSQL_USER'),
         'PASSWORD': os.getenv('MYSQL_PASSWORD'),
         'HOST': db_host,
-        'PORT': db_port,
+        'PORT': db_port,  
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
+        'TEST': {
+            'NAME': 'test_neuroforum',
+        }
     }
 }
 
