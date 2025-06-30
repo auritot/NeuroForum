@@ -2,9 +2,11 @@ from django.db import connection, transaction
 from django.contrib.auth.hashers import check_password, make_password
 from .. import utilities
 from datetime import datetime
+from . import log_service
 
 comment_col = ["CommentID", "CommentContents", "Timestamp", "PostID_id", "UserID_id"]
 comment_username_col = ["CommentID", "CommentContents", "Timestamp", "PostID_id", "UserID_id", "Username", "CommentPosition"]
+comment_with_position_col = ["CommentID", "CommentContents", "Timestamp", "PostID_id", "UserID_id", "CommentPosition", "PageNumberInPost"]
 
 # MARK: Get Comments for page by Post ID
 def get_comments_for_page(start_index, per_page, postID=None, userID=None):
@@ -59,7 +61,7 @@ def get_comments_for_page(start_index, per_page, postID=None, userID=None):
             comments = [dict(zip(comment_username_col, row)) for row in results]
             comment_data = {"comments": comments}
 
-        return utilities.response("SUCCESS", "Retrieved Post for pages", comment_data)
+        return utilities.response("SUCCESS", "Retrieved comment for pages", comment_data)
     
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
@@ -69,7 +71,21 @@ def get_comment_by_id(comment_id):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                """ SELECT * FROM forum_comment WHERE CommentID = %s; """, 
+                """ 
+                SELECT c.*,
+                (
+                    SELECT COUNT(*) + 1 FROM forum_comment c2
+                    WHERE c2.PostID_id = c.PostID_id AND c2.Timestamp > c.Timestamp
+		            ORDER BY c.Timestamp DESC
+                ) AS CommentPosition,
+                CEIL((
+                    SELECT COUNT(*) + 1 FROM forum_comment c2
+                    WHERE c2.PostID_id = c.PostID_id AND c2.Timestamp > c.Timestamp
+		            ORDER BY c.Timestamp DESC
+                ) / 2) AS PageNumberInPost
+                FROM forum_comment c WHERE c.CommentID = %s
+                ORDER BY c.Timestamp DESC;
+                """, 
                 [comment_id],
             )
 
@@ -77,7 +93,7 @@ def get_comment_by_id(comment_id):
             if result is None:
                 return utilities.response("NOT_FOUND", "Post not found")
 
-            comment = dict(zip(comment_col, result))
+            comment = dict(zip(comment_with_position_col, result))
             comment_data = {"comment": comment}
 
         return utilities.response("SUCCESS", "Retrieved Comment by ID", comment_data)
@@ -126,13 +142,16 @@ def insert_new_comment(commentContents, postID, userID):
                     [commentContents, timestamp, postID, userID],
                 )
 
+                log_service.log_action(f"User commented on Post {postID}", userID)
+
         return utilities.response("SUCCESS", "Comment successfully created")
 
     except Exception as e:
+        log_service.log_action(f"Failed to comment on Post {postID}: {e}", userID, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Delete Comment by ID
-def delete_comment_by_id(commentID):
+def delete_comment_by_id(commentID, userID, isAdmin=False):
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -141,13 +160,17 @@ def delete_comment_by_id(commentID):
                     [commentID],
                 )
 
+                log_msg = f'{"Admin" if isAdmin else "User"} deleted Comment {commentID}'
+                log_service.log_action(log_msg, userID)
+
         return utilities.response("SUCCESS", "Comment deleted successfully")
     
     except Exception as e:
+        log_service.log_action(f"Failed to delete Comment {commentID}: {e}", userID, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
 # MARK: Update Comment by ID
-def update_comment_by_id(commentContents, commentID):
+def update_comment_by_id(commentContents, commentID, userID):
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -159,7 +182,10 @@ def update_comment_by_id(commentContents, commentID):
                     [commentContents, commentID],
                 )
 
+                log_service.log_action(f"User updated Comment {commentID}", userID)
+
         return utilities.response("SUCCESS", "Comment updated successfully")
     
     except Exception as e:
+        log_service.log_action(f"Failed to update Comment {commentID}: {e}", userID, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")

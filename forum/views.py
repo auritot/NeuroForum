@@ -988,9 +988,7 @@ def manage_filtered_words_view(request):
 
     return render(request, "html/filtered_words_manage.html", context)
 
-# Admin User Portal
-
-
+# MARK: Admin User Portal
 def admin_portal(request):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
@@ -1003,7 +1001,7 @@ def admin_portal(request):
     users = UserAccount.objects.all()
     return render(request, "html/admin_portal.html", {"users": users, "user_info": user_info})
 
-
+# MARK: Change User Role Process
 @require_POST
 def change_user_role(request, user_id):
     session_response = session_service.check_session(request)

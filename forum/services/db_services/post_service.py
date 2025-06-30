@@ -117,13 +117,16 @@ def insert_new_post(postTitle, postDescription, allowComments, userID):
                 cursor.execute("SELECT LAST_INSERT_ID();")
                 post_id = cursor.fetchone()[0]
 
+                log_service.log_action("User posted a new post", userID)
+
         return utilities.response("SUCCESS", "Post created successfully", {"post_id": post_id})
 
     except Exception as e:
+        log_service.log_action(f"Failed to post a new Post: {e}", userID, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
 # MARK: Update Post by ID
-def update_post_by_id(postTitle, postDescription, allowComments, postID):
+def update_post_by_id(postTitle, postDescription, allowComments, postID, userID):
     commentStatus = 1 if allowComments else 0
 
     try:
@@ -137,13 +140,16 @@ def update_post_by_id(postTitle, postDescription, allowComments, postID):
                     [postTitle, postDescription, commentStatus, postID],
                 )
 
+                log_service.log_action(f"User updated post {postID}", userID)
+
         return utilities.response("SUCCESS", "Post updated successfully")
     
     except Exception as e:
+        log_service.log_action(f"Failed to update Post {postID}", userID, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Delete Post by ID
-def delete_post_by_id(postID):
+def delete_post_by_id(postID, userID, isAdmin=False):
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -156,9 +162,13 @@ def delete_post_by_id(postID):
                     [postID],
                 )
 
-        return utilities.response("SUCCESS", "Post and Comments deleted successfully")
+                log_msg = f'{"Admin" if isAdmin else "User"} deleted Post {postID} and its comments'
+                log_service.log_action(log_msg, userID)
+
+        return utilities.response("SUCCESS", "The Post and its Comments deleted successfully")
     
     except Exception as e:
+        log_service.log_action(f"Failed to delete Post {postID}: {e}", userID, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
 # MARK: Search Posts by Keyword

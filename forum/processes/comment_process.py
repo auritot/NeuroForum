@@ -10,18 +10,22 @@ def process_create_comment(request, post_id, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, "Session Expired! Please login again.")
         return redirect("login_view")
 
-    commentText = request.POST.get("commentText")
-    response = comment_service.insert_new_comment(
-        commentText, post_id, context["user_info"]["UserID"]
-    )
-
-    if response["status"] == "SUCCESS":
+    commentText = request.POST.get("commentText", "")
+    if not commentText:
+        messages.error(request, "Comment cannot be empty!")
         return redirect('post_view', post_id=post_id)
 
-    return redirect('post_view', post_id=post_id)
+    response = comment_service.insert_new_comment(commentText, post_id, context["user_info"]["UserID"])
+
+    if response["status"] == "SUCCESS":
+        messages.success(request, response["message"])
+        return redirect('post_view', post_id=post_id)
+    else: 
+        messages.error(request, "A problem has occurred. Please try again.")
+        return redirect('post_view', post_id=post_id)
 
 # MARK: Delete Comment by ID
 def process_delete_comment(request, post_id, comment_id, context={}):
@@ -30,20 +34,30 @@ def process_delete_comment(request, post_id, comment_id, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, "Session Expired! Please login again.")
         return redirect("login_view")
 
     comment_response = comment_service.get_comment_by_id(comment_id)
     if comment_response["status"] == "SUCCESS":
         context["comment"] = comment_response["data"]["comment"]
+    else: 
+        messages.error(request, "A problem has occurred. Please try again.")
+        return redirect('index')
 
-    response = comment_service.delete_comment_by_id(comment_id)
+    if context["comment"]["UserID_id"] == context["user_info"]["UserID"]:
+        response = comment_service.delete_comment_by_id(comment_id, context["user_info"]["UserID"])
+    elif context["user_info"]["Role"] == "admin":
+        response = comment_service.delete_comment_by_id(comment_id, context["user_info"]["UserID"], isAdmin=True)
+    else: 
+        messages.error(request, "Unauthorized to delete this comment")
+        return redirect('index')
 
-    if context["user_info"]["Role"] == "admin" or context["comment"]["UserID_id"] == context["user_info"]["UserID"]:
-        if response["status"] == "SUCCESS":
-            return redirect('post_view', post_id=post_id)
-
-    return redirect('post_view', post_id=post_id)
+    if response["status"] == "SUCCESS":
+        messages.success(request, response["message"])
+        return redirect('post_view', post_id=post_id)
+    else:
+        messages.error(request, "A problem has occurred. Please try again.")
+        return redirect('index')
 
 # MARK: Update Comment by ID
 def process_update_comment(request, post_id, comment_id, context={}):
@@ -52,19 +66,32 @@ def process_update_comment(request, post_id, comment_id, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, "Session Expired! Please login again.")
         return redirect("login_view")
-
-    editCommentText = request.POST.get("editCommentText")
 
     comment_response = comment_service.get_comment_by_id(comment_id)
     if comment_response["status"] == "SUCCESS":
         context["comment"] = comment_response["data"]["comment"]
+    else:
+        messages.error(request, "A problem has occurred. Please try again.")
+        return redirect('index')
+    
+    comment_url = f"post_view/{context["comment"]["PostID_id"]}?page={context["comment"]["PageNumberInPost"]}#comment-{context["comment"]["CommentPosition"]}"
 
-    if context["user_info"]["Role"] == "admin" or context["comment"]["UserID_id"] == context["user_info"]["UserID"]:
-        response = comment_service.update_comment_by_id(editCommentText, comment_id)
+    editCommentText = request.POST.get("editCommentText")
+    if not editCommentText: 
+        messages.error(request, "Comment cannot be empty!")
+        redirect(comment_url)
 
-        if response["status"] == "SUCCESS":
-            return redirect('post_view', post_id=post_id)
+    if context["comment"]["UserID_id"] == context["user_info"]["UserID"]:
+        response = comment_service.update_comment_by_id(editCommentText, comment_id, context["user_info"]["UserID"])
+    else: 
+        messages.error(request, "Unauthorized to update the comment")
+        return redirect('post_view', post_id=post_id)
 
-    return redirect('post_view', post_id=post_id)
+    if response["status"] == "SUCCESS":
+        messages.success(request, response["message"])
+        redirect(comment_url)
+    else:
+        messages.error(request, "A problem has occurred. Please try again.")
+        return redirect('post_view', post_id=post_id)
