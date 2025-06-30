@@ -1,6 +1,6 @@
 pipeline {
     agent any
-    
+
     environment {
         DEBUG = 'False'
     }
@@ -37,23 +37,28 @@ pipeline {
                                 ]
                                 def envContent = envMap.collect { k, v -> "${k}=${v}" }.join("\n")
                                 writeFile file: '.env', text: envContent
+
+                                writeFile file: 'docker-compose.override.yml', text: '''
+services:
+  db:
+    ports: []
+
+  redis:
+    ports: []
+'''
                             }
 
                             sh '''
-                                # Ensure the container is running
                                 docker-compose up -d web
-                                
-                                # Wait a moment for it to be ready
+
                                 sleep 5
-                                
-                                # Then run your existing docker exec commands
+
                                 docker exec \
                                     -e FERNET_KEY=$FERNET_KEY \
                                     -e DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE \
                                     neuroforum_django_web_1 \
                                     sh -c "mkdir -p /tmp/test-reports && python -m xmlrunner discover -s . -o /tmp/test-reports"
                             '''
-
                         }
                     }
                 }
@@ -80,6 +85,9 @@ pipeline {
                     echo 'No test results found.'
                     currentBuild.result = 'FAILURE'
                 }
+
+                // Cleanup override file
+                sh 'rm -f docker-compose.override.yml'
             }
 
             echo "Final build result: ${currentBuild.result}"
