@@ -237,3 +237,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ReCaptcha settings
 RECAPTCHA_PUBLIC_KEY = os.getenv('RECAPTCHA_PUBLIC_KEY', 'dummy-public-key')
 RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY', 'dummy-private-key')
+
+
+if 'test' in sys.argv:
+    TEST_OUTPUT_DIR = os.getenv('TEST_OUTPUT_DIR', 'reports/test-reports')

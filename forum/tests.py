@@ -1,8 +1,12 @@
+import xmlrunner
+from django.test.runner import DiscoverRunner
 from django.test import TestCase, Client
 from django.utils import timezone
 from .models import UserAccount, Post, Comment, Filtering, Logs, ChatRoom, ChatSession, ChatMessage
 from django.urls import reverse
 from django.conf import settings
+
+test_runner = xmlrunner.XMLTestRunner(output=settings.TEST_OUTPUT_DIR)
 
 
 class PostModelTest(TestCase):
