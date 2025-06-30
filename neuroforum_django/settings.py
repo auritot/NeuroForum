@@ -169,6 +169,15 @@ DATABASES = {
 
 DATABASES = DATABASES
 
+if os.getenv("CI") == "true":
+    DATABASES["default"]["TEST"] = {
+        "NAME": os.getenv("DJANGO_TEST_DATABASE", "test_neuroforum_database"),
+        "MIRROR": None,
+        "DEPENDENCIES": [],
+        "SERIALIZE": False,
+        "CREATE_DB": False,  # <-- optional, some Django versions honor this
+    }
+
 # Email configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
 EMAIL_HOST = os.getenv('EMAIL_HOST')
@@ -228,7 +237,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ReCaptcha settings
 RECAPTCHA_PUBLIC_KEY = os.getenv('RECAPTCHA_PUBLIC_KEY', 'dummy-public-key')
 RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY', 'dummy-private-key')
-
-
-if 'test' in sys.argv: 
-    DATABASES['default']['NAME'] = 'test_neuroforum_database'
