@@ -1,11 +1,22 @@
 pipeline {
     agent any
+    options {
+        skipDefaultCheckout()
+    }
 
     environment {
         DEBUG = 'False'
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                retry(2) {
+                    checkout scm
+                }
+            }
+        }
+
         stage('Prepare & Run') {
             steps {
                 retry(2) {
@@ -22,7 +33,8 @@ pipeline {
                             "FERNET_KEY=${FERNET_KEY}",
                             "DJANGO_SETTINGS_MODULE=neuroforum_django.settings"
                         ]) {
-                            script {
+                            node {
+                                // Write env file
                                 def envMap = [
                                     'MYSQL_DATABASE': MYSQL_DATABASE,
                                     'MYSQL_USER': MYSQL_USER,
@@ -38,6 +50,7 @@ pipeline {
                                 def envContent = envMap.collect { k, v -> "${k}=${v}" }.join("\n")
                                 writeFile file: '.env', text: envContent
 
+                                // Prevent port conflict with override
                                 writeFile file: 'docker-compose.override.yml', text: '''
 services:
   db:
@@ -50,7 +63,6 @@ services:
 
                             sh '''
                                 docker-compose up -d web
-
                                 sleep 5
 
                                 docker exec \
@@ -68,29 +80,31 @@ services:
 
     post {
         always {
-            script {
-                if (fileExists('reports/test-reports')) {
-                    catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                        junit allowEmptyResults: false, testResults: 'reports/test-reports/*.xml'
+            node {
+                script {
+                    if (fileExists('reports/test-reports')) {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                            junit allowEmptyResults: false, testResults: 'reports/test-reports/*.xml'
+                        }
+
+                        echo "JUnit test result processed"
+
+                        def combinedXml = sh(script: "cat reports/test-reports/*.xml", returnStdout: true)
+                        def skippedCount = combinedXml.count('<skipped')
+                        echo "Skipped tests: ${skippedCount}"
+
+                        currentBuild.result = 'SUCCESS'
+                    } else {
+                        echo 'No test results found.'
+                        currentBuild.result = 'FAILURE'
                     }
 
-                    echo "JUnit test result processed"
-
-                    def combinedXml = sh(script: "cat reports/test-reports/*.xml", returnStdout: true)
-                    def skippedCount = combinedXml.count('<skipped')
-                    echo "Skipped tests: ${skippedCount}"
-
-                    currentBuild.result = 'SUCCESS'
-                } else {
-                    echo 'No test results found.'
-                    currentBuild.result = 'FAILURE'
+                    // Cleanup override
+                    sh 'rm -f docker-compose.override.yml'
                 }
 
-                // Cleanup override file
-                sh 'rm -f docker-compose.override.yml'
+                echo "Final build result: ${currentBuild.result}"
             }
-
-            echo "Final build result: ${currentBuild.result}"
         }
     }
 }
