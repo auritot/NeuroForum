@@ -53,6 +53,11 @@ def insert_new_user(username, email, password, role):
                     [username, email, hash_password, role],
                 )
 
+                cursor.execute("SELECT LAST_INSERT_ID();")
+                user_id = cursor.fetchone()[0]
+
+                log_service.log_action("New account have been registered", user_id)
+
         return utilities.response("SUCCESS", "User account successfully created")
 
     except Exception as e:
@@ -61,7 +66,7 @@ def insert_new_user(username, email, password, role):
         # Prints the full traceback to logs
         logger.error(traceback.format_exc())
         # --- END TEMPORARY DEBUGGING LINES ---
-
+        
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Get User by Email
@@ -145,9 +150,12 @@ def update_user_profile(user_id, username, email):
                     [username, email, user_id],
                 )
 
+                log_service.log_action("User profile have been updated", user_id)
+
         return utilities.response("SUCCESS", "User Profile updated successfully")
 
     except Exception as e:
+        log_service.log_action(f"Failed to update user: {e}", user_id, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Upate User Password
@@ -164,9 +172,12 @@ def update_user_password(user_id, password):
                     [hash_password, user_id],
                 )
 
+                log_service.log_action("User profile have been updated", user_id)
+
         return utilities.response("SUCCESS", "User Password updated successfully")
 
     except Exception as e:
+        log_service.log_action(f"Failed to update user: {e}", user_id, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Update User Role
@@ -199,6 +210,7 @@ def update_user_role(user_id, role, performed_by):
         return utilities.response("SUCCESS", f"{username}'s role successfully updated to {role}")
 
     except Exception as e:
+        log_service.log_action(f"Failed to update user: {e}", user_id, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Delete User by ID
@@ -231,4 +243,5 @@ def delete_user_by_id(user_id, performed_by):
         return utilities.response("SUCCESS", f"User '{username}' deleted successfully")
 
     except Exception as e:
+        log_service.log_action(f"Failed to delete user: {e}", user_id, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
