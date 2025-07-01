@@ -1,5 +1,5 @@
 from ..services import session_service
-from ..services.db_services import post_service
+from ..services.db_services import post_service, log_service
 from django.shortcuts import redirect
 from django.contrib import messages
 
@@ -18,6 +18,7 @@ def process_create_post(request, context={}):
     allowComments = request.POST.get("allowComments") == "on"
 
     if not postTitle or not postDescription:
+        log_service.log_action("Failed to create post: User left post title or description empty", context["user_info"]["UserID"], isError=True)
         messages.error(request, "Post title or description cannot be empty!")
         return redirect("index")
 
@@ -54,6 +55,7 @@ def process_delete_post(request, post_id, context={}):
     elif context["user_info"]["Role"] == "admin":
         response = post_service.delete_post_by_id(post_id, context["user_info"]["UserID"], isAdmin=True)
     else: 
+        log_service.log_action(f"Failed to delete Post {post_id}: User was unauthorized", context["user_info"]["UserID"], isError=True)
         messages.error(request, "Unauthorized to delete the post")
         return redirect('index')
 
@@ -80,6 +82,7 @@ def process_update_post(request, post_id, context={}):
     allowComments = request.POST.get("allowComments") == "on"
 
     if not postTitle or not postDescription:
+        log_service.log_action(f"Failed to update Post {post_id}: User left post title or description empty", context["user_info"]["UserID"], isError=True)
         messages.error(request, "Post title or description cannot be empty!")
         return redirect("index")
 
@@ -93,6 +96,7 @@ def process_update_post(request, post_id, context={}):
     if context["post"]["UserID_id"] == context["user_info"]["UserID"]:        
         response = post_service.update_post_by_id(postTitle, postDescription, allowComments, post_id, context["user_info"]["UserID"])
     else: 
+        log_service.log_action(f"Failed to update Post {post_id}: User was unauthorized", context["user_info"]["UserID"], isError=True)
         messages.error(request, "Unauthorized to update the post")
         return redirect('index')
     
