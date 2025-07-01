@@ -22,7 +22,10 @@
                               <!-- #MARK: Login Form -->
                               <form method="POST" action="{% url 'process_login' %}">
                                    {% if error %}
-                                   <p id="loginError" class="text-danger text-center mb-3">{{ error }}</p>
+                                   <div class="alert alert-danger alert-dismissible alert-animated fade-in text-center" role="alert">
+                                        {{ error }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                   </div>
                                    {% endif %}
                                    {% csrf_token %}
                                    <div class="mb-3">
