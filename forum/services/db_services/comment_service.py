@@ -142,16 +142,16 @@ def insert_new_comment(commentContents, postID, userID):
                     [commentContents, timestamp, postID, userID],
                 )
 
-                log_service.log_action(f"User commented on Post {postID}", userID)
+                log_service.log_action(f"User commented in Post {postID}", userID)
 
         return utilities.response("SUCCESS", "Comment successfully created")
 
     except Exception as e:
-        log_service.log_action(f"Failed to comment on Post {postID}: {e}", userID, isSystem=True, isError=True)
+        log_service.log_action(f"Failed to create comment in Post {postID}: {e}", userID, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
 
 # MARK: Delete Comment by ID
-def delete_comment_by_id(commentID, userID, isAdmin=False):
+def delete_comment_by_id(postID, commentID, userID, isAdmin=False):
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -160,17 +160,17 @@ def delete_comment_by_id(commentID, userID, isAdmin=False):
                     [commentID],
                 )
 
-                log_msg = f'{"Admin" if isAdmin else "User"} deleted Comment {commentID}'
+                log_msg = f'{"Admin" if isAdmin else "User"} deleted Comment {commentID} in Post {postID}'
                 log_service.log_action(log_msg, userID)
 
         return utilities.response("SUCCESS", "Comment deleted successfully")
     
     except Exception as e:
-        log_service.log_action(f"Failed to delete Comment {commentID}: {e}", userID, isSystem=True, isError=True)
+        log_service.log_action(f"Failed to delete Comment {commentID} in Post {postID}: {e}", userID, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
 # MARK: Update Comment by ID
-def update_comment_by_id(commentContents, commentID, userID):
+def update_comment_by_id(commentContents, commentID, postID, userID):
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -182,10 +182,10 @@ def update_comment_by_id(commentContents, commentID, userID):
                     [commentContents, commentID],
                 )
 
-                log_service.log_action(f"User updated Comment {commentID}", userID)
+                log_service.log_action(f"User updated Comment {commentID} in Post {postID}", userID)
 
         return utilities.response("SUCCESS", "Comment updated successfully")
     
     except Exception as e:
-        log_service.log_action(f"Failed to update Comment {commentID}: {e}", userID, isSystem=True, isError=True)
+        log_service.log_action(f"Failed to update Comment {commentID} in Post {postID}: {e}", userID, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")

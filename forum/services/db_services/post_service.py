@@ -122,7 +122,7 @@ def insert_new_post(postTitle, postDescription, allowComments, userID):
         return utilities.response("SUCCESS", "Post created successfully", {"post_id": post_id})
 
     except Exception as e:
-        log_service.log_action(f"Failed to post a new Post: {e}", userID, isSystem=True, isError=True)
+        log_service.log_action(f"Failed to create Post: {e}", userID, isSystem=True, isError=True)
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
 # MARK: Update Post by ID
@@ -140,7 +140,7 @@ def update_post_by_id(postTitle, postDescription, allowComments, postID, userID)
                     [postTitle, postDescription, commentStatus, postID],
                 )
 
-                log_service.log_action(f"User updated post {postID}", userID)
+                log_service.log_action(f"User updated Post {postID}", userID)
 
         return utilities.response("SUCCESS", "Post updated successfully")
     
