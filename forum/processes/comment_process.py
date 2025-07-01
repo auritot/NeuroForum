@@ -1,5 +1,5 @@
 from ..services import session_service
-from ..services.db_services import comment_service
+from ..services.db_services import comment_service, log_service
 from django.shortcuts import redirect
 from django.contrib import messages
 
@@ -15,6 +15,7 @@ def process_create_comment(request, post_id, context={}):
 
     commentText = request.POST.get("commentText", "")
     if not commentText:
+        log_service.log_action(f"Failed to create comment in Post {post_id}: User left comment text empty", context["user_info"]["UserID"], isError=True)
         messages.error(request, "Comment cannot be empty!")
         return redirect('post_view', post_id=post_id)
 
@@ -49,6 +50,7 @@ def process_delete_comment(request, post_id, comment_id, context={}):
     elif context["user_info"]["Role"] == "admin":
         response = comment_service.delete_comment_by_id(comment_id, context["user_info"]["UserID"], isAdmin=True)
     else: 
+        log_service.log_action(f"Failed to delete Comment {comment_id} in Post {post_id}: User was unauthorized", context["user_info"]["UserID"], isError=True)
         messages.error(request, "Unauthorized to delete this comment")
         return redirect('index')
 
@@ -80,12 +82,14 @@ def process_update_comment(request, post_id, comment_id, context={}):
 
     editCommentText = request.POST.get("editCommentText")
     if not editCommentText: 
+        log_service.log_action(f"Failed to update comment in Post {post_id}: User left comment text empty", context["user_info"]["UserID"], isError=True)
         messages.error(request, "Comment cannot be empty!")
         redirect(comment_url)
 
     if context["comment"]["UserID_id"] == context["user_info"]["UserID"]:
         response = comment_service.update_comment_by_id(editCommentText, comment_id, context["user_info"]["UserID"])
     else: 
+        log_service.log_action(f"Failed to update Comment {comment_id} in Post {post_id}: User was unauthorized", context["user_info"]["UserID"], isError=True)
         messages.error(request, "Unauthorized to update the comment")
         return redirect('post_view', post_id=post_id)
 
