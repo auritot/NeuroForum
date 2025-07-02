@@ -260,11 +260,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 RECAPTCHA_PUBLIC_KEY = os.getenv('RECAPTCHA_PUBLIC_KEY', 'dummy-public-key')
 RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY', 'dummy-private-key')
 
-
-if 'test' in sys.argv:
-    TEST_OUTPUT_DIR = os.getenv('TEST_OUTPUT_DIR', 'reports/test-reports')
-
-
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
@@ -294,3 +289,7 @@ LOGGING = {
     },
 }
 
+if 'test' in sys.argv:
+    TEST_OUTPUT_DIR = os.getenv('TEST_OUTPUT_DIR', 'reports/test-reports')
+    CACHES['default']['BACKEND'] = 'django_redis.cache.RedisCache'
+    CACHES['default']['LOCATION'] = 'redis://127.0.0.1:6379/1'
