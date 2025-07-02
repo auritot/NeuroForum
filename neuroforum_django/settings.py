@@ -118,7 +118,7 @@ INSTALLED_APPS = [
 
 ASGI_APPLICATION = 'neuroforum_django.asgi.application'
 
-REDIS_HOST = "127.0.0.1" if DEBUG else "redis"
+REDIS_HOST = "127.0.0.1" if os.getenv("CI") == "true" else "redis"
 
 CHANNEL_LAYERS = {
     "default": {
@@ -267,7 +267,7 @@ if 'test' in sys.argv:
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://redis:6379/1',
+        'LOCATION': f'redis://{REDIS_HOST}:6379/1',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
