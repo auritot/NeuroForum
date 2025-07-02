@@ -57,7 +57,7 @@ class SessionAuthMiddleware(BaseMiddleware):
 
 class IPBanMiddleware(MiddlewareMixin):
     def process_request(self, request):
-        ip = request.META.get('REMOTE_ADDR')
+        ip = self.get_client_ip(request)
 
         if cache.get(f"login_ban_{ip}"):
             # Allow access to the banned page itself
