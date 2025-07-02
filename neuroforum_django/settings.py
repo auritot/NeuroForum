@@ -266,7 +266,7 @@ LOGGING = {
         "login_file": {
             "level": "WARNING",
             "class": "logging.FileHandler",
-            "filename": "/var/log/django/login_failures.log",
+            "filename": os.getenv("LOGIN_FAILURE_LOG", "/app/logs/login_failures.log"),
         },
     },
     "loggers": {

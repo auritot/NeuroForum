@@ -56,6 +56,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Prepare login log file for tests
+      run: |
+          mkdir -p logs
+          touch logs/login_failures.log
+
+    - name: Run Django tests
+      run: |
+          docker run \
+            -e LOGIN_FAILURE_LOG=/app/logs/login_failures.log \
+            -v ${{ github.workspace }}/logs:/app/logs \
+            your-image-name \
+            python manage.py test
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:

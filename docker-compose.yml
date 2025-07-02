@@ -30,6 +30,7 @@ services:
     volumes:
       - .:/app:cached
       - ./reports:/app/reports
+      - ./logs:/app/logs
     ports:
       - "8000:8000"
     depends_on:
@@ -45,6 +46,8 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY}
       DEBUG: "False"
+      LOGIN_FAILURE_LOG: /app/logs/login_failures.log
+
 
 volumes:
   db_data:
