@@ -109,11 +109,12 @@ def login_view(request, context={}):
         result = authenticate_user(email, password)
         print("👤 Auth result:", result)
 
-        if result:
+        if result and result.get("status") == "SUCCESS":
             # Successful login
             cache.delete(attempts_key)
             cache.delete(ban_key)
-
+            return render(request, "html/login_view.html", context)
+        
         else:
             # Failed login
             attempts = cache.get(attempts_key, 0) + 1
