@@ -43,18 +43,21 @@ class LoginViewTest(TestCase):
     def test_ip_ban_after_5_attempts(self):
         client = Client()
         ip = "192.168.0.123"
+        headers = {'HTTP_X_FORWARDED_FOR': ip}
 
-        # Clear previous attempts if test reuses cache
+        # Clear cache keys
         cache.delete(f"login_attempts_{ip}")
         cache.delete(f"login_ban_{ip}")
 
+        # Simulate 5 failed login attempts
         for _ in range(5):
             client.post(reverse("login_view"), {
                 "email": "a@b.com",
                 "password": "fail"
-            }, REMOTE_ADDR=ip)
+            }, **headers)
 
-        response = client.get(reverse("login_view"), REMOTE_ADDR=ip)
+        # Final GET to check if banned
+        response = client.get(reverse("login_view"), **headers)
         self.assertRedirects(response, reverse("banned_view"))
 
 class CommentModelTest(TestCase):
