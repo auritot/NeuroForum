@@ -43,21 +43,23 @@ class LoginViewTest(TestCase):
     def test_ip_ban_after_5_attempts(self):
         client = Client()
         ip = "192.168.0.123"
-        meta = {'REMOTE_ADDR': ip}
 
-        # Clear cache keys
+        # Force all requests to use this IP
+        client.defaults['REMOTE_ADDR'] = ip
+
+        # Clear Redis state
         cache.delete(f"login_attempts_{ip}")
         cache.delete(f"login_ban_{ip}")
 
-        # Simulate 5 failed logins
         for _ in range(5):
             client.post(reverse("login_view"), {
                 "email": "a@b.com",
                 "password": "fail"
-            }, **meta)
+            })
 
-        # Final GET to check for ban
-        response = client.get(reverse("login_view"), **meta)
+        # Final GET will now also carry the correct IP
+        print("Cache ban key:", cache.get(f"login_ban_{ip}"))
+        response = client.get(reverse("login_view"))
         self.assertRedirects(response, reverse("banned_view"))
 
 class CommentModelTest(TestCase):
