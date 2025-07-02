@@ -131,6 +131,7 @@ def login_view(request, context={}):
             logger.warning(f"Login failed for IP {ip_address}")
 
             if attempts >= 5:
+                print(f"🚫 Setting ban for IP: {ip_address}")
                 cache.set(ban_key, True, timeout=3600)
                 return redirect("banned_view")
 
