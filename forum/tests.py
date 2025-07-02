@@ -42,11 +42,16 @@ class UserAccountModelTest(TestCase):
 class LoginViewTest(TestCase):
     def test_ip_ban_after_5_attempts(self):
         client = Client()
-        ip = "127.0.0.1"
+        ip = "192.168.0.123"
+
+        # Clear previous attempts if test reuses cache
+        cache.delete(f"login_attempts_{ip}")
+        cache.delete(f"login_ban_{ip}")
+
         for _ in range(5):
             client.post(reverse("login_view"), {
-                "email": "fake@example.com",
-                "password": "wrongpass"
+                "email": "a@b.com",
+                "password": "fail"
             }, REMOTE_ADDR=ip)
 
         response = client.get(reverse("login_view"), REMOTE_ADDR=ip)
