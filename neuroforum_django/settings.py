@@ -18,6 +18,13 @@ import os
 from sshtunnel import SSHTunnelForwarder
 import sys
 
+log_path = os.getenv("LOGIN_FAILURE_LOG", "/app/logs/login_failures.log")
+
+# Ensure the log directory exists, even in CI/CD
+os.makedirs(os.path.dirname(log_path), exist_ok=True)
+if not os.path.exists(log_path):
+    open(log_path, "a").close()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(dotenv_path=BASE_DIR / '.env')
@@ -266,7 +273,7 @@ LOGGING = {
         "login_file": {
             "level": "WARNING",
             "class": "logging.FileHandler",
-            "filename": os.getenv("LOGIN_FAILURE_LOG", "/app/logs/login_failures.log"),
+            "filename": log_path,
         },
     },
     "loggers": {
@@ -277,3 +284,4 @@ LOGGING = {
         },
     },
 }
+
