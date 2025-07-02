@@ -5,6 +5,7 @@ from django.utils import timezone
 from .models import UserAccount, Post, Comment, Filtering, Logs, ChatRoom, ChatSession, ChatMessage
 from django.urls import reverse
 from django.conf import settings
+from django.core.cache import cache
 
 test_runner = xmlrunner.XMLTestRunner(output=settings.TEST_OUTPUT_DIR)
 
@@ -38,6 +39,18 @@ class UserAccountModelTest(TestCase):
         self.assertEqual(str(user), "alice")
         self.assertTrue(user.is_authenticated)
 
+class LoginViewTest(TestCase):
+    def test_ip_ban_after_5_attempts(self):
+        client = Client()
+        ip = "127.0.0.1"
+        for _ in range(5):
+            client.post(reverse("login_view"), {
+                "email": "fake@example.com",
+                "password": "wrongpass"
+            }, REMOTE_ADDR=ip)
+
+        response = client.get(reverse("login_view"), REMOTE_ADDR=ip)
+        self.assertRedirects(response, reverse("banned_view"))
 
 class CommentModelTest(TestCase):
     def setUp(self):
