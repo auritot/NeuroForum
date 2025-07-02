@@ -134,9 +134,9 @@ def login_view(request, context={}):
                 cache.set(ban_key, True, timeout=3600)
                 return redirect("banned_view")
 
-            return render(request, "login_view")
+            return render(request, "html/login_view.html")
 
-    return render(request, "login_view")
+    return render(request, "html/login_view.html")
 
 
 def logout_view(request, context={}):
