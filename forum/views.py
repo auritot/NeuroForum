@@ -108,7 +108,7 @@ def login_view(request, context={}):
     # Already banned?
     if cache.get(ban_key):
         context["error"] = "Too many failed login attempts. Please try again later."
-        return render(request, "html/login_view.html", context)
+        return redirect("banned_view")
 
     if request.method == "POST":
         # Call the actual login handler
