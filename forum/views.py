@@ -117,29 +117,26 @@ def login_view(request, context={}):
 
         result = authenticate_user(email, password)
 
-        if result["status"] != "SUCCESS":
-            # Increment login attempts
+        if result:
+            # Successful login
+            cache.delete(attempts_key)
+            cache.delete(ban_key)
+
+        else:
+            # Failed login
             attempts = cache.get(attempts_key, 0) + 1
             cache.set(attempts_key, attempts, timeout=3600)
 
-            # Log the failed login attempt
-            logger.warning(f"{ip_address} - Failed login at /login/authenticate")
+            # Log to file
+            logger.warning(f"Login failed for IP {ip_address}")
 
-            # Ban if threshold exceeded
             if attempts >= 5:
                 cache.set(ban_key, True, timeout=3600)
-                return redirect('banned_view')
+                return redirect("banned_view")
 
-            return render(request, "html/login_view.html", {"error": result["message"]})
+            return render(request, "login_view")
 
-        # Success: reset counters
-        cache.delete(attempts_key)
-        cache.delete(ban_key)
-
-        # You should log the user in and redirect here
-        return redirect("home_view")
-
-    return render(request, "html/login_view.html")
+    return render(request, "login_view")
 
 
 def logout_view(request, context={}):
