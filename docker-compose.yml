@@ -23,7 +23,9 @@ services:
     restart: unless-stopped
 
     command: >
-      sh -c "python manage.py makemigrations &&
+      sh -c " mkdir -p /app/logs &&
+        touch /app/logs/login_failures.log &&
+        python manage.py makemigrations &&
         python manage.py migrate &&  
         daphne -b 0.0.0.0 -p 8000 neuroforum_django.asgi:application"
 
