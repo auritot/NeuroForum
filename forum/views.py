@@ -25,6 +25,9 @@ import subprocess
 import re
 import random
 import string
+import logging
+
+login_logger = logging.getLogger("login_failures")
 
 # Constants for validation
 FILTER_CONTENT_REGEX = r"^[\w '.@*-]+$"
@@ -98,6 +101,7 @@ def get_client_ip(request):
 @csrf_protect
 def login_view(request, context={}):
     ip = get_client_ip(request)
+    login_logger.warning(f"{ip} - Failed login at /login/authenticate")
     fail_key = f"login_fail_{ip}"
     ban_key = f"login_ban_{ip}"
 

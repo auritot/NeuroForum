@@ -258,3 +258,22 @@ CACHES = {
         "LOCATION": "rate-limit-cache",
     }
 }
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "login_file": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": "/var/log/django/login_failures.log",
+        },
+    },
+    "loggers": {
+        "login_failures": {
+            "handlers": ["login_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
