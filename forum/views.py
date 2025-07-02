@@ -19,7 +19,9 @@ from .processes import user_process, content_filtering_process
 from .pwd_utils import validate_password_nist
 from .services.db_services.user_service import get_user_by_email, update_user_password
 from django.views.decorators.csrf import csrf_protect
+from django.core.cache import cache
 
+import subprocess
 import re
 import random
 import string
@@ -85,11 +87,60 @@ def index(request, context={}):
 
 
 # MARK: Login View
+
+def get_client_ip(request):
+    # Consider X-Forwarded-For if behind reverse proxy
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get("REMOTE_ADDR")
+
 @csrf_protect
 def login_view(request, context={}):
-    messages = get_messages(request)
-    for message in messages:
-        context["error"] = message
+    ip = get_client_ip(request)
+    fail_key = f"login_fail_{ip}"
+    ban_key = f"login_ban_{ip}"
+
+    # Already banned?
+    if cache.get(ban_key):
+        context["error"] = "Too many failed login attempts. Please try again later."
+        return render(request, "html/login_view.html", context)
+
+    if request.method == "POST":
+        # Call the actual login handler
+        response = user_process.process_login(request)
+
+        if response.get("status") != "SUCCESS":
+            fail_count = cache.get(fail_key, 0) + 1
+            cache.set(fail_key, fail_count, timeout=600)  # 10 minutes expiry
+
+            if fail_count >= 5:
+                cache.set(ban_key, True, timeout=3600)  # 1 hour ban
+
+                # Log the ban
+                log_service.log_action(
+                    f"IP {ip} banned after {fail_count} failed login attempts.",
+                    performed_by=1, isSystem=True, isError=True
+                )
+
+                try:
+                    subprocess.Popen(["fail2ban-client", "set", "apache-django-login", "banip", ip])
+                except Exception as e:
+                    print(f"⚠️ Failed to call fail2ban-client: {e}")
+
+                return redirect("banned_view")
+
+            elif fail_count >= 3:
+                context["error"] = f"Login failed. {5 - fail_count} attempt(s) remaining before lockout."
+            else:
+                context["error"] = "Login failed. Please try again."
+
+            return render(request, "html/login_view.html", context)
+
+        # Login success
+        cache.delete(fail_key)
+        cache.delete(ban_key)
+        return redirect("index")
 
     return render(request, "html/login_view.html", context)
 
@@ -767,3 +818,8 @@ def search_posts_view(request):
     context["search_query"] = search_query
 
     return render(request, "html/search.html", context)
+
+# MARK: Banned View
+
+def banned_view(request):
+    return render(request, "html/banned.html", status=403)

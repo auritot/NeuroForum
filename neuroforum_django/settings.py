@@ -250,3 +250,11 @@ RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY', 'dummy-private-key')
 
 if 'test' in sys.argv:
     TEST_OUTPUT_DIR = os.getenv('TEST_OUTPUT_DIR', 'reports/test-reports')
+
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "rate-limit-cache",
+    }
+}

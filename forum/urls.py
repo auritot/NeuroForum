@@ -17,6 +17,7 @@ urlpatterns = [
          name="filtered_words_api"),
     path("edit_post/<int:post_id>", views.post_form_view, name="edit_post_view"),
     path("post/<int:post_id>", views.post_view, name="post_view"),
+    path("banned/", views.banned_view, name="banned_view"),
     # User Related Pages
     path("profile", views.user_profile_view, name="user_profile_view"),
     path("manage_post", views.user_manage_post_view,
