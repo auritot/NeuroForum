@@ -2,6 +2,9 @@ from channels.middleware import BaseMiddleware
 from django.contrib.auth.models import AnonymousUser
 from channels.db import database_sync_to_async
 from django.contrib.sessions.backends.db import SessionStore
+from django.core.cache import cache
+from django.shortcuts import redirect
+from django.utils.deprecation import MiddlewareMixin
 
 @database_sync_to_async
 def fetch_user_from_session(session_key):
@@ -51,3 +54,15 @@ class SessionAuthMiddleware(BaseMiddleware):
             scope["user"] = AnonymousUser()
 
         return await super().__call__(scope, receive, send)
+
+class IPBanMiddleware(MiddlewareMixin):
+    def process_request(self, request):
+        ip = self.get_client_ip(request)
+        if cache.get(f"login_ban_{ip}"):
+            return redirect("banned_view")  # Named URL
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get("REMOTE_ADDR")
