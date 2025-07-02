@@ -21,6 +21,7 @@ from .services.db_services.user_service import get_user_by_email, update_user_pa
 from django.views.decorators.csrf import csrf_protect
 from django.core.cache import cache
 from forum.services.db_services.user_service import authenticate_user
+from forum.ip_utils import get_client_ip
 
 import subprocess
 import re
@@ -91,16 +92,6 @@ def index(request, context={}):
 
 
 # MARK: Login View
-
-def get_client_ip(request):
-    # Consider X-Forwarded-For if behind reverse proxy
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(",")[0]
-    else:
-        ip = request.META.get("REMOTE_ADDR")
-    return ip
-
 @csrf_protect
 def login_view(request, context={}):
     ip_address = get_client_ip(request)

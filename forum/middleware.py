@@ -5,6 +5,7 @@ from django.contrib.sessions.backends.db import SessionStore
 from django.core.cache import cache
 from django.shortcuts import redirect
 from django.utils.deprecation import MiddlewareMixin
+from forum.ip_utils import get_client_ip
 
 @database_sync_to_async
 def fetch_user_from_session(session_key):
@@ -65,7 +66,4 @@ class IPBanMiddleware(MiddlewareMixin):
             # Allow access to the banned page itself
             if request.path != '/banned/' and not request.path.startswith('/static/'):
                 return redirect("banned_view")
-            
-    def get_client_ip(self, request):
-        return request.META.get("REMOTE_ADDR")
         
