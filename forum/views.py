@@ -128,9 +128,10 @@ def login_view(request, context={}):
                 )
 
                 try:
-                    subprocess.Popen(["fail2ban-client", "set", "apache-django-login", "banip", ip])
+                    cache.set(ban_key, True, timeout=3600)
+                    return redirect("banned_view")
                 except Exception as e:
-                    print(f"⚠️ Failed to call fail2ban-client: {e}")
+                    print(f"Failed to call fail2ban-client: {e}")
 
                 return redirect("banned_view")
 

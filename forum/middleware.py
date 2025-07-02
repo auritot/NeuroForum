@@ -57,10 +57,13 @@ class SessionAuthMiddleware(BaseMiddleware):
 
 class IPBanMiddleware(MiddlewareMixin):
     def process_request(self, request):
-        ip = self.get_client_ip(request)
-        if cache.get(f"login_ban_{ip}"):
-            return redirect("banned_view")  # Named URL
+        ip = request.META.get('REMOTE_ADDR')
 
+        if cache.get(f"login_ban_{ip}"):
+            # Allow access to the banned page itself
+            if request.path != '/banned/' and not request.path.startswith('/static/'):
+                return redirect("banned_view")
+            
     def get_client_ip(self, request):
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
