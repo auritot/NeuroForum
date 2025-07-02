@@ -18,12 +18,17 @@ import os
 from sshtunnel import SSHTunnelForwarder
 import sys
 
-log_path = os.getenv("LOGIN_FAILURE_LOG", "/app/logs/login_failures.log")
+# Set log path (use /tmp for GitHub Actions CI)
+default_log_path = "/tmp/login_failures.log" if os.getenv("CI") == "true" else "/app/logs/login_failures.log"
+log_path = os.getenv("LOGIN_FAILURE_LOG", default_log_path)
 
-# Ensure the log directory exists, even in CI/CD
-os.makedirs(os.path.dirname(log_path), exist_ok=True)
-if not os.path.exists(log_path):
-    open(log_path, "a").close()
+# Ensure the log file and parent directory exist
+try:
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    if not os.path.exists(log_path):
+        open(log_path, "a").close()
+except Exception as e:
+    print(f"Logging path setup failed: {e}")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
