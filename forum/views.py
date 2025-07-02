@@ -107,6 +107,7 @@ def login_view(request, context={}):
         password = request.POST.get("password")
 
         result = authenticate_user(email, password)
+        print("👤 Auth result:", result)
 
         if result:
             # Successful login
@@ -122,7 +123,7 @@ def login_view(request, context={}):
             logger.warning(f"Login failed for IP {ip_address}")
 
             if attempts >= 5:
-                print(f"🚫 Setting ban for IP: {ip_address}")
+                print(f"🚫 Setting ban for IP: {ip_address}, attempts={attempts}")
                 cache.set(ban_key, True, timeout=3600)
                 return redirect("banned_view")
 
