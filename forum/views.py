@@ -120,6 +120,7 @@ def login_view(request, context={}):
             attempts = cache.get(attempts_key, 0) + 1
             cache.set(attempts_key, attempts, timeout=3600)
 
+            print(f"❌ Login failed — attempts for {ip_address}: {attempts}")
             # Log to file
             logger.warning(f"Login failed for IP {ip_address}")
 
