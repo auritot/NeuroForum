@@ -9,6 +9,11 @@ import random
 import string
 from django.core.mail import send_mail
 from django.utils import timezone
+from forum.ip_utils import get_client_ip
+from django.core.cache import cache
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def generate_verification_code(length=6):
@@ -20,6 +25,16 @@ def generate_verification_code(length=6):
 def process_login(request):
     if request.method != 'POST':
         return redirect('login_view')
+    
+    ip_address = get_client_ip(request)
+    ban_key = f"login_ban_{ip_address}"
+    attempts_key = f"login_attempts_{ip_address}"
+
+    print(f"👀 IP login attempt from {ip_address}")
+    print(f"🚫 Ban status: {cache.get(ban_key)}")
+
+    if cache.get(ban_key):
+        return redirect("banned_view")
 
     email = utilities.sanitize_input(request.POST.get("email"))
     password = request.POST.get("password", "")
@@ -33,6 +48,10 @@ def process_login(request):
     result = user_service.authenticate_user(email, password)
 
     if result["status"] == "SUCCESS":
+
+        cache.delete(attempts_key)
+        cache.delete(ban_key)
+
         verification_code = generate_verification_code()
         request.session['pending_user'] = email
         request.session['verification_code'] = verification_code
@@ -51,6 +70,16 @@ def process_login(request):
             return redirect("login_view")
 
         return redirect("email_verification")
+    
+    attempts = cache.get(attempts_key, 0) + 1
+    cache.set(attempts_key, attempts, timeout=3600)
+    print(f"❌ Login failed — attempts for {ip_address}: {attempts}")
+    logger.warning(f"Login failed for IP {ip_address}")
+
+    if attempts >= 5:
+        print(f"🚫 Setting ban for IP: {ip_address}, attempts={attempts}")
+        cache.set(ban_key, True, timeout=3600)
+        return redirect("banned_view")
 
     if result["status"] in ["NOT_FOUND", "INVALID"]:
         messages.error(request, "Invalid email or password.")

@@ -27,9 +27,6 @@ import subprocess
 import re
 import random
 import string
-import logging
-
-logger = logging.getLogger(__name__)
 
 # Constants for validation
 FILTER_CONTENT_REGEX = r"^[\w '.@*-]+$"
@@ -94,41 +91,16 @@ def index(request, context={}):
 # MARK: Login View
 @csrf_protect
 def login_view(request, context={}):
-    ip_address = get_client_ip(request)
-    ban_key = f"login_ban_{ip_address}"
-    attempts_key = f"login_attempts_{ip_address}"
-
-    # Check if IP is banned
-    if cache.get(ban_key):
-        return redirect('banned_view')
-
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
 
         result = authenticate_user(email, password)
-        print("👤 Auth result:", result)
 
         if result and result.get("status") == "SUCCESS":
-            # Successful login
-            cache.delete(attempts_key)
-            cache.delete(ban_key)
             return render(request, "html/login_view.html", context)
-        
+
         else:
-            # Failed login
-            attempts = cache.get(attempts_key, 0) + 1
-            cache.set(attempts_key, attempts, timeout=3600)
-
-            print(f"❌ Login failed — attempts for {ip_address}: {attempts}")
-            # Log to file
-            logger.warning(f"Login failed for IP {ip_address}")
-
-            if attempts >= 5:
-                print(f"🚫 Setting ban for IP: {ip_address}, attempts={attempts}")
-                cache.set(ban_key, True, timeout=3600)
-                return redirect("banned_view")
-
             return render(request, "html/login_view.html")
 
     return render(request, "html/login_view.html")
