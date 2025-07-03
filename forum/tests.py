@@ -67,7 +67,6 @@ class LoginViewTest(TestCase):
         follow_response = client.get(response.url)
         self.assertEqual(follow_response.status_code, 403)
 
-
 class CommentModelTest(TestCase):
     def setUp(self):
         self.user = UserAccount.objects.create(Username="bob", Email="bob@example.com", Password="pwd", Role="user")
