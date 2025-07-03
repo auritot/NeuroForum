@@ -3,18 +3,18 @@ name: SonarQube Analysis
 on:
   push:
     branches:
-      - main  # Run the scan on pushes to the main branch
+      - main
 
 jobs:
   build:
     name: Build and analyze
-    runs-on: windows-latest
+    runs-on: ubuntu-latest  # ← changed from windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensure full Git history for SonarQube analysis
+          fetch-depth: 0
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v2
