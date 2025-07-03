@@ -72,7 +72,7 @@ def process_login(request):
         return redirect("email_verification")
     
     attempts = cache.get(attempts_key, 0) + 1
-    cache.set(attempts_key, attempts, timeout=3600)
+    cache.set(attempts_key, attempts, timeout=600)
     print(f"❌ Login failed — attempts for {ip_address}: {attempts}")
     logger.warning(f"Login failed for IP {ip_address}")
 
