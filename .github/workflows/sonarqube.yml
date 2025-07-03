@@ -6,15 +6,19 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build and analyze
-    runs-on: ubuntu-latest  # ← changed from windows-latest
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest  # Make sure it's Linux (container actions require Linux)
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
         with:
-          fetch-depth: 0
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v2
