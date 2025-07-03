@@ -43,28 +43,30 @@ class LoginViewTest(TestCase):
     def test_ip_ban_after_5_attempts(self):
         client = Client()
         ip = "192.168.0.123"
-
-        # Force all requests to use this IP
         client.defaults['REMOTE_ADDR'] = ip
 
-        # Clear Redis state
+        # Clear cache
         cache.delete(f"login_attempts_{ip}")
         cache.delete(f"login_ban_{ip}")
 
+        # Trigger 5 failed logins (to /login/authenticate)
         for _ in range(5):
-            client.post(reverse("login_view"), {
+            client.post(reverse("process_login"), {
                 "email": "a@b.com",
                 "password": "fail"
             })
 
-        # Final GET will now also carry the correct IP
         print("Cache ban key:", cache.get(f"login_ban_{ip}"))
-        response = client.get(reverse("login_view"))
-        self.assertEqual(response.status_code, 302)  # Redirect happened
-        self.assertEqual(response.url, reverse("banned_view"))  # Correct target
 
-        banned_response = client.get(response.url)
-        self.assertEqual(banned_response.status_code, 403)
+        # Final GET to /login should trigger middleware redirect
+        response = client.get(reverse("login_view"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("banned_view"))
+
+        # Optional: follow redirect to confirm 403 status
+        follow_response = client.get(response.url)
+        self.assertEqual(follow_response.status_code, 403)
+
 
 class CommentModelTest(TestCase):
     def setUp(self):
