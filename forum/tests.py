@@ -60,7 +60,11 @@ class LoginViewTest(TestCase):
         # Final GET will now also carry the correct IP
         print("Cache ban key:", cache.get(f"login_ban_{ip}"))
         response = client.get(reverse("login_view"))
-        self.assertRedirects(response, reverse("banned_view"))
+        self.assertEqual(response.status_code, 302)  # Redirect happened
+        self.assertEqual(response.url, reverse("banned_view"))  # Correct target
+
+        banned_response = client.get(response.url)
+        self.assertEqual(banned_response.status_code, 403)
 
 class CommentModelTest(TestCase):
     def setUp(self):
