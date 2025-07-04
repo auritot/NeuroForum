@@ -47,6 +47,7 @@ services:
       DB_PORT: ${DB_PORT}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY}
+      FERNET_KEY: ${FERNET_KEY}
       DEBUG: "False"
       LOGIN_FAILURE_LOG: /app/logs/login_failures.log
 
