@@ -153,10 +153,15 @@ class ChatMessage(models.Model):
     @property
     def content(self):
         try:
-            room_name = self.session.room.name  # get room name from session
-            return decrypt_message(self.content_encrypted, room_name)
-        except Exception:
+            room_name = self.session.room.name
+            print(f"🔐 Decrypting: {self.content_encrypted}")
+            result = decrypt_message(self.content_encrypted, room_name)
+            print(f"✅ Decrypted result: {result}")
+            return result
+        except Exception as e:
+            print("❌ DECRYPTION ERROR:", str(e))
             return "[Decryption Failed]"
+
 
     @content.setter
     def content(self, value):
