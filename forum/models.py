@@ -153,13 +153,15 @@ class ChatMessage(models.Model):
     @property
     def content(self):
         try:
-            return decrypt_message(self.content_encrypted)
+            room_name = self.session.room.name  # get room name from session
+            return decrypt_message(self.content_encrypted, room_name)
         except Exception:
             return "[Decryption Failed]"
 
     @content.setter
     def content(self, value):
-        self.content_encrypted = encrypt_message(value)
+        room_name = self.session.room.name
+        self.content_encrypted = encrypt_message(value, room_name)
 
     def __str__(self):
         ts = self.timestamp.strftime("%H:%M %d/%m/%Y")
