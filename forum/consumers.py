@@ -9,6 +9,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.utils import timezone
 from pytz import timezone as pytz_timezone
+from forum.crypto_utils import decrypt_message
 
 from django.contrib.auth import get_user_model
 from .models import ChatRoom, ChatSession, ChatMessage, UserAccount
@@ -116,10 +117,15 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         sg = timezone.now().astimezone(pytz_timezone("Asia/Singapore"))
         timestamp_str = sg.strftime("%I:%M %p %d/%m/%Y")
 
-        # persist the message
-        await self._save_message(self.session, self.scope["user"], safe_message)
+        # persist and retrieve the saved message
+        saved_msg = await self._save_message(self.session, self.scope["user"], safe_message)
+        room_name = saved_msg.session.room.name
 
-        decrypted_content = await self._get_latest_decrypted_content(self.session, self.scope["user"])
+        try:
+            decrypted_content = decrypt_message(saved_msg.content_encrypted, room_name)
+        except Exception as e:
+            print("❌ DECRYPTION ERROR:", str(e))
+            decrypted_content = "[Decryption Failed]"
 
         # broadcast the decrypted version
         await self.channel_layer.group_send(
@@ -222,8 +228,20 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
     # def _mark_as_read(self, user, room):
     #     ChatUnread.objects.filter(user=user, room=room).update(unread_count=0)
     @database_sync_to_async
-    def _get_latest_decrypted_content(session, user):
+    def _get_latest_decrypted_content(self, session, user):
         msg = ChatMessage.objects.filter(session=session, sender=user).order_by("-timestamp").first()
         if msg:
-            return msg.content  # this accesses the property in a sync-safe context
+            try:
+                room_name = msg.session.room.name
+                return decrypt_message(msg.content_encrypted, room_name)
+            except Exception as e:
+                print("❌ DECRYPT ERROR:", str(e))
+                return "[Decryption Failed]"
         return "[Decryption Failed]"
+    
+    @database_sync_to_async
+    def _save_message(self, session, user, content):
+        msg = ChatMessage(session=session, sender=user)
+        msg.content = content  # triggers encryption
+        msg.save()
+        return msg
