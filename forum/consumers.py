@@ -116,27 +116,26 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         sg = timezone.now().astimezone(pytz_timezone("Asia/Singapore"))
         timestamp_str = sg.strftime("%I:%M %p %d/%m/%Y")
 
-        # 1) send to everyone in the chatroom
+        # persist the message
+        await self._save_message(self.session, self.scope["user"], safe_message)
+
+        # fetch the latest saved message and decrypt
+        @database_sync_to_async
+        def get_latest_decrypted_message(session, user):
+            msg = ChatMessage.objects.filter(session=session, sender=user).order_by("-timestamp").first()
+            return msg.content if msg else "[Decryption Failed]"
+
+        decrypted_content = await get_latest_decrypted_message(self.session, self.scope["user"])
+
+        # broadcast the decrypted version
         await self.channel_layer.group_send(
             self.room_name,
             {
                 "type":      "chat.message",
-                "message":   safe_message,
+                "message":   decrypted_content,
                 "sender":    self.current_user,
                 "timestamp": timestamp_str,
                 "history":   False,
-            }
-        )
-
-        # 2) persist the message
-        await self._save_message(self.session, self.scope["user"], safe_message)
-
-        # 3) ping the other user’s notify channel for unread‐badge/glow
-        await self.channel_layer.group_send(
-            f"notify_{self.other_user}",
-            {
-                "type":      "chat.unread_notification",
-                "from_user": self.current_user,
             }
         )
 
