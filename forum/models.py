@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from forum.crypto_utils import encrypt_message, decrypt_message
+from asgiref.sync import sync_to_async
 
 # Create your models here.
 
@@ -171,6 +172,9 @@ class ChatMessage(models.Model):
     def __str__(self):
         ts = self.timestamp.strftime("%H:%M %d/%m/%Y")
         return f"[{ts}] {self.sender.username}: {self.content[:40]}…"
+    
+    async def get_decrypted_content(self):
+        return await sync_to_async(decrypt_message)(self.content_encrypted, self.session.room.name)
 
 
 # class ChatUnread(models.Model):

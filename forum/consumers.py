@@ -79,7 +79,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             for msg in past_msgs:
                 local_time = msg.timestamp.astimezone(sg)
                 await self.send(text_data=json.dumps({
-                    "message":        msg.content,
+                    "message":        await msg.get_decrypted_content(),
                     "sender":         msg.sender.Username,
                     "timestamp":      local_time.strftime("%I:%M %p %d/%m/%Y"),
                     "history":        True,
@@ -91,7 +91,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         for msg in current_backlog:
             local_time = msg.timestamp.astimezone(sg)
             await self.send(text_data=json.dumps({
-                "message":   msg.content,
+                "message":   await msg.get_decrypted_content(),
                 "sender":    msg.sender.Username,
                 "timestamp": local_time.strftime("%I:%M %p %d/%m/%Y"),
                 "history":   False,
