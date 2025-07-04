@@ -119,17 +119,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         # persist the message
         await self._save_message(self.session, self.scope["user"], safe_message)
 
-        # fetch the latest saved message and decrypt
-        @database_sync_to_async
-        def get_latest_decrypted_message(session, user):
-            msg = ChatMessage.objects.filter(session=session, sender=user).order_by("-timestamp").first()
-            try:
-                return msg.content
-            except Exception as e:
-                print("DECRYPTION ERROR:", str(e))
-                return "[Decryption Failed]"
-
-        decrypted_content = await get_latest_decrypted_message(self.session, self.scope["user"])
+        decrypted_content = await self._get_latest_decrypted_content(self.session, self.scope["user"])
 
         # broadcast the decrypted version
         await self.channel_layer.group_send(
@@ -231,3 +221,9 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
     # @database_sync_to_async
     # def _mark_as_read(self, user, room):
     #     ChatUnread.objects.filter(user=user, room=room).update(unread_count=0)
+    @database_sync_to_async
+    def _get_latest_decrypted_content(session, user):
+        msg = ChatMessage.objects.filter(session=session, sender=user).order_by("-timestamp").first()
+        if msg:
+            return msg.content  # this accesses the property in a sync-safe context
+        return "[Decryption Failed]"
