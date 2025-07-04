@@ -123,7 +123,11 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         @database_sync_to_async
         def get_latest_decrypted_message(session, user):
             msg = ChatMessage.objects.filter(session=session, sender=user).order_by("-timestamp").first()
-            return msg.content if msg else "[Decryption Failed]"
+            try:
+                return msg.content
+            except Exception as e:
+                print("DECRYPTION ERROR:", str(e))
+                return "[Decryption Failed]"
 
         decrypted_content = await get_latest_decrypted_message(self.session, self.scope["user"])
 
