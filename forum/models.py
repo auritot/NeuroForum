@@ -174,7 +174,12 @@ class ChatMessage(models.Model):
         return f"[{ts}] {self.sender.username}: {self.content[:40]}…"
     
     async def get_decrypted_content(self):
-        return await sync_to_async(decrypt_message)(self.content_encrypted, self.session.room.name)
+    
+        def get_room_name():
+            return self.session.room.name
+
+        room_name = await sync_to_async(get_room_name)()
+        return await sync_to_async(decrypt_message)(self.content_encrypted, room_name)
 
 
 # class ChatUnread(models.Model):
