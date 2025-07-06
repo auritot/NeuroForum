@@ -220,21 +220,6 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             return 0
         PrivateChatConsumer._session_participants[session_id] = cnt
         return cnt
-
-    # @database_sync_to_async
-    # def _mark_as_read(self, user, room):
-    #     ChatUnread.objects.filter(user=user, room=room).update(unread_count=0)
-    # @database_sync_to_async
-    # def _get_latest_decrypted_content(self, session, user):
-    #     msg = ChatMessage.objects.filter(session=session, sender=user).order_by("-timestamp").first()
-    #     if msg:
-    #         try:
-    #             room_name = msg.session.room.name
-    #             return decrypt_message(msg.content_encrypted, room_name)
-    #         except Exception as e:
-    #             print("❌ DECRYPT ERROR:", str(e))
-    #             return "[Decryption Failed]"
-    #     return "[Decryption Failed]"
     
     @database_sync_to_async
     def _save_message(self, session, user, content):

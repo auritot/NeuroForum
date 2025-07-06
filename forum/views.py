@@ -312,15 +312,63 @@ def post_view(request, post_id, context={}):
 @csrf_protect
 def user_profile_view(request, context={}):
     session_response = session_service.check_session(request)
-    if session_response["status"] == "SUCCESS":
-        context["user_info"] = session_response["data"]
-    else:
+    if session_response["status"] != "SUCCESS":
         messages.error(request, "Session Expired! Please login.")
         return redirect("login_view")
-    # else:
-    #     return redirect('index')
 
-    user_response = user_service.get_user_by_id(context["user_info"]["UserID"])
+    context["user_info"] = session_response["data"]
+    user_id = context["user_info"]["UserID"]
+    user_email = context["user_info"]["Email"]
+
+    if request.method == "POST":
+        if "oldPassword" in request.POST:
+            # Handle password change
+            old_password = request.POST.get("oldPassword", "")
+            new_password = request.POST.get("newPassword", "")
+            confirm_password = request.POST.get("newConfirmPassword", "")
+
+            if not old_password or not new_password or not confirm_password:
+                messages.error(request, "Please fill in all password fields.")
+                return redirect("user_profile_view")
+
+            if new_password != confirm_password:
+                messages.error(request, "New passwords do not match.")
+                return redirect("user_profile_view")
+
+            auth_result = authenticate_user(user_email, old_password)
+            if auth_result["status"] != "SUCCESS":
+                messages.error(request, "Old password is incorrect.")
+                return redirect("user_profile_view")
+
+            valid, msg = validate_password_nist(new_password)
+            if not valid:
+                messages.error(request, msg)
+                return redirect("user_profile_view")
+
+            update_result = update_user_password(user_id, new_password)
+            if update_result["status"] == "SUCCESS":
+                messages.success(request, "Password updated successfully.")
+            else:
+                messages.error(request, "Failed to update password.")
+
+            return redirect("user_profile_view")
+
+        elif "username" in request.POST and "email" in request.POST:
+            # Handle profile update
+            new_username = request.POST.get("username", "").strip()
+            new_email = request.POST.get("email", "").strip()
+
+            # (Optional) Add validation here
+
+            update_result = user_service.update_user_profile(user_id, new_username, new_email)
+            if update_result["status"] == "SUCCESS":
+                messages.success(request, "Profile updated successfully.")
+                return redirect("user_profile_view")
+            else:
+                messages.error(request, "Failed to update profile.")
+
+    # Load user info for GET or failed POST
+    user_response = user_service.get_user_by_id(user_id)
     if user_response["status"] == "SUCCESS":
         context["user_data"] = user_response["data"]
 
