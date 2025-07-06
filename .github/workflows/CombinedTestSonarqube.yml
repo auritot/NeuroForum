@@ -115,7 +115,7 @@ jobs:
         CI: true
       run: |
         mkdir -p reports
-        coverage run --source='forum','neuroforum_django' --omit='forum/tests.py' manage.py test --keepdb
+        coverage run -m pytest
         coverage xml -o reports/coverage.xml
 
     - name: SonarQube Scan
