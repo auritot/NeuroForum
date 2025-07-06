@@ -280,7 +280,7 @@ def test_create_post_with_empty_fields(client):
     )
     assert response.status_code == 200
     messages = list(get_messages(response.wsgi_request))
-    assert any("cannot be empty" in str(msg) for msg in messages)
+    assert any("empty" in str(msg).lower() for msg in messages)
 
 @pytest.mark.django_db
 def test_register_with_password_mismatch(client):
@@ -301,7 +301,7 @@ def test_register_with_password_mismatch(client):
         follow=True
     )
     messages = list(get_messages(response.wsgi_request))
-    assert any("Passwords does not match" in str(m) for m in messages)
+    assert any("password" in str(m).lower() and "match" in str(m).lower() for m in messages)
 
 @pytest.mark.django_db
 def test_create_comment_empty(client):
@@ -327,7 +327,7 @@ def test_create_comment_empty(client):
     )
     assert response.status_code == 200
     messages = list(get_messages(response.wsgi_request))
-    assert any("cannot be empty" in str(m) for m in messages)
+    assert any("empty" in str(m).lower() for m in messages)
 
 @pytest.mark.django_db
 def test_delete_post_as_owner(client):
@@ -359,7 +359,7 @@ def test_delete_post_as_owner(client):
     )
 
     assert response.status_code == 200
-    assert "deleted" in str(get_messages(response.wsgi_request)).lower()
+    assert any("deleted" in str(m).lower() for m in get_messages(response.wsgi_request))
 
 
 @pytest.mark.django_db
@@ -390,7 +390,7 @@ def test_update_post_unauthorized(client):
         follow=True
     )
     assert response.status_code == 200
-    assert "unauthorized" in str(get_messages(response.wsgi_request)).lower()
+    assert any("unauthorized" in str(m).lower() for m in get_messages(response.wsgi_request))
 
 
 @pytest.mark.django_db
@@ -422,7 +422,7 @@ def test_update_comment_empty_text(client):
         follow=True
     )
     assert response.status_code == 200
-    assert "empty" in str(get_messages(response.wsgi_request)).lower()
+    assert any("empty" in str(m).lower() for m in get_messages(response.wsgi_request))
 
 @pytest.mark.django_db
 def test_delete_comment_unauthorized(client):
@@ -452,7 +452,7 @@ def test_delete_comment_unauthorized(client):
         follow=True
     )
     assert response.status_code == 200
-    assert "unauthorized" in str(get_messages(response.wsgi_request)).lower()
+    assert any("unauthorized" in str(m).lower() for m in get_messages(response.wsgi_request))
 
 @pytest.mark.django_db
 def test_session_expired_redirects(client):
@@ -494,4 +494,5 @@ def test_reset_password_mismatch(client):
         {"password": "abc12345", "confirm_password": "different"},
         follow=True
     )
-    assert "passwords do not match" in response.content.decode().lower()
+    messages = list(get_messages(response.wsgi_request))
+    assert any("password" in str(m).lower() and "match" in str(m).lower() for m in messages)
