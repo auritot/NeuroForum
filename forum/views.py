@@ -763,21 +763,47 @@ def delete_user(request, user_id):
 def search_posts_view(request):
     context = {}
     session_response = session_service.check_session(request)
-
+    
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
-    else:
-        context["user_info"] = None  # Explicitly handle anonymous users
 
+    # Get search query and sort parameters
     search_query = request.GET.get("q", "")
-    start_index = int(request.GET.get("start", 0))
+    sort_order = request.GET.get("sort", "newest")  # Default to newest first
+
+    # Configure pagination
     per_page = 10
+    current_page = int(request.GET.get("page", 1))
+    
+    # Get total count for pagination
+    count_response = post_service.get_search_post_count(
+        keyword=search_query
+    )
+    total_count = count_response["data"]["count"] if count_response["status"] == "SUCCESS" else 0
+    
+    pagination_data = utilities.get_pagination_data(
+        current_page, per_page, total_count
+    )
 
+    # Call service with search + sorting
     response = post_service.search_posts_by_keyword(
-        search_query, start_index, per_page)
-    context["posts"] = response["data"]["posts"] if response["status"] == "SUCCESS" else []
-    context["search_query"] = search_query
+        keyword=search_query,
+        start_index=pagination_data["start_index"],
+        per_page=per_page,
+        sort_order=sort_order
+    )
 
+    context.update({
+        "posts": response["data"]["posts"] if response["status"] == "SUCCESS" else [],
+        "search_query": search_query,
+        "request": request,
+        "page_range": pagination_data["page_range"],
+        "current_page": current_page,
+        "total_pages": pagination_data["total_pages"],
+        "previous_page": pagination_data["previous_page"],
+        "next_page": pagination_data["next_page"]
+    })
+    
     return render(request, "html/search.html", context)
 
 # MARK: Banned View

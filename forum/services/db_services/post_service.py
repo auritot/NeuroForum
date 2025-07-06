@@ -172,7 +172,7 @@ def delete_post_by_id(postID, userID, isAdmin=False):
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
     
 # MARK: Search Posts by Keyword
-def search_posts_by_keyword(keyword, start_index=0, per_page=10, userID=None):
+def search_posts_by_keyword(keyword, start_index=0, per_page=10, userID=None, sort_order="newest"):
     try:
         search_term = f"%{keyword}%"
 
@@ -189,9 +189,15 @@ def search_posts_by_keyword(keyword, start_index=0, per_page=10, userID=None):
             base_query += " AND p.UserID_id = %s"
             params.append(userID)
 
-        base_query += """
+        # Add sorting
+        if sort_order == "oldest":
+            order_clause = "ORDER BY p.Timestamp ASC"
+        else:  # Default to newest
+            order_clause = "ORDER BY p.Timestamp DESC"
+        
+        base_query += f"""
             GROUP BY p.PostID, u.UserID
-            ORDER BY p.Timestamp DESC
+            {order_clause}
             LIMIT %s, %s;
         """
         params.extend([start_index, per_page])
@@ -204,5 +210,26 @@ def search_posts_by_keyword(keyword, start_index=0, per_page=10, userID=None):
 
         return utilities.response("SUCCESS", "Search results retrieved", post_data)
 
+    except Exception as e:
+        return utilities.response("ERROR", f"An unexpected error occurred: {e}")
+    
+
+def get_search_post_count(keyword):
+    try:
+        search_term = f"%{keyword}%"
+        query = """
+            SELECT COUNT(*) 
+            FROM forum_post p
+            WHERE (p.Title LIKE %s OR p.PostContent LIKE %s)
+        """
+        params = [search_term, search_term]
+
+        with connection.cursor() as cursor:
+            cursor.execute(query, params)
+            result = cursor.fetchone()
+            count = result[0] if result else 0
+
+        return utilities.response("SUCCESS", "Search count retrieved", {"count": count})
+    
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
