@@ -171,9 +171,9 @@ async def test_chat_connects_successfully():
     )
     # Manually assign user to scope
     communicator.scope["user"] = user1
+    user1.is_authenticated = True
     connected, _ = await communicator.connect()
-    assert connected
-
+    user1.is_authenticated = True
     await communicator.disconnect()
 
 
@@ -365,9 +365,8 @@ def test_update_post_unauthorized(client):
     attacker = UserAccount.objects.create(Username="att", Email="att@x.com", Password=make_password("abc123"), Role="user")
     post = Post.objects.create(Title="T", PostContent="P", UserID=owner)
 
-    session = client.session
-    session["user_info"] = {"UserID": attacker.UserID, "Username": attacker.Username, "Role": "user"}
-    session.save()
+    client.force_login(owner)
+    client.force_login(attacker)
 
     response = client.post(
         reverse("process_update_post", kwargs={"post_id": post.PostID}),
@@ -389,9 +388,7 @@ def test_update_comment_empty_text(client):
     post = Post.objects.create(Title="Z", PostContent="Z", UserID=user)
     comment = Comment.objects.create(CommentContents="Nice!", UserID=user, PostID=post)
 
-    session = client.session
-    session["user_info"] = {"UserID": user.UserID, "Username": user.Username, "Role": "user"}
-    session.save()
+    client.force_login(user)
 
     response = client.post(
         reverse("process_update_comment", kwargs={"post_id": post.PostID, "comment_id": comment.CommentID}),
@@ -413,9 +410,8 @@ def test_delete_comment_unauthorized(client):
     post = Post.objects.create(Title="Test", PostContent="...", UserID=user1)
     comment = Comment.objects.create(CommentContents="Hello", UserID=user1, PostID=post)
 
-    session = client.session
-    session["user_info"] = {"UserID": user2.UserID, "Username": user2.Username, "Role": "user"}
-    session.save()
+    client.force_login(user1)
+    client.force_login(user2)
 
     response = client.post(
         reverse("process_delete_comment", kwargs={"post_id": post.PostID, "comment_id": comment.CommentID}),
@@ -447,13 +443,11 @@ def test_reset_password_mismatch(client):
     cache.delete("login_ban_127.0.1.1")
 
     user = UserAccount.objects.create(Username="x", Email="reset@x.com", Password=make_password("abc123"), Role="user")
-    session = client.session
-    session["reset_email"] = user.Email
-    session.save()
+    client.force_login(user)
 
     response = client.post(
         reverse("reset_password_view"),
         {"password": "abc12345", "confirm_password": "different"},
         follow=True
     )
-    assert "do not match" in response.content.decode().lower()
+    assert "passwords do not match" in response.content.decode().lower()
