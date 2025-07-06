@@ -91,14 +91,14 @@ jobs:
         MYSQL_USER: ${{ secrets.MYSQL_USER }}
 
 
-    - name: Run tests and generate XML report
+    - name: Run tests with coverage
       env:
         DJANGO_SETTINGS_MODULE: neuroforum_django.settings
         CI: true
-        TEST_OUTPUT_DIR: reports/test-reports
       run: |
-        mkdir -p reports/test-reports
-        python manage.py test --keepdb --testrunner=xmlrunner.extra.djangotestrunner.XMLTestRunner
+        mkdir -p reports
+        coverage run --source='.' manage.py test --keepdb
+        coverage xml -o reports/coverage.xml
 
     - name: Upload test results
       uses: actions/upload-artifact@v4

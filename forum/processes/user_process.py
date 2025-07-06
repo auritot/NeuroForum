@@ -7,7 +7,6 @@ from django.contrib import messages
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
-import random
 import string
 import secrets
 from django.core.mail import send_mail
@@ -23,10 +22,10 @@ SESSION_EXPIRED_MSG = "Session Expired! Please login again."
 USER_NOT_FOUND_MSG = "User not found"
 
 def generate_verification_code(length=6):
-    return ''.join(random.choices(string.digits, k=length))
+    return ''.join(secrets.choice(string.digits) for _ in range(length))
 
 # MARK: Process Login
-
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def process_login(request):
@@ -101,6 +100,7 @@ def process_login(request):
 
 
 # MARK: Process Register
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def process_register(request):
@@ -202,6 +202,7 @@ def process_register(request):
 
 
 # MARK: Process Update Profile
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def process_update_profile(request, context=None):
@@ -259,6 +260,7 @@ def process_update_profile(request, context=None):
     return redirect("user_profile_view")
 
 # MARK: Process Change Password
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def process_change_password(request, context=None):
@@ -289,9 +291,12 @@ def process_change_password(request, context=None):
         messages.error(request, error)
         return redirect("user_profile_view")
 
-    # user_response = user_service.get_user_by_id(context["user_info"]["UserID"])
-    # if user_response["status"] == "SUCCESS":
-    #     context["user_data"] = user_response["data"]
+    user_response = user_service.get_user_by_id(context["user_info"]["UserID"])
+    if user_response["status"] == "SUCCESS":
+        context["user_data"] = user_response["data"]
+    else:
+        messages.error(request, USER_NOT_FOUND_MSG)
+        return redirect("user_profile_view")
 
     result = user_service.authenticate_user(
         context["user_data"]["Email"], oldPassword)
