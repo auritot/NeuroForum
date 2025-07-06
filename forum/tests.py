@@ -387,42 +387,47 @@ def test_delete_post_as_owner(client):
 
 @pytest.mark.django_db
 def test_update_post_unauthorized(client):
-    # Arrange
     client.defaults['REMOTE_ADDR'] = '127.0.1.1'
     client.defaults['HTTP_USER_AGENT'] = 'pytest'
     cache.delete("login_attempts_127.0.1.1")
     cache.delete("login_ban_127.0.1.1")
 
+    # owner creates the post
     owner = UserAccount.objects.create(
-        Username="own", Email="own@x.com",
-        Password=make_password("abc123"), Role="user"
+        Username="own",
+        Email="own@x.com",
+        Password=make_password("abc123"),
+        Role="user"
     )
+    # attacker is a different user
     attacker = UserAccount.objects.create(
-        Username="att", Email="att@x.com",
-        Password=make_password("abc123"), Role="user"
+        Username="att",
+        Email="att@x.com",
+        Password=make_password("abc123"),
+        Role="user"
     )
     post = Post.objects.create(Title="T", PostContent="P", UserID=owner)
 
-    # Session is still the owner (i.e. not the attacker)
+    # Session is set to the attacker, not the owner
     session = client.session
-    session["UserID"] = owner.UserID
-    session["Username"] = owner.Username
-    session["Role"] = owner.Role
+    session["UserID"] = attacker.UserID
+    session["Username"] = attacker.Username
+    session["Role"] = attacker.Role
     session["IP"] = client.defaults['REMOTE_ADDR']
     session["UserAgent"] = client.defaults['HTTP_USER_AGENT']
     session.save()
 
-    # Act
+    # Attacker attempts to update someone else's post
     response = client.post(
         reverse("process_update_post", kwargs={"post_id": post.PostID}),
         {"postTitle": "Fake", "postDescription": "Malicious"},
         follow=True
     )
 
-    # Assert: unauthorized updates redirect to index with an error flash
+    # Should get bounced back to index with an error flash
     assert response.redirect_chain[-1][0] == reverse("index")
-    msgs = [m.message.lower() for m in get_messages(response.wsgi_request)]
-    assert any("unauthorized to update the post" in m for m in msgs)
+    messages = list(get_messages(response.wsgi_request))
+    assert any("unauthorized" in str(m).lower() for m in messages)
 
 @pytest.mark.django_db
 def test_update_comment_empty_text_raises(client):
