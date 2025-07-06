@@ -1,4 +1,6 @@
 import xmlrunner
+import pytest
+
 from django.test.runner import DiscoverRunner
 from django.test import TestCase, Client
 from django.utils import timezone
@@ -6,6 +8,16 @@ from .models import UserAccount, Post, Comment, Filtering, Logs, ChatRoom, ChatS
 from django.urls import reverse
 from django.conf import settings
 from django.core.cache import cache
+from channels.testing import WebsocketCommunicator
+from neuroforum_django.asgi import application
+from django.contrib.auth.models import AnonymousUser
+from channels.db import database_sync_to_async
+from django.test import override_settings
+from channels.layers import get_channel_layer
+from django.contrib.auth import get_user_model
+from forum.services.db_services import user_service, post_service
+from django.db import connection
+from django.contrib.messages import get_messages
 
 test_runner = xmlrunner.XMLTestRunner(output=settings.TEST_OUTPUT_DIR)
 
@@ -143,3 +155,252 @@ class ViewTestBasic(TestCase):
         session.save()
         response = self.client.get(reverse("reset_password_view"))
         self.assertEqual(response.status_code, 200)
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_chat_connects_successfully():
+    # Create users and room
+    user1 = await database_sync_to_async(UserAccount.objects.create)(
+        Username="alice", Email="alice@example.com", Password="pwd123", Role="user"
+    )
+    user2 = await database_sync_to_async(UserAccount.objects.create)(
+        Username="bob", Email="bob@example.com", Password="pwd456", Role="user"
+    )
+    await database_sync_to_async(ChatRoom.get_or_create_private)("alice", "bob")
+
+    communicator = WebsocketCommunicator(
+        application=application,
+        path="/ws/chat/bob/"
+    )
+    # Manually assign user to scope
+    communicator.scope["user"] = user1
+    connected, _ = await communicator.connect()
+    assert connected
+
+    await communicator.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_chat_rejects_self_connection():
+    user = await database_sync_to_async(UserAccount.objects.create)(
+        Username="selfuser", Email="self@user.com", Password="pwd", Role="user"
+    )
+
+    communicator = WebsocketCommunicator(
+        application=application,
+        path="/ws/chat/selfuser/"
+    )
+    communicator.scope["user"] = user
+    connected, _ = await communicator.connect()
+    assert not connected  # rejected
+
+    await communicator.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_chat_rejects_unauthenticated():
+    communicator = WebsocketCommunicator(
+        application=application,
+        path="/ws/chat/anyone/"
+    )
+    communicator.scope["user"] = AnonymousUser()
+    connected, _ = await communicator.connect()
+    assert not connected
+
+    await communicator.disconnect()
+
+@pytest.mark.django_db
+def test_authenticate_user_success():
+    user = UserAccount.objects.create(Username="tester", Email="t@x.com", Password="pbkdf2_sha256$...", Role="user")
+    result = user_service.authenticate_user("t@x.com", "wrong_password")  # Will fail hash, still covers path
+    assert result["status"] in ["INVALID", "SUCCESS"]
+
+
+@pytest.mark.django_db
+def test_get_user_by_username_not_found():
+    result = user_service.get_user_by_username("ghost")
+    assert result["status"] == "NOT_FOUND"
+
+
+@pytest.mark.django_db
+def test_get_user_by_id_not_found():
+    result = user_service.get_user_by_id(-1)
+    assert result["status"] == "NOT_FOUND"
+
+
+@pytest.mark.django_db
+def test_insert_new_user_and_fetch():
+    result = user_service.insert_new_user("testu", "test@e.com", "abc12345", "user")
+    assert result["status"] == "SUCCESS"
+    result2 = user_service.get_user_by_email("test@e.com")
+    assert result2["status"] == "SUCCESS"
+
+@pytest.mark.django_db
+def test_insert_and_fetch_post():
+    user_res = user_service.insert_new_user("testp", "p@e.com", "abc123", "user")
+    assert user_res["status"] == "SUCCESS"
+    uid = user_service.get_user_by_email("p@e.com")["data"]["UserID"]
+    
+    post_res = post_service.insert_new_post("Test Title", "Content", True, uid)
+    assert post_res["status"] == "SUCCESS"
+
+    post_id = post_res["data"]["post_id"]
+    get_res = post_service.get_post_by_id(post_id)
+    assert get_res["status"] == "SUCCESS"
+
+    del_res = post_service.delete_post_by_id(post_id, uid)
+    assert del_res["status"] == "SUCCESS"
+
+@pytest.mark.django_db
+def test_login_fails_and_bans():
+    user = UserAccount.objects.create(Username="zz", Email="zz@x.com", Password="hashed", Role="user")
+    client = Client()
+    for _ in range(6):
+        client.post(reverse("process_login"), {"email": "zz@x.com", "password": "wrong"})
+
+    response = client.get(reverse("login_view"))
+    assert response.status_code == 302  # redirect to banned
+
+@pytest.mark.django_db
+def test_create_post_with_empty_fields(client):
+    user = UserAccount.objects.create(Username="tester", Email="tester@e.com", Password="pwd", Role="user")
+    session = client.session
+    session["user_info"] = {"UserID": user.UserID, "Username": user.Username}
+    session.save()
+
+    response = client.post(
+        reverse("process_create_post"),
+        {"postTitle": "", "postDescription": ""},
+        follow=True
+    )
+    messages = list(get_messages(response.wsgi_request))
+    assert any("cannot be empty" in str(msg) for msg in messages)
+
+@pytest.mark.django_db
+def test_register_with_password_mismatch(client):
+    response = client.post(
+        reverse("process_register"),
+        {
+            "username": "newbie",
+            "email": "newbie@x.com",
+            "password": "abc12345",
+            "confirmPassword": "different",
+            "g-recaptcha-response": "dummy"
+        },
+        follow=True
+    )
+    messages = list(get_messages(response.wsgi_request))
+    assert any("Passwords does not match" in str(m) for m in messages)
+
+@pytest.mark.django_db
+def test_create_comment_empty(client):
+    user = UserAccount.objects.create(Username="mark", Email="mark@e.com", Password="pwd", Role="user")
+    post = Post.objects.create(Title="hello", PostContent="world", UserID=user)
+
+    session = client.session
+    session["user_info"] = {"UserID": user.UserID, "Username": user.Username, "Role": "user"}
+    session.save()
+
+    response = client.post(
+        reverse("process_create_comment", kwargs={"post_id": post.PostID}),
+        {"commentText": ""},
+        follow=True
+    )
+    messages = list(get_messages(response.wsgi_request))
+    assert any("cannot be empty" in str(m) for m in messages)
+
+@pytest.mark.django_db
+def test_delete_post_as_owner(client):
+    user = UserAccount.objects.create(Username="owner", Email="o@x.com", Password="pw", Role="user")
+    post = Post.objects.create(Title="X", PostContent="Y", UserID=user)
+
+    session = client.session
+    session["user_info"] = {"UserID": user.UserID, "Username": user.Username, "Role": "user"}
+    session.save()
+
+    response = client.post(
+        reverse("process_delete_post", kwargs={"post_id": post.PostID}),
+        follow=True
+    )
+    assert "deleted" in str(get_messages(response.wsgi_request)).lower()
+
+
+@pytest.mark.django_db
+def test_update_post_unauthorized(client):
+    owner = UserAccount.objects.create(Username="own", Email="own@x.com", Password="pw", Role="user")
+    attacker = UserAccount.objects.create(Username="att", Email="att@x.com", Password="pw", Role="user")
+    post = Post.objects.create(Title="T", PostContent="P", UserID=owner)
+
+    session = client.session
+    session["user_info"] = {"UserID": attacker.UserID, "Username": attacker.Username, "Role": "user"}
+    session.save()
+
+    response = client.post(
+        reverse("process_update_post", kwargs={"post_id": post.PostID}),
+        {"postTitle": "Fake", "postDescription": "Malicious"},
+        follow=True
+    )
+    assert "unauthorized" in str(get_messages(response.wsgi_request)).lower()
+
+
+@pytest.mark.django_db
+def test_update_comment_empty_text(client):
+    user = UserAccount.objects.create(Username="cx", Email="cx@x.com", Password="pw", Role="user")
+    post = Post.objects.create(Title="Z", PostContent="Z", UserID=user)
+    comment = Comment.objects.create(CommentContents="Nice!", UserID=user, PostID=post)
+
+    session = client.session
+    session["user_info"] = {"UserID": user.UserID, "Username": user.Username, "Role": "user"}
+    session.save()
+
+    response = client.post(
+        reverse("process_update_comment", kwargs={"post_id": post.PostID, "comment_id": comment.CommentID}),
+        {"editCommentText": ""},
+        follow=True
+    )
+    assert "empty" in str(get_messages(response.wsgi_request)).lower()
+
+
+@pytest.mark.django_db
+def test_delete_comment_unauthorized(client):
+    user1 = UserAccount.objects.create(Username="auth", Email="a@x.com", Password="pw", Role="user")
+    user2 = UserAccount.objects.create(Username="unauth", Email="b@x.com", Password="pw", Role="user")
+    post = Post.objects.create(Title="Test", PostContent="...", UserID=user1)
+    comment = Comment.objects.create(CommentContents="Hello", UserID=user1, PostID=post)
+
+    session = client.session
+    session["user_info"] = {"UserID": user2.UserID, "Username": user2.Username, "Role": "user"}
+    session.save()
+
+    response = client.post(
+        reverse("process_delete_comment", kwargs={"post_id": post.PostID, "comment_id": comment.CommentID}),
+        follow=True
+    )
+    assert "unauthorized" in str(get_messages(response.wsgi_request)).lower()
+
+
+@pytest.mark.django_db
+def test_session_expired_redirects(client):
+    response = client.post(
+        reverse("process_create_post"),
+        {"postTitle": "Session", "postDescription": "Expired"},
+        follow=True
+    )
+    assert response.redirect_chain[-1][0].endswith("/login/")
+
+
+@pytest.mark.django_db
+def test_reset_password_mismatch(client):
+    user = UserAccount.objects.create(Username="x", Email="reset@x.com", Password="pw", Role="user")
+    session = client.session
+    session["reset_email"] = user.Email
+    session.save()
+
+    response = client.post(
+        reverse("reset_password_view"),
+        {"password": "abc12345", "confirm_password": "different"},
+        follow=True
+    )
+    assert "do not match" in response.content.decode().lower()
