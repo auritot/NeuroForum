@@ -271,10 +271,14 @@ def test_create_post_with_empty_fields(client):
         Password=make_password("abc123"),
         Role="user"
     )
+
+    # --- set session exactly as check_session expects ---
     session = client.session
-    session["user_info"] = {"UserID": user.UserID, "Username": user.Username}
-    session["IP"] = "127.0.1.1"
-    session["UserAgent"] = "pytest"
+    session["UserID"] = user.UserID
+    session["Username"] = user.Username
+    session["Role"] = user.Role
+    session["IP"] = client.defaults['REMOTE_ADDR']
+    session["UserAgent"] = client.defaults['HTTP_USER_AGENT']
     session.save()
 
     response = client.post(
@@ -283,7 +287,7 @@ def test_create_post_with_empty_fields(client):
         follow=True
     )
 
-    # Expect redirect back to index with an error flash
+    # now we get redirected back to index with our flash
     assert response.redirect_chain[-1][0] == reverse("index")
     messages = list(get_messages(response.wsgi_request))
     assert any("post title or description cannot be empty" in str(m).lower() for m in messages)
@@ -326,10 +330,13 @@ def test_create_comment_empty(client):
     )
     post = Post.objects.create(Title="hello", PostContent="world", UserID=user)
 
+    # --- session setup ---
     session = client.session
-    session["user_info"] = {"UserID": user.UserID, "Username": user.Username, "Role": "user"}
-    session["IP"] = "127.0.1.1"
-    session["UserAgent"] = "pytest"
+    session["UserID"] = user.UserID
+    session["Username"] = user.Username
+    session["Role"] = user.Role
+    session["IP"] = client.defaults['REMOTE_ADDR']
+    session["UserAgent"] = client.defaults['HTTP_USER_AGENT']
     session.save()
 
     response = client.post(
@@ -338,7 +345,7 @@ def test_create_comment_empty(client):
         follow=True
     )
 
-    # Should redirect back to the post with an error flash
+    # redirect back to that post with an error flash
     assert response.redirect_chain[-1][0].startswith(
         reverse("post_view", kwargs={"post_id": post.PostID})
     )
@@ -354,21 +361,17 @@ def test_delete_post_as_owner(client):
     cache.delete("login_ban_127.0.1.1")
 
     user = UserAccount.objects.create(
-        Username="owner",
-        Email="o@x.com",
-        Password=make_password("abc123"),
-        Role="user"
+        Username="owner", Email="o@x.com", Password=make_password("abc123"), Role="user"
     )
     post = Post.objects.create(Title="X", PostContent="Y", UserID=user)
 
+    # --- session setup ---
     session = client.session
-    session["user_info"] = {
-        "UserID": user.UserID,
-        "Username": user.Username,
-        "Role": user.Role
-    }
-    session["IP"] = "127.0.1.1"
-    session["UserAgent"] = "pytest"
+    session["UserID"] = user.UserID
+    session["Username"] = user.Username
+    session["Role"] = user.Role
+    session["IP"] = client.defaults['REMOTE_ADDR']
+    session["UserAgent"] = client.defaults['HTTP_USER_AGENT']
     session.save()
 
     response = client.post(
@@ -376,7 +379,7 @@ def test_delete_post_as_owner(client):
         follow=True
     )
 
-    # Owner deletion should redirect to index with "deleted" flash
+    # should get back to index with success flash
     assert response.redirect_chain[-1][0] == reverse("index")
     messages = list(get_messages(response.wsgi_request))
     assert any("deleted" in str(m).lower() for m in messages)
@@ -390,27 +393,20 @@ def test_update_post_unauthorized(client):
     cache.delete("login_ban_127.0.1.1")
 
     owner = UserAccount.objects.create(
-        Username="own",
-        Email="own@x.com",
-        Password=make_password("abc123"),
-        Role="user"
+        Username="own", Email="own@x.com", Password=make_password("abc123"), Role="user"
     )
     attacker = UserAccount.objects.create(
-        Username="att",
-        Email="att@x.com",
-        Password=make_password("abc123"),
-        Role="user"
+        Username="att", Email="att@x.com", Password=make_password("abc123"), Role="user"
     )
     post = Post.objects.create(Title="T", PostContent="P", UserID=owner)
 
+    # session is the owner, but then attacker tries to update
     session = client.session
-    session["user_info"] = {
-        "UserID": owner.UserID,
-        "Username": owner.Username,
-        "Role": owner.Role,
-    }
-    session["IP"] = "127.0.1.1"
-    session["UserAgent"] = "pytest"
+    session["UserID"] = owner.UserID
+    session["Username"] = owner.Username
+    session["Role"] = owner.Role
+    session["IP"] = client.defaults['REMOTE_ADDR']
+    session["UserAgent"] = client.defaults['HTTP_USER_AGENT']
     session.save()
 
     response = client.post(
@@ -419,7 +415,7 @@ def test_update_post_unauthorized(client):
         follow=True
     )
 
-    # Unauthorized updates redirect back with an error flash
+    # unauthorized => redirect back to the post and flash error
     assert response.redirect_chain[-1][0] == reverse("post_view", kwargs={"post_id": post.PostID})
     messages = list(get_messages(response.wsgi_request))
     assert any("unauthorized" in str(m).lower() for m in messages)
@@ -427,87 +423,72 @@ def test_update_post_unauthorized(client):
 
 @pytest.mark.django_db
 def test_update_comment_empty_text(client):
-    client.defaults['REMOTE_ADDR'] = '127.0.0.1'
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
     client.defaults['HTTP_USER_AGENT'] = 'pytest'
-    cache.delete("login_attempts_127.0.0.1")
-    cache.delete("login_ban_127.0.0.1")
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
 
     user = UserAccount.objects.create(
-        Username="cx",
-        Email="cx@x.com",
-        Password=make_password("abc123"),
-        Role="user"
+        Username="cx", Email="cx@x.com", Password=make_password("abc123"), Role="user"
     )
     post = Post.objects.create(Title="Z", PostContent="Z", UserID=user)
     comment = Comment.objects.create(CommentContents="Nice!", UserID=user, PostID=post)
 
+    # --- session setup ---
     session = client.session
-    session["user_info"] = {
-        "UserID": user.UserID,
-        "Username": user.Username,
-        "Role": user.Role,
-    }
-    session["IP"] = "127.0.0.1"
-    session["UserAgent"] = "pytest"
+    session["UserID"] = user.UserID
+    session["Username"] = user.Username
+    session["Role"] = user.Role
+    session["IP"] = client.defaults['REMOTE_ADDR']
+    session["UserAgent"] = client.defaults['HTTP_USER_AGENT']
     session.save()
 
     response = client.post(
-        reverse("process_update_comment", kwargs={
-            "post_id": post.PostID,
-            "comment_id": comment.CommentID
-        }),
+        reverse("process_update_comment", kwargs={"post_id": post.PostID, "comment_id": comment.CommentID}),
         {"editCommentText": ""},
         follow=True
     )
 
-    # Don’t assert redirect (falls through); just check the error message
+    # it falls through to the same page with an error flash
     messages = list(get_messages(response.wsgi_request))
     assert any("comment cannot be empty" in str(m).lower() for m in messages)
 
+
 @pytest.mark.django_db
 def test_delete_comment_unauthorized(client):
-    client.defaults['REMOTE_ADDR'] = '127.0.0.1'
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
     client.defaults['HTTP_USER_AGENT'] = 'pytest'
-    cache.delete("login_attempts_127.0.0.1")
-    cache.delete("login_ban_127.0.0.1")
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
 
     user1 = UserAccount.objects.create(
-        Username="auth",
-        Email="a@x.com",
-        Password=make_password("abc123"),
-        Role="user"
+        Username="auth", Email="a@x.com", Password=make_password("abc123"), Role="user"
     )
     user2 = UserAccount.objects.create(
-        Username="unauth",
-        Email="b@x.com",
-        Password=make_password("abc123"),
-        Role="user"
+        Username="unauth", Email="b@x.com", Password=make_password("abc123"), Role="user"
     )
     post = Post.objects.create(Title="Test", PostContent="...", UserID=user1)
     comment = Comment.objects.create(CommentContents="Hello", UserID=user1, PostID=post)
 
+    # session is user1, but we don't switch to user2, so our session user tries to delete someone else's comment
     session = client.session
-    session["user_info"] = {
-        "UserID": user1.UserID,
-        "Username": user1.Username,
-        "Role": user1.Role,
-    }
-    session["IP"] = "127.0.0.1"
-    session["UserAgent"] = "pytest"
+    session["UserID"] = user1.UserID
+    session["Username"] = user1.Username
+    session["Role"] = user1.Role
+    session["IP"] = client.defaults['REMOTE_ADDR']
+    session["UserAgent"] = client.defaults['HTTP_USER_AGENT']
     session.save()
 
     response = client.post(
-        reverse("process_delete_comment", kwargs={
-            "post_id": post.PostID,
-            "comment_id": comment.CommentID
-        }),
+        reverse("process_delete_comment", kwargs={"post_id": post.PostID, "comment_id": comment.CommentID}),
         follow=True
     )
 
-    # Unauthorized deletes go back to index
+    # unauthorized delete falls back to index
     assert response.redirect_chain[-1][0] == reverse("index")
     messages = list(get_messages(response.wsgi_request))
     assert any("unauthorized" in str(m).lower() for m in messages)
+
 
 @pytest.mark.django_db
 def test_session_expired_redirects(client):
