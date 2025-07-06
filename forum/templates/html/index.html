@@ -25,22 +25,17 @@
           </div>
         </form>
 
-        <!-- #MARK: Filter bar -->
-        <form class="mb-4">
+       <!-- #MARK: Filter bar -->
+        <form class="mb-4" method="get" action="{% url 'search_posts' %}">
+          <!-- Preserve search term -->
+          <input type="hidden" name="q" value="{{ search_query|default:'' }}">
+          
           <div class="row g-2 align-items-center">
             <div class="col-sm-4">
-              <select class="form-select">
-                <option selected disabled>Category</option>
-                <option>Technology</option>
-                <option>News</option>
-                <option>Entertainment</option>
-              </select>
-            </div>
-            <div class="col-sm-4">
-              <select class="form-select">
-                <option selected disabled>Date</option>
-                <option>Newest First</option>
-                <option>Oldest First</option>
+              <select class="form-select" name="sort">
+                <option value="" selected disabled>Date</option>
+                <option value="newest" {% if request.GET.sort == "newest" %}selected{% endif %}>Newest First</option>
+                <option value="oldest" {% if request.GET.sort == "oldest" %}selected{% endif %}>Oldest First</option>
               </select>
             </div>
             <div class="col-sm-4 d-grid">
