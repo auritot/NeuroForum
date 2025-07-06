@@ -1,4 +1,3 @@
-import xmlrunner
 import pytest
 
 from django.test.runner import DiscoverRunner
@@ -18,9 +17,6 @@ from django.contrib.auth import get_user_model
 from forum.services.db_services import user_service, post_service
 from django.db import connection
 from django.contrib.messages import get_messages
-
-test_runner = xmlrunner.XMLTestRunner(output=settings.TEST_OUTPUT_DIR)
-
 
 class PostModelTest(TestCase):
     def setUp(self):

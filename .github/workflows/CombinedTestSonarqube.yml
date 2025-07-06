@@ -1,4 +1,4 @@
-name: CI Test
+name: CI Test + Sonarqube Analysis
 
 on:
   push:
@@ -115,17 +115,8 @@ jobs:
         CI: true
       run: |
         mkdir -p reports
-        coverage run --source='.' manage.py test --keepdb
+        coverage run --source='forum','neuroforum_django' --omit='forum/tests.py' manage.py test --keepdb
         coverage xml -o reports/coverage.xml
-
-    - name: Debug coverage report
-      run: cat reports/coverage.xml
-
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: reports/test-reports/
 
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v2
