@@ -268,6 +268,9 @@ def test_create_post_with_empty_fields(client):
     user = UserAccount.objects.create(Username="tester", Email="tester@e.com", Password=make_password("abc123"), Role="user")
     session = client.session
     session["user_info"] = {"UserID": user.UserID, "Username": user.Username}
+
+    session["IP"] = "127.0.1.1"
+    session["UserAgent"] = "pytest"
     session.save()
 
     response = client.post(
@@ -312,6 +315,9 @@ def test_create_comment_empty(client):
 
     session = client.session
     session["user_info"] = {"UserID": user.UserID, "Username": user.Username, "Role": "user"}
+    
+    session["IP"] = "127.0.1.1"
+    session["UserAgent"] = "pytest"
     session.save()
 
     response = client.post(
@@ -341,6 +347,10 @@ def test_delete_post_as_owner(client):
         "Username": user.Username,
         "Role": user.Role
     }
+
+
+    session["IP"] = "127.0.1.1"
+    session["UserAgent"] = "pytest"
     session.save()
 
     response = client.post(
@@ -369,6 +379,9 @@ def test_update_post_unauthorized(client):
         "Username": owner.Username,
         "Role": owner.Role,
     }
+    
+    session["IP"] = "127.0.1.1"
+    session["UserAgent"] = "pytest"
     session.save()
 
     response = client.post(
@@ -397,6 +410,9 @@ def test_update_comment_empty_text(client):
         "Username": user.Username,
         "Role": user.Role,
     }
+    
+    session["IP"] = "127.0.1.1"
+    session["UserAgent"] = "pytest"
     session.save()
 
 
@@ -426,6 +442,9 @@ def test_delete_comment_unauthorized(client):
         "Username": user1.Username,
         "Role": user1.Role,
     }
+    
+    session["IP"] = "127.0.1.1"
+    session["UserAgent"] = "pytest"
     session.save()
 
     response = client.post(
@@ -465,6 +484,9 @@ def test_reset_password_mismatch(client):
         "Username": user.Username,
         "Role": user.Role,
     }
+    
+    session["IP"] = "127.0.1.1"
+    session["UserAgent"] = "pytest"
     session.save()
 
     response = client.post(
