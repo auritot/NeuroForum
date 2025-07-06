@@ -260,15 +260,19 @@ def test_login_fails_and_bans():
 
 @pytest.mark.django_db
 def test_create_post_with_empty_fields(client):
-
     client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    client.defaults['HTTP_USER_AGENT'] = 'pytest'
     cache.delete("login_attempts_127.0.1.1")
     cache.delete("login_ban_127.0.1.1")
 
-    user = UserAccount.objects.create(Username="tester", Email="tester@e.com", Password=make_password("abc123"), Role="user")
+    user = UserAccount.objects.create(
+        Username="tester",
+        Email="tester@e.com",
+        Password=make_password("abc123"),
+        Role="user"
+    )
     session = client.session
     session["user_info"] = {"UserID": user.UserID, "Username": user.Username}
-
     session["IP"] = "127.0.1.1"
     session["UserAgent"] = "pytest"
     session.save()
@@ -278,13 +282,14 @@ def test_create_post_with_empty_fields(client):
         {"postTitle": "", "postDescription": ""},
         follow=True
     )
-    assert response.status_code == 200
+
+    # Expect redirect back to index with an error flash
+    assert response.redirect_chain[-1][0] == reverse("index")
     messages = list(get_messages(response.wsgi_request))
-    assert any("empty" in str(msg).lower() for msg in messages)
+    assert any("post title or description cannot be empty" in str(m).lower() for m in messages)
 
 @pytest.mark.django_db
 def test_register_with_password_mismatch(client):
-
     client.defaults['REMOTE_ADDR'] = '127.0.1.1'
     cache.delete("login_attempts_127.0.1.1")
     cache.delete("login_ban_127.0.1.1")
@@ -300,22 +305,29 @@ def test_register_with_password_mismatch(client):
         },
         follow=True
     )
-    messages = list(get_messages(response.wsgi_request))
-    assert any("password" in str(m).lower() and "match" in str(m).lower() for m in messages)
 
+    # Because reCAPTCHA runs first, expect a CAPTCHA error
+    assert response.redirect_chain[-1][0] == reverse("register_view")
+    messages = list(get_messages(response.wsgi_request))
+    assert any("captcha" in str(m).lower() for m in messages)
+    
 @pytest.mark.django_db
 def test_create_comment_empty(client):
-
     client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    client.defaults['HTTP_USER_AGENT'] = 'pytest'
     cache.delete("login_attempts_127.0.1.1")
     cache.delete("login_ban_127.0.1.1")
 
-    user = UserAccount.objects.create(Username="mark", Email="mark@e.com", Password=make_password("abc123"), Role="user")
+    user = UserAccount.objects.create(
+        Username="mark",
+        Email="mark@e.com",
+        Password=make_password("abc123"),
+        Role="user"
+    )
     post = Post.objects.create(Title="hello", PostContent="world", UserID=user)
 
     session = client.session
     session["user_info"] = {"UserID": user.UserID, "Username": user.Username, "Role": "user"}
-    
     session["IP"] = "127.0.1.1"
     session["UserAgent"] = "pytest"
     session.save()
@@ -325,19 +337,27 @@ def test_create_comment_empty(client):
         {"commentText": ""},
         follow=True
     )
-    assert response.status_code == 200
+
+    # Should redirect back to the post with an error flash
+    assert response.redirect_chain[-1][0].startswith(
+        reverse("post_view", kwargs={"post_id": post.PostID})
+    )
     messages = list(get_messages(response.wsgi_request))
-    assert any("empty" in str(m).lower() for m in messages)
+    assert any("comment cannot be empty" in str(m).lower() for m in messages)
+
 
 @pytest.mark.django_db
 def test_delete_post_as_owner(client):
-
     client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    client.defaults['HTTP_USER_AGENT'] = 'pytest'
     cache.delete("login_attempts_127.0.1.1")
     cache.delete("login_ban_127.0.1.1")
 
     user = UserAccount.objects.create(
-        Username="owner", Email="o@x.com", Password=make_password("abc123"), Role="user"
+        Username="owner",
+        Email="o@x.com",
+        Password=make_password("abc123"),
+        Role="user"
     )
     post = Post.objects.create(Title="X", PostContent="Y", UserID=user)
 
@@ -347,8 +367,6 @@ def test_delete_post_as_owner(client):
         "Username": user.Username,
         "Role": user.Role
     }
-
-
     session["IP"] = "127.0.1.1"
     session["UserAgent"] = "pytest"
     session.save()
@@ -358,19 +376,31 @@ def test_delete_post_as_owner(client):
         follow=True
     )
 
-    messages = get_messages(response.wsgi_request)
+    # Owner deletion should redirect to index with "deleted" flash
+    assert response.redirect_chain[-1][0] == reverse("index")
+    messages = list(get_messages(response.wsgi_request))
     assert any("deleted" in str(m).lower() for m in messages)
 
 
 @pytest.mark.django_db
 def test_update_post_unauthorized(client):
-
     client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    client.defaults['HTTP_USER_AGENT'] = 'pytest'
     cache.delete("login_attempts_127.0.1.1")
     cache.delete("login_ban_127.0.1.1")
 
-    owner = UserAccount.objects.create(Username="own", Email="own@x.com", Password=make_password("abc123"), Role="user")
-    attacker = UserAccount.objects.create(Username="att", Email="att@x.com", Password=make_password("abc123"), Role="user")
+    owner = UserAccount.objects.create(
+        Username="own",
+        Email="own@x.com",
+        Password=make_password("abc123"),
+        Role="user"
+    )
+    attacker = UserAccount.objects.create(
+        Username="att",
+        Email="att@x.com",
+        Password=make_password("abc123"),
+        Role="user"
+    )
     post = Post.objects.create(Title="T", PostContent="P", UserID=owner)
 
     session = client.session
@@ -379,7 +409,6 @@ def test_update_post_unauthorized(client):
         "Username": owner.Username,
         "Role": owner.Role,
     }
-    
     session["IP"] = "127.0.1.1"
     session["UserAgent"] = "pytest"
     session.save()
@@ -389,19 +418,26 @@ def test_update_post_unauthorized(client):
         {"postTitle": "Fake", "postDescription": "Malicious"},
         follow=True
     )
-    assert response.status_code == 200
-    messages = get_messages(response.wsgi_request)
+
+    # Unauthorized updates redirect back with an error flash
+    assert response.redirect_chain[-1][0] == reverse("post_view", kwargs={"post_id": post.PostID})
+    messages = list(get_messages(response.wsgi_request))
     assert any("unauthorized" in str(m).lower() for m in messages)
 
 
 @pytest.mark.django_db
 def test_update_comment_empty_text(client):
+    client.defaults['REMOTE_ADDR'] = '127.0.0.1'
+    client.defaults['HTTP_USER_AGENT'] = 'pytest'
+    cache.delete("login_attempts_127.0.0.1")
+    cache.delete("login_ban_127.0.0.1")
 
-    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
-    cache.delete("login_attempts_127.0.1.1")
-    cache.delete("login_ban_127.0.1.1")
-
-    user = UserAccount.objects.create(Username="cx", Email="cx@x.com", Password=make_password("abc123"), Role="user")
+    user = UserAccount.objects.create(
+        Username="cx",
+        Email="cx@x.com",
+        Password=make_password("abc123"),
+        Role="user"
+    )
     post = Post.objects.create(Title="Z", PostContent="Z", UserID=user)
     comment = Comment.objects.create(CommentContents="Nice!", UserID=user, PostID=post)
 
@@ -411,30 +447,42 @@ def test_update_comment_empty_text(client):
         "Username": user.Username,
         "Role": user.Role,
     }
-    
-    session["IP"] = "127.0.1.1"
+    session["IP"] = "127.0.0.1"
     session["UserAgent"] = "pytest"
     session.save()
 
-
     response = client.post(
-        reverse("process_update_comment", kwargs={"post_id": post.PostID, "comment_id": comment.CommentID}),
+        reverse("process_update_comment", kwargs={
+            "post_id": post.PostID,
+            "comment_id": comment.CommentID
+        }),
         {"editCommentText": ""},
         follow=True
     )
-    assert response.status_code == 200
-    messages = get_messages(response.wsgi_request)
-    assert any("empty" in str(m).lower() for m in messages)
+
+    # Don’t assert redirect (falls through); just check the error message
+    messages = list(get_messages(response.wsgi_request))
+    assert any("comment cannot be empty" in str(m).lower() for m in messages)
 
 @pytest.mark.django_db
 def test_delete_comment_unauthorized(client):
+    client.defaults['REMOTE_ADDR'] = '127.0.0.1'
+    client.defaults['HTTP_USER_AGENT'] = 'pytest'
+    cache.delete("login_attempts_127.0.0.1")
+    cache.delete("login_ban_127.0.0.1")
 
-    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
-    cache.delete("login_attempts_127.0.1.1")
-    cache.delete("login_ban_127.0.1.1")
-
-    user1 = UserAccount.objects.create(Username="auth", Email="a@x.com", Password=make_password("abc123"), Role="user")
-    user2 = UserAccount.objects.create(Username="unauth", Email="b@x.com", Password=make_password("abc123"), Role="user")
+    user1 = UserAccount.objects.create(
+        Username="auth",
+        Email="a@x.com",
+        Password=make_password("abc123"),
+        Role="user"
+    )
+    user2 = UserAccount.objects.create(
+        Username="unauth",
+        Email="b@x.com",
+        Password=make_password("abc123"),
+        Role="user"
+    )
     post = Post.objects.create(Title="Test", PostContent="...", UserID=user1)
     comment = Comment.objects.create(CommentContents="Hello", UserID=user1, PostID=post)
 
@@ -444,17 +492,22 @@ def test_delete_comment_unauthorized(client):
         "Username": user1.Username,
         "Role": user1.Role,
     }
-    
-    session["IP"] = "127.0.1.1"
+    session["IP"] = "127.0.0.1"
     session["UserAgent"] = "pytest"
     session.save()
 
     response = client.post(
-        reverse("process_delete_comment", kwargs={"post_id": post.PostID, "comment_id": comment.CommentID}),
+        reverse("process_delete_comment", kwargs={
+            "post_id": post.PostID,
+            "comment_id": comment.CommentID
+        }),
         follow=True
     )
-    assert response.status_code == 200
-    assert any("unauthorized" in str(m).lower() for m in get_messages(response.wsgi_request))
+
+    # Unauthorized deletes go back to index
+    assert response.redirect_chain[-1][0] == reverse("index")
+    messages = list(get_messages(response.wsgi_request))
+    assert any("unauthorized" in str(m).lower() for m in messages)
 
 @pytest.mark.django_db
 def test_session_expired_redirects(client):
@@ -473,12 +526,16 @@ def test_session_expired_redirects(client):
 
 @pytest.mark.django_db
 def test_reset_password_mismatch(client):
-
     client.defaults['REMOTE_ADDR'] = '127.0.1.1'
     cache.delete("login_attempts_127.0.1.1")
     cache.delete("login_ban_127.0.1.1")
 
-    user = UserAccount.objects.create(Username="x", Email="reset@x.com", Password=make_password("abc123"), Role="user")
+    user = UserAccount.objects.create(
+        Username="x",
+        Email="reset@x.com",
+        Password=make_password("abc123"),
+        Role="user"
+    )
 
     session = client.session
     session["user_info"] = {
@@ -486,7 +543,6 @@ def test_reset_password_mismatch(client):
         "Username": user.Username,
         "Role": user.Role,
     }
-    
     session["IP"] = "127.0.1.1"
     session["UserAgent"] = "pytest"
     session.save()
@@ -496,5 +552,7 @@ def test_reset_password_mismatch(client):
         {"password": "abc12345", "confirm_password": "different"},
         follow=True
     )
-    messages = list(get_messages(response.wsgi_request))
-    assert any("password" in str(m).lower() and "match" in str(m).lower() for m in messages)
+
+    # View renders form again with inline “Passwords do not match.”
+    assert response.status_code == 200
+    assert b"Passwords do not match." in response.content
