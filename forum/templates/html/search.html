@@ -23,7 +23,7 @@
             <input
             type="text"
             class="form-control"
-            name="q"
+            name="search_q"
             value="{{ search_query|default:'' }}"
             placeholder="Search posts..."
             />
@@ -34,14 +34,14 @@
         <!-- #MARK: Filter bar -->
         <form class="mb-4" method="get" action="{% url 'search_posts' %}">
           <!-- Preserve search term -->
-          <input type="hidden" name="q" value="{{ search_query|default:'' }}">
+          <input type="hidden" name="search_q" value="{{ search_query|default:'' }}">
           
           <div class="row g-2 align-items-center">
             <div class="col-sm-4">
-              <select class="form-select" name="sort">
+              <select class="form-select" name="search_sort">
                 <option value="" selected disabled>Date</option>
-                <option value="newest" {% if request.GET.sort == "newest" %}selected{% endif %}>Newest First</option>
-                <option value="oldest" {% if request.GET.sort == "oldest" %}selected{% endif %}>Oldest First</option>
+                <option value="newest" {% if request.GET.search_sort == "newest" %}selected{% endif %}>Newest First</option>
+                <option value="oldest" {% if request.GET.search_sort == "oldest" %}selected{% endif %}>Oldest First</option>
               </select>
             </div>
             <div class="col-sm-4 d-grid">
@@ -51,7 +51,7 @@
         </form>
 
         <!-- #MARK: Posts -->
-        <div class="mb-4" id="postList">
+        <div class="mb-4" id="search_postList">
           {% for post in posts %}
           <div class="card mb-4 position-relative">
             <a class="text-decoration-none text-dark" href="{% url 'post_view' post_id=post.PostID %}">
@@ -108,14 +108,14 @@
           {% if previous_page %}
           <li class="page-item">
             <a class="page-link" 
-              href="?page=1&q={{ search_query|urlencode }}&sort={{ request.GET.sort|default:'newest' }}" 
+              href="?page=1&search_q={{ search_query|urlencode }}&search_sort={{ request.GET.search_sort|default:'newest' }}" 
               aria-label="First">
               <span aria-hidden="true">&#60;&#60;</span>
             </a>
           </li>
           <li class="page-item">
             <a class="page-link" 
-              href="?page={{ previous_page }}&q={{ search_query|urlencode }}&sort={{ request.GET.sort|default:'newest' }}" 
+              href="?page={{ previous_page }}&search_q={{ search_query|urlencode }}&search_sort={{ request.GET.search_sort|default:'newest' }}" 
               aria-label="Previous">
               <span aria-hidden="true">&#60;</span>
             </a>
@@ -126,7 +126,7 @@
           {% for page_num in page_range %}
           <li class="page-item {% if page_num == current_page %}active{% endif %}">
             <a class="page-link" 
-              href="?page={{ page_num }}&q={{ search_query|urlencode }}&sort={{ request.GET.sort|default:'newest' }}">
+              href="?page={{ page_num }}&search_q={{ search_query|urlencode }}&search_sort={{ request.GET.search_sort|default:'newest' }}">
               {{ page_num }}
             </a>
           </li>
@@ -136,14 +136,14 @@
           {% if next_page %}
           <li class="page-item">
             <a class="page-link" 
-              href="?page={{ next_page }}&q={{ search_query|urlencode }}&sort={{ request.GET.sort|default:'newest' }}" 
+              href="?page={{ next_page }}&search_q={{ search_query|urlencode }}&search_sort={{ request.GET.search_sort|default:'newest' }}" 
               aria-label="Next">
               <span aria-hidden="true">&#62;</span>
             </a>
           </li>
           <li class="page-item">
             <a class="page-link" 
-              href="?page={{ total_pages }}&q={{ search_query|urlencode }}&sort={{ request.GET.sort|default:'newest' }}" 
+              href="?page={{ total_pages }}&search_q={{ search_query|urlencode }}&search_sort={{ request.GET.search_sort|default:'newest' }}" 
               aria-label="Last">
               <span aria-hidden="true">&#62;&#62;</span>
             </a>
