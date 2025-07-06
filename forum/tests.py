@@ -277,6 +277,7 @@ def test_create_post_with_empty_fields(client):
         {"postTitle": "", "postDescription": ""},
         follow=True
     )
+    assert response.status_code == 200
     messages = list(get_messages(response.wsgi_request))
     assert any("cannot be empty" in str(msg) for msg in messages)
 
@@ -320,6 +321,7 @@ def test_create_comment_empty(client):
         {"commentText": ""},
         follow=True
     )
+    assert response.status_code == 200
     messages = list(get_messages(response.wsgi_request))
     assert any("cannot be empty" in str(m) for m in messages)
 
@@ -330,17 +332,25 @@ def test_delete_post_as_owner(client):
     cache.delete("login_attempts_127.0.1.1")
     cache.delete("login_ban_127.0.1.1")
 
-    user = UserAccount.objects.create(Username="owner", Email="o@x.com", Password=make_password("abc123"), Role="user")
+    user = UserAccount.objects.create(
+        Username="owner", Email="o@x.com", Password=make_password("abc123"), Role="user"
+    )
     post = Post.objects.create(Title="X", PostContent="Y", UserID=user)
 
     session = client.session
-    session["user_info"] = {"UserID": user.UserID, "Username": user.Username, "Role": "user"}
+    session["user_info"] = {
+        "UserID": user.UserID,
+        "Username": user.Username,
+        "Role": user.Role
+    }
     session.save()
 
     response = client.post(
         reverse("process_delete_post", kwargs={"post_id": post.PostID}),
         follow=True
     )
+
+    assert response.status_code == 200
     assert "deleted" in str(get_messages(response.wsgi_request)).lower()
 
 
@@ -364,6 +374,7 @@ def test_update_post_unauthorized(client):
         {"postTitle": "Fake", "postDescription": "Malicious"},
         follow=True
     )
+    assert response.status_code == 200
     assert "unauthorized" in str(get_messages(response.wsgi_request)).lower()
 
 
@@ -387,8 +398,8 @@ def test_update_comment_empty_text(client):
         {"editCommentText": ""},
         follow=True
     )
+    assert response.status_code == 200
     assert "empty" in str(get_messages(response.wsgi_request)).lower()
-
 
 @pytest.mark.django_db
 def test_delete_comment_unauthorized(client):
@@ -410,11 +421,15 @@ def test_delete_comment_unauthorized(client):
         reverse("process_delete_comment", kwargs={"post_id": post.PostID, "comment_id": comment.CommentID}),
         follow=True
     )
+    assert response.status_code == 200
     assert "unauthorized" in str(get_messages(response.wsgi_request)).lower()
-
 
 @pytest.mark.django_db
 def test_session_expired_redirects(client):
+
+    client.defaults['REMOTE_ADDR'] = '127.0.1.2'
+    cache.delete('login_attempts_127.0.1.2')
+    cache.delete('login_ban_127.0.1.2')
 
     response = client.post(
         reverse("process_create_post"),
