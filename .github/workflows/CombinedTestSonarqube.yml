@@ -109,6 +109,12 @@ jobs:
         python manage.py makemigrations --noinput
         python manage.py migrate --noinput
 
+    - name: Create pytest.ini dynamically
+      run: |
+        echo "[pytest]" > pytest.ini
+        echo "DJANGO_SETTINGS_MODULE = neuroforum_django.settings" >> pytest.ini
+        echo "python_files = tests.py test_*.py *_tests.py" >> pytest.ini
+
     - name: Run tests with coverage
       env:
         DJANGO_SETTINGS_MODULE: neuroforum_django.settings
