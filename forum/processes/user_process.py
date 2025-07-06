@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 ERR_MSG = "A problem has occurred. Please try again."
 SESSION_EXPIRED_MSG = "Session Expired! Please login again."
+USER_NOT_FOUND_MSG = "User not found"
 
 def generate_verification_code(length=6):
     return ''.join(random.choices(string.digits, k=length))
@@ -195,7 +196,11 @@ def process_register(request):
 
 
 # MARK: Process Update Profile
-def process_update_profile(request, context={}):
+def process_update_profile(request, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
 
     if session_response["status"] == "SUCCESS":
@@ -212,7 +217,7 @@ def process_update_profile(request, context={}):
         context["user_data"] = user_response["data"]
     elif user_response["status"] == "NOT_FOUND":
         log_service.log_action(f"Failed to update user profile: User not found", context["user_info"]["UserID"], isError=True)
-        messages.error(request, "User not found.")
+        messages.error(request, USER_NOT_FOUND_MSG)
     else:
         messages.error(request, ERR_MSG)
         return redirect('user_profile_view')
@@ -246,7 +251,11 @@ def process_update_profile(request, context={}):
     return redirect("user_profile_view")
 
 # MARK: Process Change Password
-def process_change_password(request, context={}):
+def process_change_password(request, context=None):
+
+    if context is None:
+        context = {}
+    
     session_response = session_service.check_session(request)
 
     if session_response["status"] == "SUCCESS":
@@ -283,7 +292,7 @@ def process_change_password(request, context={}):
         return redirect("user_profile_view")
     elif result["status"] == "NOT_FOUND":
         log_service.log_action(f"Failed to update user profile: User not found", context["user_info"]["UserID"], isError=True)
-        messages.error(request, "User not found.")
+        messages.error(request, USER_NOT_FOUND_MSG)
         return redirect("user_profile_view")
     elif result["status"] == "ERROR":
         messages.error(request, ERR_MSG)
@@ -314,7 +323,7 @@ def process_update_user_role(request, user_id):
     user_response = user_service.get_user_by_id(user_id)
     if user_response["status"] == "NOT_FOUND":
         log_service.log_action(f"Failed to update user profile: User not found", performed_by, isError=True)
-        messages.error(request, "User not found.")
+        messages.error(request, USER_NOT_FOUND_MSG)
         return redirect("admin_portal")
     elif user_response["status"] == "ERROR":
         messages.error(request, ERR_MSG)
@@ -347,7 +356,7 @@ def process_delete_user(request, user_id):
     user_response = user_service.get_user_by_id(user_id)
     if user_response["status"] == "NOT_FOUND":
         log_service.log_action(f"Failed to update user profile: User not found", performed_by, isError=True)
-        messages.error(request, "User not found.")
+        messages.error(request, USER_NOT_FOUND_MSG)
         return redirect("admin_portal")
     elif user_response["status"] == "ERROR":
         messages.error(request, ERR_MSG)

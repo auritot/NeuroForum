@@ -19,6 +19,7 @@ from .processes import user_process, content_filtering_process
 from .pwd_utils import validate_password_nist
 from .services.db_services.user_service import get_user_by_email, update_user_password
 from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_http_methods
 from django.core.cache import cache
 from forum.services.db_services.user_service import authenticate_user
 from forum.ip_utils import get_client_ip
@@ -59,6 +60,7 @@ def validate_filter_content(content):
 
 
 # MARK: Index View
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def index(request, context=None):
 
@@ -99,6 +101,7 @@ def index(request, context=None):
 
 
 # MARK: Login View
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def login_view(request, context=None):
 
@@ -119,7 +122,8 @@ def login_view(request, context=None):
 
     return render(request, LOGIN_HTML)
 
-
+@require_http_methods(["GET", "POST"])
+@csrf_protect
 def logout_view(request, context=None):
 
     if context is None:
@@ -138,6 +142,7 @@ def logout_view(request, context=None):
 
 
 # MARK: Register View
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def register_view(request, context=None):
 
@@ -155,6 +160,7 @@ def register_view(request, context=None):
 
 
 # MARK: Email Verification View
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def email_verification(request):
     if request.method == "POST":
@@ -278,6 +284,7 @@ def email_verification(request):
 
 
 # MARK: Post Form View
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def post_form_view(request, context=None, post_id=None):
 
@@ -306,7 +313,8 @@ def filtered_words_api(request):
 
 
 # MARK: Post View
-
+@require_http_methods(["GET", "POST"])
+@csrf_protect
 def post_view(request, post_id, context=None):
 
     if context is None:
@@ -339,6 +347,7 @@ def post_view(request, post_id, context=None):
 
 
 # MARK: User Profile View
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def user_profile_view(request, context=None):
 
@@ -362,6 +371,7 @@ def user_profile_view(request, context=None):
 
 
 # MARK: User Manage Post View
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def user_manage_post_view(request, context=None):
 
@@ -399,6 +409,7 @@ def user_manage_post_view(request, context=None):
 
 
 # MARK: Admin Manage Post View
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def admin_manage_post_view(request, context=None):
 
@@ -440,6 +451,7 @@ def admin_manage_post_view(request, context=None):
 
 # MARK: User Manage Comment View
 
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def user_manage_comment_view(request, context=None):
 
@@ -477,6 +489,7 @@ def user_manage_comment_view(request, context=None):
 
 
 # MARK: Admin Manage Comment View
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def admin_manage_comment_view(request, context=None):
 
@@ -514,7 +527,7 @@ def admin_manage_comment_view(request, context=None):
     return render(request, "html/admin_manage_comment_view.html", context)
 
 # MARK: Admin View log
-
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def admin_logs_view(request, context=None):
 
@@ -559,7 +572,7 @@ def admin_logs_view(request, context=None):
     return render(request, "html/admin_logs_view.html", context)
 
 # MARK: Forgot Password View
-
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def forgot_password_view(request):
     context = {}
@@ -593,6 +606,7 @@ def forgot_password_view(request):
 
 
 # MARK: Reset Password View
+@require_http_methods(["GET", "POST"])
 @csrf_protect
 def reset_password_view(request):
 
@@ -732,7 +746,8 @@ def start_chat_view(request):
 
 
 # MARK: Filtered Words View
-
+@require_http_methods(["GET", "POST"])
+@csrf_protect
 def manage_filtered_words_view(request):
     # session and authorization
     session_resp = session_service.check_session(request)
