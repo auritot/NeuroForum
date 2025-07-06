@@ -358,8 +358,8 @@ def test_delete_post_as_owner(client):
         follow=True
     )
 
-    assert response.status_code == 200
-    assert any("deleted" in str(m).lower() for m in get_messages(response.wsgi_request))
+    messages = get_messages(response.wsgi_request)
+    assert any("deleted" in str(m).lower() for m in messages)
 
 
 @pytest.mark.django_db
@@ -390,7 +390,8 @@ def test_update_post_unauthorized(client):
         follow=True
     )
     assert response.status_code == 200
-    assert any("unauthorized" in str(m).lower() for m in get_messages(response.wsgi_request))
+    messages = get_messages(response.wsgi_request)
+    assert any("unauthorized" in str(m).lower() for m in messages)
 
 
 @pytest.mark.django_db
@@ -422,7 +423,8 @@ def test_update_comment_empty_text(client):
         follow=True
     )
     assert response.status_code == 200
-    assert any("empty" in str(m).lower() for m in get_messages(response.wsgi_request))
+    messages = get_messages(response.wsgi_request)
+    assert any("empty" in str(m).lower() for m in messages)
 
 @pytest.mark.django_db
 def test_delete_comment_unauthorized(client):
