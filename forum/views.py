@@ -60,7 +60,11 @@ def validate_filter_content(content):
 
 # MARK: Index View
 @csrf_protect
-def index(request, context={}):
+def index(request, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -96,7 +100,11 @@ def index(request, context={}):
 
 # MARK: Login View
 @csrf_protect
-def login_view(request, context={}):
+def login_view(request, context=None):
+
+    if context is None:
+        context = {}
+
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
@@ -112,7 +120,11 @@ def login_view(request, context={}):
     return render(request, LOGIN_HTML)
 
 
-def logout_view(request, context={}):
+def logout_view(request, context=None):
+
+    if context is None:
+        context = {}
+
     if request.method == 'POST':
         logout(request)
         session_service.clear_session(request)
@@ -127,7 +139,11 @@ def logout_view(request, context={}):
 
 # MARK: Register View
 @csrf_protect
-def register_view(request, context={}):
+def register_view(request, context=None):
+
+    if context is None:
+        context = {}
+
     messages = get_messages(request)
     for message in messages:
         context["error"] = message
@@ -263,7 +279,11 @@ def email_verification(request):
 
 # MARK: Post Form View
 @csrf_protect
-def post_form_view(request, context={}, post_id=None):
+def post_form_view(request, context=None, post_id=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -281,13 +301,17 @@ def post_form_view(request, context={}, post_id=None):
 
 def filtered_words_api(request):
     # Delegate to process layer
-    response = content_filtering_process.process_get_all_filtered_words_api()
+    response = content_filtering_process.process_get_all_filtered_words_api(request)
     return JsonResponse(response)
 
 
 # MARK: Post View
 
-def post_view(request, post_id, context={}):
+def post_view(request, post_id, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -316,7 +340,11 @@ def post_view(request, post_id, context={}):
 
 # MARK: User Profile View
 @csrf_protect
-def user_profile_view(request, context={}):
+def user_profile_view(request, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -335,7 +363,11 @@ def user_profile_view(request, context={}):
 
 # MARK: User Manage Post View
 @csrf_protect
-def user_manage_post_view(request, context={}):
+def user_manage_post_view(request, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -368,7 +400,11 @@ def user_manage_post_view(request, context={}):
 
 # MARK: Admin Manage Post View
 @csrf_protect
-def admin_manage_post_view(request, context={}):
+def admin_manage_post_view(request, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -405,7 +441,11 @@ def admin_manage_post_view(request, context={}):
 # MARK: User Manage Comment View
 
 @csrf_protect
-def user_manage_comment_view(request, context={}):
+def user_manage_comment_view(request, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -438,7 +478,11 @@ def user_manage_comment_view(request, context={}):
 
 # MARK: Admin Manage Comment View
 @csrf_protect
-def admin_manage_comment_view(request, context={}):
+def admin_manage_comment_view(request, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -472,7 +516,11 @@ def admin_manage_comment_view(request, context={}):
 # MARK: Admin View log
 
 @csrf_protect
-def admin_logs_view(request, context={}):
+def admin_logs_view(request, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]

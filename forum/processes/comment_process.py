@@ -2,11 +2,15 @@ from ..services import session_service
 from ..services.db_services import comment_service, log_service
 from django.shortcuts import redirect
 from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
 
 SESSION_EXPIRED_MSG = "Session Expired! Please login again."
 ERROR_MSG = "A problem has occurred. Please try again."
 
 # MARK: Insert Comment
+@csrf_protect
+@require_POST
 def process_create_comment(request, post_id, context=None):
 
     if context is None:
@@ -36,6 +40,8 @@ def process_create_comment(request, post_id, context=None):
         return redirect('post_view', post_id=post_id)
 
 # MARK: Delete Comment by ID
+@csrf_protect
+@require_POST
 def process_delete_comment(request, post_id, comment_id, context=None):
 
     if context is None:
@@ -73,6 +79,8 @@ def process_delete_comment(request, post_id, comment_id, context=None):
         return redirect('index')
 
 # MARK: Update Comment by ID
+@csrf_protect
+@require_POST
 def process_update_comment(request, post_id, comment_id, context=None):
 
     if context is None:

@@ -2,11 +2,15 @@ from ..services import session_service
 from ..services.db_services import post_service, log_service
 from django.shortcuts import redirect
 from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
 
 ERR_MSG = "A problem has occurred. Please try again."
 SESSION_EXPIRED_MSG = "Session Expired! Please login again."
 
 # MARK: Insert Post
+@csrf_protect
+@require_POST
 def process_create_post(request, context=None):
 
     if context is None:
@@ -41,6 +45,8 @@ def process_create_post(request, context=None):
         return redirect("index")
 
 # MARK: Delete Post by ID
+@csrf_protect
+@require_POST
 def process_delete_post(request, post_id, context=None):
 
     if context is None:
@@ -79,6 +85,8 @@ def process_delete_post(request, post_id, context=None):
         else: return redirect('post_view', post_id=post_id)
 
 # MARK: Update Post by ID
+@csrf_protect
+@require_POST
 def process_update_post(request, post_id, context=None):
 
     if context is None:
