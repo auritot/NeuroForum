@@ -9,3 +9,4 @@ db/
 forum/__pycache__/*
 forum/migrations/__pycache__/*
 neuroforum_django/__pycache__/*
+sonar-project.properties
