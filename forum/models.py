@@ -120,7 +120,7 @@ class ChatSession(models.Model):
     room = models.ForeignKey(
         ChatRoom, on_delete=models.CASCADE, related_name="sessions")
     started_at = models.DateTimeField(auto_now_add=True)
-    ended_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=False)
 
     class Meta:
         ordering = ["-started_at"]  # newest sessions first
