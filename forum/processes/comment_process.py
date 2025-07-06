@@ -3,14 +3,21 @@ from ..services.db_services import comment_service, log_service
 from django.shortcuts import redirect
 from django.contrib import messages
 
+SESSION_EXPIRED_MSG = "Session Expired! Please login again."
+ERROR_MSG = "A problem has occurred. Please try again."
+
 # MARK: Insert Comment
-def process_create_comment(request, post_id, context={}):
+def process_create_comment(request, post_id, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login again.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     commentText = request.POST.get("commentText", "")
@@ -25,24 +32,28 @@ def process_create_comment(request, post_id, context={}):
         messages.success(request, response["message"])
         return redirect('post_view', post_id=post_id)
     else: 
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERROR_MSG)
         return redirect('post_view', post_id=post_id)
 
 # MARK: Delete Comment by ID
-def process_delete_comment(request, post_id, comment_id, context={}):
+def process_delete_comment(request, post_id, comment_id, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login again.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     comment_response = comment_service.get_comment_by_id(comment_id)
     if comment_response["status"] == "SUCCESS":
         context["comment"] = comment_response["data"]["comment"]
     else: 
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERROR_MSG)
         return redirect('index')
 
     if context["comment"]["UserID_id"] == context["user_info"]["UserID"]:
@@ -58,24 +69,28 @@ def process_delete_comment(request, post_id, comment_id, context={}):
         messages.success(request, response["message"])
         return redirect('post_view', post_id=post_id)
     else:
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERROR_MSG)
         return redirect('index')
 
 # MARK: Update Comment by ID
-def process_update_comment(request, post_id, comment_id, context={}):
+def process_update_comment(request, post_id, comment_id, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login again.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     comment_response = comment_service.get_comment_by_id(comment_id)
     if comment_response["status"] == "SUCCESS":
         context["comment"] = comment_response["data"]["comment"]
     else:
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERROR_MSG)
         return redirect('index')
     
     comment_url = f"post_view/{context["comment"]["PostID_id"]}?page={context["comment"]["PageNumberInPost"]}#comment-{context["comment"]["CommentPosition"]}"
@@ -97,5 +112,5 @@ def process_update_comment(request, post_id, comment_id, context={}):
         messages.success(request, response["message"])
         redirect(comment_url)
     else:
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERROR_MSG)
         return redirect('post_view', post_id=post_id)

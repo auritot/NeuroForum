@@ -3,14 +3,21 @@ from ..services.db_services import post_service, log_service
 from django.shortcuts import redirect
 from django.contrib import messages
 
+ERR_MSG = "A problem has occurred. Please try again."
+SESSION_EXPIRED_MSG = "Session Expired! Please login again."
+
 # MARK: Insert Post
-def process_create_post(request, context={}):
+def process_create_post(request, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login again.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     postTitle = request.POST.get("postTitle", "")
@@ -30,24 +37,28 @@ def process_create_post(request, context={}):
         messages.success(request, response["message"])
         return redirect('post_view', post_id=response["data"]["post_id"])
     else: 
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
         return redirect("index")
 
 # MARK: Delete Post by ID
-def process_delete_post(request, post_id, context={}):
+def process_delete_post(request, post_id, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login again.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
     
     post_response = post_service.get_post_by_id(post_id)
     if post_response["status"] == "SUCCESS":
         context["post"] = post_response["data"]["post"]
     else: 
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
         return redirect('index')
 
     if context["post"]["UserID_id"] == context["user_info"]["UserID"]:
@@ -63,18 +74,22 @@ def process_delete_post(request, post_id, context={}):
         messages.success(request, response["message"])
         return redirect('index')
     else:
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
         if context["user_info"]["Role"] == "admin": return redirect('admin_manage_post_view')
         else: return redirect('post_view', post_id=post_id)
 
 # MARK: Update Post by ID
-def process_update_post(request, post_id, context={}):
+def process_update_post(request, post_id, context=None):
+
+    if context is None:
+        context = {}
+
     session_response = session_service.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login again.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
         
     postTitle = request.POST.get("postTitle")
@@ -90,7 +105,7 @@ def process_update_post(request, post_id, context={}):
     if post_response["status"] == "SUCCESS":
         context["post"] = post_response["data"]["post"]
     else: 
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
         return redirect('index')
 
     if context["post"]["UserID_id"] == context["user_info"]["UserID"]:        
@@ -104,5 +119,5 @@ def process_update_post(request, post_id, context={}):
         messages.success(request, response["message"])
         return redirect('post_view', post_id=post_id)
     else:
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
         return redirect('post_view', post_id=post_id)

@@ -18,6 +18,7 @@ from .models import ChatRoom, ChatSession, ChatMessage, UserAccount
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+DATETIME_FORMAT = "%I:%M %p %d/%m/%Y"
 
 class PrivateChatConsumer(AsyncWebsocketConsumer):
     """
@@ -81,9 +82,9 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
                 await self.send(text_data=json.dumps({
                     "message":        await msg.get_decrypted_content(),
                     "sender":         msg.sender.Username,
-                    "timestamp":      local_time.strftime("%I:%M %p %d/%m/%Y"),
+                    "timestamp":      local_time.strftime(DATETIME_FORMAT),
                     "history":        True,
-                    "session_range":  f"{msg.session.started_at.astimezone(sg).strftime('%I:%M %p %d/%m/%Y')} → {msg.session.ended_at.astimezone(sg).strftime('%I:%M %p %d/%m/%Y')}"
+                    "session_range":  f"{msg.session.started_at.astimezone(sg).strftime(DATETIME_FORMAT)} → {msg.session.ended_at.astimezone(sg).strftime(DATETIME_FORMAT)}"
                 }))
 
         # 2) send backlog from the currently open session
@@ -93,7 +94,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 "message":   await msg.get_decrypted_content(),
                 "sender":    msg.sender.Username,
-                "timestamp": local_time.strftime("%I:%M %p %d/%m/%Y"),
+                "timestamp": local_time.strftime(DATETIME_FORMAT),
                 "history":   False,
             }))
 
@@ -116,7 +117,7 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
         safe_message = bleach.clean(raw)
         sg = timezone.now().astimezone(pytz_timezone("Asia/Singapore"))
-        timestamp_str = sg.strftime("%I:%M %p %d/%m/%Y")
+        timestamp_str = sg.strftime(DATETIME_FORMAT)
 
         # persist and retrieve the saved message
         saved_msg = await self._save_message(self.session, self.scope["user"], safe_message)

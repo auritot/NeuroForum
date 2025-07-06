@@ -145,7 +145,7 @@ class ChatMessage(models.Model):
     session = models.ForeignKey(
         ChatSession, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
-    content_encrypted = models.TextField(null=True, blank=True)
+    content_encrypted = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -180,12 +180,3 @@ class ChatMessage(models.Model):
 
         room_name = await sync_to_async(get_room_name)()
         return await sync_to_async(decrypt_message)(self.content_encrypted, room_name)
-
-
-# class ChatUnread(models.Model):
-#     user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
-#     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
-#     unread_count = models.PositiveIntegerField(default=0)
-
-#     class Meta:
-#         unique_together = ("user", "room")

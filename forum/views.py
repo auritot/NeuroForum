@@ -32,6 +32,12 @@ import string
 FILTER_CONTENT_REGEX = r"^[\w '.@*-]+$"
 FILTER_CONTENT_MAX_LENGTH = 255
 
+LOGIN_HTML = "html/login_view.html"
+RESET_HTML = "html/reset_password_view.html"
+CHAT_LANDING_HTML = "html/chat_landing.html"
+SESSION_EXPIRED_MSG = "Session Expired! Please login again."
+INVALID_ACCESS_MSG = "Invalid Access!"
+LOGIN_PATH = "/login"
 
 def validate_filter_content(content):
     """
@@ -98,12 +104,12 @@ def login_view(request, context={}):
         result = authenticate_user(email, password)
 
         if result and result.get("status") == "SUCCESS":
-            return render(request, "html/login_view.html", context)
+            return render(request, LOGIN_HTML, context)
 
         else:
-            return render(request, "html/login_view.html")
+            return render(request, LOGIN_HTML)
 
-    return render(request, "html/login_view.html")
+    return render(request, LOGIN_HTML)
 
 
 def logout_view(request, context={}):
@@ -262,7 +268,7 @@ def post_form_view(request, context={}, post_id=None):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     if post_id != None:
@@ -312,63 +318,15 @@ def post_view(request, post_id, context={}):
 @csrf_protect
 def user_profile_view(request, context={}):
     session_response = session_service.check_session(request)
-    if session_response["status"] != "SUCCESS":
-        messages.error(request, "Session Expired! Please login.")
+    if session_response["status"] == "SUCCESS":
+        context["user_info"] = session_response["data"]
+    else:
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
+    # else:
+    #     return redirect('index')
 
-    context["user_info"] = session_response["data"]
-    user_id = context["user_info"]["UserID"]
-    user_email = context["user_info"]["Email"]
-
-    if request.method == "POST":
-        if "oldPassword" in request.POST:
-            # Handle password change
-            old_password = request.POST.get("oldPassword", "")
-            new_password = request.POST.get("newPassword", "")
-            confirm_password = request.POST.get("newConfirmPassword", "")
-
-            if not old_password or not new_password or not confirm_password:
-                messages.error(request, "Please fill in all password fields.")
-                return redirect("user_profile_view")
-
-            if new_password != confirm_password:
-                messages.error(request, "New passwords do not match.")
-                return redirect("user_profile_view")
-
-            auth_result = authenticate_user(user_email, old_password)
-            if auth_result["status"] != "SUCCESS":
-                messages.error(request, "Old password is incorrect.")
-                return redirect("user_profile_view")
-
-            valid, msg = validate_password_nist(new_password)
-            if not valid:
-                messages.error(request, msg)
-                return redirect("user_profile_view")
-
-            update_result = update_user_password(user_id, new_password)
-            if update_result["status"] == "SUCCESS":
-                messages.success(request, "Password updated successfully.")
-            else:
-                messages.error(request, "Failed to update password.")
-
-            return redirect("user_profile_view")
-
-        elif "username" in request.POST and "email" in request.POST:
-            # Handle profile update
-            new_username = request.POST.get("username", "").strip()
-            new_email = request.POST.get("email", "").strip()
-
-            # (Optional) Add validation here
-
-            update_result = user_service.update_user_profile(user_id, new_username, new_email)
-            if update_result["status"] == "SUCCESS":
-                messages.success(request, "Profile updated successfully.")
-                return redirect("user_profile_view")
-            else:
-                messages.error(request, "Failed to update profile.")
-
-    # Load user info for GET or failed POST
-    user_response = user_service.get_user_by_id(user_id)
+    user_response = user_service.get_user_by_id(context["user_info"]["UserID"])
     if user_response["status"] == "SUCCESS":
         context["user_data"] = user_response["data"]
 
@@ -382,7 +340,7 @@ def user_manage_post_view(request, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
     # else:
     #     return redirect('index')
@@ -415,11 +373,11 @@ def admin_manage_post_view(request, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     if context["user_info"]["Role"] != "admin":
-        messages.error(request, "Invalid Access!")
+        messages.error(request, INVALID_ACCESS_MSG)
         return redirect("login_view")
 
     per_page = 10
@@ -452,7 +410,7 @@ def user_manage_comment_view(request, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
     # else:
     #     return redirect('index')
@@ -485,11 +443,11 @@ def admin_manage_comment_view(request, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     if context["user_info"]["Role"] != "admin":
-        messages.error(request, "Invalid Access!")
+        messages.error(request, INVALID_ACCESS_MSG)
         return redirect("login_view")
 
     per_page = 10
@@ -519,11 +477,11 @@ def admin_logs_view(request, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     if context["user_info"]["Role"] != "admin":
-        messages.error(request, "Invalid Access!")
+        messages.error(request, INVALID_ACCESS_MSG)
         return redirect("login_view")
 
     search = request.GET.get("search", "")
@@ -598,21 +556,21 @@ def reset_password_view(request):
             confirm_password = request.POST.get("confirm_password")
 
             if new_password != confirm_password:
-                return render(request, "html/reset_password_view.html", {"error": "Passwords do not match."})
+                return render(request, RESET_HTML, {"error": "Passwords do not match."})
 
             status, msg = validate_password_nist(new_password)
             if not status:
-                return render(request, "html/reset_password_view.html", {"error": msg})
+                return render(request, RESET_HTML, {"error": msg})
 
             # Fetch user by email
             response = get_user_by_email(user_email)
             if response["status"] != "SUCCESS":
-                return render(request, "html/reset_password_view.html", {"error": "User not found."})
+                return render(request, RESET_HTML, {"error": "User not found."})
 
             user_id = response["data"]["UserID"]
             update_response = update_user_password(user_id, new_password)
             if update_response["status"] != "SUCCESS":
-                return render(request, "html/reset_password_view.html", {"error": "Password reset failed."})
+                return render(request, RESET_HTML, {"error": "Password reset failed."})
 
             # Clean up session
             for key in ['reset_email', 'verification_code', 'code_generated_at', 'verified_for_reset']:
@@ -626,7 +584,7 @@ def reset_password_view(request):
             print("Password reset error:", e)
             return HttpResponse("Server error during password reset", status=500)
 
-    return render(request, "html/reset_password_view.html")
+    return render(request, RESET_HTML)
 
 
 # MARK: Chat View
@@ -642,7 +600,7 @@ def chat_view(request, other_user):
     user_info = session_response["data"]
 
     if not UserAccount.objects.filter(Username__iexact=other_user).exists():
-        return render(request, "html/chat_landing.html", {
+        return render(request, CHAT_LANDING_HTML, {
             "user_info": user_info,
             "error":     "User does not exist."
         })
@@ -668,7 +626,7 @@ def chat_view(request, other_user):
 def chat_landing_or_redirect_view(request):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
-        return redirect("/login")
+        return redirect(LOGIN_PATH)
 
     user_info = session_response["data"]
     username = user_info["Username"]
@@ -681,14 +639,14 @@ def chat_landing_or_redirect_view(request):
             return redirect(f"/chat/{partners[0]}/?frame=1")
         return redirect(f"/chat/{partners[0]}")
 
-    return render(request, "html/chat_landing.html", {"user_info": user_info})
+    return render(request, CHAT_LANDING_HTML, {"user_info": user_info})
 
 @csrf_protect
 @xframe_options_exempt
 def chat_home_view(request):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
-        return redirect("/login")
+        return redirect(LOGIN_PATH)
 
     user_info = session_response["data"]
     username = user_info["Username"]
@@ -705,19 +663,19 @@ def chat_home_view(request):
 def start_chat_view(request):
     session = session_service.check_session(request)
     if session["status"] != "SUCCESS":
-        return redirect("/login")
+        return redirect(LOGIN_PATH)
 
     user_info = session["data"]
     username = request.GET.get("username", "").strip().lower()
 
     if not username or username == user_info["Username"].lower():
-        return render(request, "html/chat_landing.html", {
+        return render(request, CHAT_LANDING_HTML, {
             "user_info": user_info,
             "error": "Invalid",
         })
 
     if not UserAccount.objects.filter(Username__iexact=username).exists():
-        return render(request, "html/chat_landing.html", {
+        return render(request, CHAT_LANDING_HTML, {
             "user_info": user_info,
             "error": "User does not exist.",
         })
@@ -771,7 +729,7 @@ def manage_filtered_words_view(request):
 def admin_portal(request):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
-        return redirect("/login")
+        return redirect(LOGIN_PATH)
 
     user_info = session_response["data"]
     if user_info["Role"].lower() != "admin":
@@ -785,7 +743,7 @@ def admin_portal(request):
 def change_user_role(request, user_id):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
-        return redirect("/login")
+        return redirect(LOGIN_PATH)
 
     user_info = session_response["data"]
     if user_info["Role"].lower() != "admin":
@@ -798,7 +756,7 @@ def change_user_role(request, user_id):
 def delete_user(request, user_id):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
-        return redirect("/login")
+        return redirect(LOGIN_PATH)
 
     user_info = session_response["data"]
     if user_info["Role"].lower() != "admin":

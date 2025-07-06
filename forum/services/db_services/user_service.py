@@ -8,6 +8,9 @@ from . import log_service
 user_col = ["UserID", "Username", "Email",
             "Password", "Role"]
 
+USER_FOUND_MSG = "User was found"
+USER_NOT_FOUND_MSG = "User not found"
+
 # MARK: Login Authentication
 
 
@@ -21,7 +24,7 @@ def authenticate_user(email, password):
 
             result = cursor.fetchone()
             if result is None:
-                return utilities.response("NOT_FOUND", "User not found")
+                return utilities.response("NOT_FOUND", USER_NOT_FOUND_MSG)
 
             user_data = dict(zip(user_col, result))
 
@@ -82,11 +85,11 @@ def get_user_by_email(email):
 
             result = cursor.fetchone()
             if result is None:
-                return utilities.response("NOT_FOUND", "User not found")
+                return utilities.response("NOT_FOUND", USER_NOT_FOUND_MSG)
 
             user_data = dict(zip(user_col, result))
 
-            return utilities.response("SUCCESS", "User was found", user_data)
+            return utilities.response("SUCCESS", USER_FOUND_MSG, user_data)
 
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
@@ -104,11 +107,11 @@ def get_user_by_username(username):
 
             result = cursor.fetchone()
             if result is None:
-                return utilities.response("NOT_FOUND", "User not found")
+                return utilities.response("NOT_FOUND", USER_NOT_FOUND_MSG)
 
             user_data = dict(zip(user_col, result))
 
-            return utilities.response("SUCCESS", "User was found", user_data)
+            return utilities.response("SUCCESS", USER_FOUND_MSG, user_data)
 
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
@@ -126,11 +129,11 @@ def get_user_by_id(user_id):
 
             result = cursor.fetchone()
             if result is None:
-                return utilities.response("NOT_FOUND", "User not found")
+                return utilities.response("NOT_FOUND", USER_NOT_FOUND_MSG)
 
             user_data = dict(zip(user_col, result))
 
-            return utilities.response("SUCCESS", "User was found", user_data)
+            return utilities.response("SUCCESS", USER_FOUND_MSG, user_data)
 
     except Exception as e:
         return utilities.response("ERROR", f"An unexpected error occurred: {e}")
@@ -194,7 +197,7 @@ def update_user_role(user_id, role, performed_by):
                 )
                 result = cursor.fetchone()
                 if not result:
-                    return utilities.response("ERROR", "User not found")
+                    return utilities.response("ERROR", USER_NOT_FOUND_MSG)
 
                 username = result[0]
 
@@ -227,8 +230,7 @@ def delete_user_by_id(user_id, performed_by):
                 )
                 result = cursor.fetchone()
                 if not result:
-                    return utilities.response("ERROR", "User not found")
-
+                    return utilities.response("ERROR", USER_NOT_FOUND_MSG)
                 username = result[0]
 
                 # Then, delete the user

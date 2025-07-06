@@ -15,6 +15,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+ERR_MSG = "A problem has occurred. Please try again."
+SESSION_EXPIRED_MSG = "Session Expired! Please login again."
 
 def generate_verification_code(length=6):
     return ''.join(random.choices(string.digits, k=length))
@@ -87,7 +89,7 @@ def process_login(request):
             f"Login failed for email '{email}': invalid email or password.", 1, isSystem=False, isError=True)
         return redirect("login_view")
 
-    messages.error(request, "A problem has occurred. Please try again.")
+    messages.error(request, ERR_MSG)
     log_service.log_action(
         f"Login failed for email '{email}': unknown error occurred.", 1, isSystem=True, isError=True)
     return redirect("login_view")
@@ -186,7 +188,7 @@ def process_register(request):
         )
         return redirect("email_verification")
 
-    messages.error(request, "A problem has occurred. Please try again.")
+    messages.error(request, ERR_MSG)
     log_service.log_action(
         f"Registration failed for email '{email}': unknown error occurred.", 1, isSystem=True, isError=True)
     return redirect("register_view")
@@ -199,7 +201,7 @@ def process_update_profile(request, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     username = utilities.sanitize_input(request.POST.get("username"))
@@ -212,7 +214,7 @@ def process_update_profile(request, context={}):
         log_service.log_action(f"Failed to update user profile: User not found", context["user_info"]["UserID"], isError=True)
         messages.error(request, "User not found.")
     else:
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
         return redirect('user_profile_view')
 
     if username == context["user_data"]["Username"] and email == context["user_data"]["Email"]:
@@ -239,7 +241,7 @@ def process_update_profile(request, context={}):
         messages.success(request, "User Profile has been updated")
         return redirect("user_profile_view")
     else:
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
 
     return redirect("user_profile_view")
 
@@ -250,7 +252,7 @@ def process_change_password(request, context={}):
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
-        messages.error(request, "Session Expired! Please login.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     oldPassword = utilities.sanitize_input(request.POST.get("oldPassword"))
@@ -277,14 +279,14 @@ def process_change_password(request, context={}):
     
     if result["status"] == "INVALID":
         log_service.log_action(f"Failed to update user profile: Incorrect old password entered", context["user_info"]["UserID"], isError=True)
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
         return redirect("user_profile_view")
     elif result["status"] == "NOT_FOUND":
         log_service.log_action(f"Failed to update user profile: User not found", context["user_info"]["UserID"], isError=True)
         messages.error(request, "User not found.")
         return redirect("user_profile_view")
     elif result["status"] == "ERROR":
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
         return redirect("user_profile_view")
 
 
@@ -295,7 +297,7 @@ def process_change_password(request, context={}):
         messages.success(request, "Password has been changed")
         return redirect("user_profile_view")
     else: 
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
 
     return redirect("user_profile_view")
 
@@ -303,7 +305,7 @@ def process_change_password(request, context={}):
 def process_update_user_role(request, user_id):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
-        messages.error(request, "Session expired. Please log in.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     role = utilities.sanitize_input(request.POST.get("role"))
@@ -315,7 +317,7 @@ def process_update_user_role(request, user_id):
         messages.error(request, "User not found.")
         return redirect("admin_portal")
     elif user_response["status"] == "ERROR":
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
         return redirect("admin_portal")
 
     result = user_service.update_user_role(user_id, role, performed_by)
@@ -323,7 +325,7 @@ def process_update_user_role(request, user_id):
         username = user_response["data"]["Username"]
         messages.success(request, f"Updated role for {username} to {role}.")
     else:
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
 
     return redirect("admin_portal")
 
@@ -331,7 +333,7 @@ def process_update_user_role(request, user_id):
 def process_delete_user(request, user_id):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
-        messages.error(request, "Session expired. Please log in.")
+        messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
     performed_by = session_response["data"]["UserID"]
@@ -348,7 +350,7 @@ def process_delete_user(request, user_id):
         messages.error(request, "User not found.")
         return redirect("admin_portal")
     elif user_response["status"] == "ERROR":
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
         return redirect("admin_portal")
 
     username = user_response["data"]["Username"]
@@ -357,6 +359,6 @@ def process_delete_user(request, user_id):
     if result["status"] == "SUCCESS":
         messages.success(request, f"User '{username}' deleted successfully.")
     else:
-        messages.error(request, "A problem has occurred. Please try again.")
+        messages.error(request, ERR_MSG)
 
     return redirect("admin_portal")
