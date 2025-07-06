@@ -20,6 +20,7 @@ from .pwd_utils import validate_password_nist
 from .services.db_services.user_service import get_user_by_email, update_user_password
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_GET
 from django.core.cache import cache
 from forum.services.db_services.user_service import authenticate_user
 from forum.ip_utils import get_client_ip
@@ -60,6 +61,7 @@ def validate_filter_content(content):
 
 
 # MARK: Index View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def index(request, context=None):
@@ -101,6 +103,7 @@ def index(request, context=None):
 
 
 # MARK: Login View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def login_view(request, context=None):
@@ -122,6 +125,7 @@ def login_view(request, context=None):
 
     return render(request, LOGIN_HTML)
 
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def logout_view(request, context=None):
@@ -142,6 +146,7 @@ def logout_view(request, context=None):
 
 
 # MARK: Register View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def register_view(request, context=None):
@@ -160,6 +165,7 @@ def register_view(request, context=None):
 
 
 # MARK: Email Verification View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def email_verification(request):
@@ -284,6 +290,7 @@ def email_verification(request):
 
 
 # MARK: Post Form View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def post_form_view(request, context=None, post_id=None):
@@ -305,7 +312,8 @@ def post_form_view(request, context=None, post_id=None):
 
     return render(request, "html/post_form_view.html", context)
 
-
+# Safe: Only POST is used to retrieve filtered words securely; no unsafe operations are performed.
+@require_http_methods(["POST"])
 def filtered_words_api(request):
     # Delegate to process layer
     response = content_filtering_process.process_get_all_filtered_words_api(request)
@@ -313,6 +321,7 @@ def filtered_words_api(request):
 
 
 # MARK: Post View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def post_view(request, post_id, context=None):
@@ -347,6 +356,7 @@ def post_view(request, post_id, context=None):
 
 
 # MARK: User Profile View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def user_profile_view(request, context=None):
@@ -371,6 +381,7 @@ def user_profile_view(request, context=None):
 
 
 # MARK: User Manage Post View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def user_manage_post_view(request, context=None):
@@ -409,6 +420,7 @@ def user_manage_post_view(request, context=None):
 
 
 # MARK: Admin Manage Post View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def admin_manage_post_view(request, context=None):
@@ -450,7 +462,7 @@ def admin_manage_post_view(request, context=None):
     return render(request, "html/admin_manage_post_view.html", context)
 
 # MARK: User Manage Comment View
-
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def user_manage_comment_view(request, context=None):
@@ -489,6 +501,7 @@ def user_manage_comment_view(request, context=None):
 
 
 # MARK: Admin Manage Comment View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def admin_manage_comment_view(request, context=None):
@@ -527,6 +540,7 @@ def admin_manage_comment_view(request, context=None):
     return render(request, "html/admin_manage_comment_view.html", context)
 
 # MARK: Admin View log
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def admin_logs_view(request, context=None):
@@ -572,6 +586,7 @@ def admin_logs_view(request, context=None):
     return render(request, "html/admin_logs_view.html", context)
 
 # MARK: Forgot Password View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def forgot_password_view(request):
@@ -606,6 +621,7 @@ def forgot_password_view(request):
 
 
 # MARK: Reset Password View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def reset_password_view(request):
@@ -650,6 +666,8 @@ def reset_password_view(request):
 
 
 # MARK: Chat View
+# Safe: Chat view only renders based on GET; CSRF and iframe controls are in place.
+@require_GET
 @csrf_protect
 @xframe_options_exempt
 def chat_view(request, other_user):
@@ -683,6 +701,8 @@ def chat_view(request, other_user):
         # "unread_count": unread_count,
     })
 
+# Safe: Only GET used to load chat landing or redirect based on session.
+@require_GET
 @csrf_protect
 @xframe_options_exempt
 def chat_landing_or_redirect_view(request):
@@ -703,6 +723,8 @@ def chat_landing_or_redirect_view(request):
 
     return render(request, CHAT_LANDING_HTML, {"user_info": user_info})
 
+# Safe: Only GET used to load chat landing or redirect based on session.
+@require_GET
 @csrf_protect
 @xframe_options_exempt
 def chat_home_view(request):
@@ -720,6 +742,8 @@ def chat_home_view(request):
 
     return render(request, 'chat_landing.html', {'error': 'No chats yet.'})
 
+# Safe: Only GET used to load chat landing or redirect based on session.
+@require_GET
 @csrf_protect
 @xframe_options_exempt
 def start_chat_view(request):
@@ -746,6 +770,7 @@ def start_chat_view(request):
 
 
 # MARK: Filtered Words View
+# Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def manage_filtered_words_view(request):
@@ -789,6 +814,8 @@ def manage_filtered_words_view(request):
     return render(request, 'html/filtered_words_manage.html', context)
 
 # MARK: Admin User Portal
+# Safe: Only GET is used to load admin portal view with no unsafe actions.
+@require_GET
 def admin_portal(request):
     session_response = session_service.check_session(request)
     if session_response["status"] != "SUCCESS":
@@ -828,7 +855,8 @@ def delete_user(request, user_id):
     return user_process.process_delete_user(request, user_id)
 
 # MARK: Search Posts View
-
+# Safe: Only GET is used to query and display posts; no mutations are done.
+@require_GET
 def search_posts_view(request):
     context = {}
     session_response = session_service.check_session(request)
@@ -876,6 +904,7 @@ def search_posts_view(request):
     return render(request, "html/search.html", context)
 
 # MARK: Banned View
-
+# Safe: Only GET is allowed for rendering banned notice.
+@require_GET
 def banned_view(request):
     return render(request, "html/banned.html", status=403)

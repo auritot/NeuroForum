@@ -5,8 +5,11 @@ from forum.pwd_utils import validate_password_nist
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.conf import settings
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_http_methods
 import random
 import string
+import secrets
 from django.core.mail import send_mail
 from django.utils import timezone
 from forum.ip_utils import get_client_ip
@@ -24,7 +27,8 @@ def generate_verification_code(length=6):
 
 # MARK: Process Login
 
-
+@require_http_methods(["GET", "POST"])
+@csrf_protect
 def process_login(request):
     if request.method != 'POST':
         return redirect('login_view')
@@ -97,6 +101,8 @@ def process_login(request):
 
 
 # MARK: Process Register
+@require_http_methods(["GET", "POST"])
+@csrf_protect
 def process_register(request):
     if request.method != 'POST':
         return redirect('register_view')
@@ -196,6 +202,8 @@ def process_register(request):
 
 
 # MARK: Process Update Profile
+@require_http_methods(["GET", "POST"])
+@csrf_protect
 def process_update_profile(request, context=None):
 
     if context is None:
@@ -251,6 +259,8 @@ def process_update_profile(request, context=None):
     return redirect("user_profile_view")
 
 # MARK: Process Change Password
+@require_http_methods(["GET", "POST"])
+@csrf_protect
 def process_change_password(request, context=None):
 
     if context is None:

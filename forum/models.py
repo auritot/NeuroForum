@@ -145,7 +145,7 @@ class ChatMessage(models.Model):
     session = models.ForeignKey(
         ChatSession, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
-    content_encrypted = models.TextField(default="", blank=False)
+    content_encrypted = models.TextField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
