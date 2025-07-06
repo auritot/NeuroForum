@@ -17,13 +17,14 @@ from django.contrib.auth import get_user_model
 from forum.services.db_services import user_service, post_service
 from django.db import connection
 from django.contrib.messages import get_messages
+from django.contrib.auth.hashers import make_password
 
 class PostModelTest(TestCase):
     def setUp(self):
         self.user = UserAccount.objects.create(
             Username="testuser",
             Email="testuser@example.com",
-            Password="securepassword123",
+            Password=make_password("abc123"),
             Role="user"
         )
         self.post = Post.objects.create(
@@ -43,7 +44,7 @@ class PostModelTest(TestCase):
 
 class UserAccountModelTest(TestCase):
     def test_user_creation_and_auth(self):
-        user = UserAccount.objects.create(Username="alice", Email="alice@example.com", Password="pwd123", Role="user")
+        user = UserAccount.objects.create(Username="alice", Email="alice@example.com", Password=make_password("abc123"), Role="user")
         self.assertEqual(str(user), "alice")
         self.assertTrue(user.is_authenticated)
 
@@ -77,7 +78,7 @@ class LoginViewTest(TestCase):
 
 class CommentModelTest(TestCase):
     def setUp(self):
-        self.user = UserAccount.objects.create(Username="bob", Email="bob@example.com", Password="pwd", Role="user")
+        self.user = UserAccount.objects.create(Username="bob", Email="bob@example.com", Password=make_password("abc123"), Role="user")
         self.post = Post.objects.create(Title="Sample", PostContent="Post", UserID=self.user)
 
     def test_comment_creation(self):
@@ -93,7 +94,7 @@ class FilteringModelTest(TestCase):
 
 class LogsModelTest(TestCase):
     def test_log_entry(self):
-        user = UserAccount.objects.create(Username="admin", Email="admin@site.com", Password="root", Role="admin")
+        user = UserAccount.objects.create(Username="admin", Email="admin@site.com", Password=make_password("abc123"), Role="admin")
         log = Logs.objects.create(LogContent="Login detected", Category="auth", UserID=user)
         self.assertIn("Login detected", str(log))
 
@@ -110,7 +111,7 @@ class ChatRoomTest(TestCase):
 
 class ChatSessionMessageTest(TestCase):
     def setUp(self):
-        self.user = UserAccount.objects.create(Username="sender", Email="s@e.com", Password="x", Role="user")
+        self.user = UserAccount.objects.create(Username="sender", Email="s@e.com", Password=make_password("abc123"), Role="user")
         self.room = ChatRoom.objects.create(name="roomx")
         self.session = ChatSession.objects.create(room=self.room)
 
@@ -127,7 +128,7 @@ class ChatSessionMessageTest(TestCase):
 class ViewTestBasic(TestCase):
     def setUp(self):
         self.client = Client()
-        self.user = UserAccount.objects.create(Username="guest", Email="g@x.com", Password="p", Role="user")
+        self.user = UserAccount.objects.create(Username="guest", Email="g@x.com", Password=make_password("abc123"), Role="user")
 
     def test_index_loads(self):
         response = self.client.get(reverse("index"))
@@ -157,10 +158,10 @@ class ViewTestBasic(TestCase):
 async def test_chat_connects_successfully():
     # Create users and room
     user1 = await database_sync_to_async(UserAccount.objects.create)(
-        Username="alice", Email="alice@example.com", Password="pwd123", Role="user"
+        Username="alice", Email="alice@example.com", Password=make_password("abc123"), Role="user"
     )
     user2 = await database_sync_to_async(UserAccount.objects.create)(
-        Username="bob", Email="bob@example.com", Password="pwd456", Role="user"
+        Username="bob", Email="bob@example.com", Password=make_password("abc123"), Role="user"
     )
     await database_sync_to_async(ChatRoom.get_or_create_private)("alice", "bob")
 
@@ -180,7 +181,7 @@ async def test_chat_connects_successfully():
 @pytest.mark.django_db(transaction=True)
 async def test_chat_rejects_self_connection():
     user = await database_sync_to_async(UserAccount.objects.create)(
-        Username="selfuser", Email="self@user.com", Password="pwd", Role="user"
+        Username="selfuser", Email="self@user.com", Password=make_password("abc123"), Role="user"
     )
 
     communicator = WebsocketCommunicator(
@@ -209,7 +210,7 @@ async def test_chat_rejects_unauthenticated():
 
 @pytest.mark.django_db
 def test_authenticate_user_success():
-    user = UserAccount.objects.create(Username="tester", Email="t@x.com", Password="pbkdf2_sha256$...", Role="user")
+    user = UserAccount.objects.create(Username="tester", Email="t@x.com", Password=make_password("abc123"), Role="user")
     result = user_service.authenticate_user("t@x.com", "wrong_password")  # Will fail hash, still covers path
     assert result["status"] in ["INVALID", "SUCCESS"]
 
@@ -251,7 +252,7 @@ def test_insert_and_fetch_post():
 
 @pytest.mark.django_db
 def test_login_fails_and_bans():
-    user = UserAccount.objects.create(Username="zz", Email="zz@x.com", Password="hashed", Role="user")
+    user = UserAccount.objects.create(Username="zz", Email="zz@x.com", Password=make_password("abc123"), Role="user")
     client = Client()
     for _ in range(6):
         client.post(reverse("process_login"), {"email": "zz@x.com", "password": "wrong"})
@@ -261,7 +262,12 @@ def test_login_fails_and_bans():
 
 @pytest.mark.django_db
 def test_create_post_with_empty_fields(client):
-    user = UserAccount.objects.create(Username="tester", Email="tester@e.com", Password="pwd", Role="user")
+
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
+
+    user = UserAccount.objects.create(Username="tester", Email="tester@e.com", Password=make_password("abc123"), Role="user")
     session = client.session
     session["user_info"] = {"UserID": user.UserID, "Username": user.Username}
     session.save()
@@ -276,6 +282,11 @@ def test_create_post_with_empty_fields(client):
 
 @pytest.mark.django_db
 def test_register_with_password_mismatch(client):
+
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
+
     response = client.post(
         reverse("process_register"),
         {
@@ -292,7 +303,12 @@ def test_register_with_password_mismatch(client):
 
 @pytest.mark.django_db
 def test_create_comment_empty(client):
-    user = UserAccount.objects.create(Username="mark", Email="mark@e.com", Password="pwd", Role="user")
+
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
+
+    user = UserAccount.objects.create(Username="mark", Email="mark@e.com", Password=make_password("abc123"), Role="user")
     post = Post.objects.create(Title="hello", PostContent="world", UserID=user)
 
     session = client.session
@@ -309,7 +325,12 @@ def test_create_comment_empty(client):
 
 @pytest.mark.django_db
 def test_delete_post_as_owner(client):
-    user = UserAccount.objects.create(Username="owner", Email="o@x.com", Password="pw", Role="user")
+
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
+
+    user = UserAccount.objects.create(Username="owner", Email="o@x.com", Password=make_password("abc123"), Role="user")
     post = Post.objects.create(Title="X", PostContent="Y", UserID=user)
 
     session = client.session
@@ -325,8 +346,13 @@ def test_delete_post_as_owner(client):
 
 @pytest.mark.django_db
 def test_update_post_unauthorized(client):
-    owner = UserAccount.objects.create(Username="own", Email="own@x.com", Password="pw", Role="user")
-    attacker = UserAccount.objects.create(Username="att", Email="att@x.com", Password="pw", Role="user")
+
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
+
+    owner = UserAccount.objects.create(Username="own", Email="own@x.com", Password=make_password("abc123"), Role="user")
+    attacker = UserAccount.objects.create(Username="att", Email="att@x.com", Password=make_password("abc123"), Role="user")
     post = Post.objects.create(Title="T", PostContent="P", UserID=owner)
 
     session = client.session
@@ -343,7 +369,12 @@ def test_update_post_unauthorized(client):
 
 @pytest.mark.django_db
 def test_update_comment_empty_text(client):
-    user = UserAccount.objects.create(Username="cx", Email="cx@x.com", Password="pw", Role="user")
+
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
+
+    user = UserAccount.objects.create(Username="cx", Email="cx@x.com", Password=make_password("abc123"), Role="user")
     post = Post.objects.create(Title="Z", PostContent="Z", UserID=user)
     comment = Comment.objects.create(CommentContents="Nice!", UserID=user, PostID=post)
 
@@ -361,8 +392,13 @@ def test_update_comment_empty_text(client):
 
 @pytest.mark.django_db
 def test_delete_comment_unauthorized(client):
-    user1 = UserAccount.objects.create(Username="auth", Email="a@x.com", Password="pw", Role="user")
-    user2 = UserAccount.objects.create(Username="unauth", Email="b@x.com", Password="pw", Role="user")
+
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
+
+    user1 = UserAccount.objects.create(Username="auth", Email="a@x.com", Password=make_password("abc123"), Role="user")
+    user2 = UserAccount.objects.create(Username="unauth", Email="b@x.com", Password=make_password("abc123"), Role="user")
     post = Post.objects.create(Title="Test", PostContent="...", UserID=user1)
     comment = Comment.objects.create(CommentContents="Hello", UserID=user1, PostID=post)
 
@@ -379,6 +415,7 @@ def test_delete_comment_unauthorized(client):
 
 @pytest.mark.django_db
 def test_session_expired_redirects(client):
+
     response = client.post(
         reverse("process_create_post"),
         {"postTitle": "Session", "postDescription": "Expired"},
@@ -389,7 +426,12 @@ def test_session_expired_redirects(client):
 
 @pytest.mark.django_db
 def test_reset_password_mismatch(client):
-    user = UserAccount.objects.create(Username="x", Email="reset@x.com", Password="pw", Role="user")
+
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
+
+    user = UserAccount.objects.create(Username="x", Email="reset@x.com", Password=make_password("abc123"), Role="user")
     session = client.session
     session["reset_email"] = user.Email
     session.save()
