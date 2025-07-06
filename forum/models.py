@@ -120,7 +120,7 @@ class ChatSession(models.Model):
     room = models.ForeignKey(
         ChatRoom, on_delete=models.CASCADE, related_name="sessions")
     started_at = models.DateTimeField(auto_now_add=True)
-    ended_at = models.DateTimeField(null=True, blank=False)
+    ended_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-started_at"]  # newest sessions first
@@ -145,7 +145,7 @@ class ChatMessage(models.Model):
     session = models.ForeignKey(
         ChatSession, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
-    content_encrypted = models.TextField(default="", blank=True)
+    content_encrypted = models.TextField(default="", blank=False)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
