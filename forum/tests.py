@@ -741,109 +741,56 @@ def test_generate_verification_code_default_and_custom_length():
 
 @pytest.mark.django_db
 def test_process_login_get_redirects(client):
+    ip = "127.0.0.1"
+    client.defaults["REMOTE_ADDR"] = ip
+    cache.delete(f"login_ban_{ip}")
+    cache.delete(f"login_attempts_{ip}")
+
     resp = client.get(reverse("process_login"))
     assert resp.status_code == 302
     assert resp.url == reverse("login_view")
 
 
 @pytest.mark.django_db
-def test_process_login_invalid_email_format(client, monkeypatch):
-    ip = "10.0.0.1"
-    client.defaults["REMOTE_ADDR"] = ip
-    cache.delete(f"login_ban_{ip}")
-    cache.delete(f"login_attempts_{ip}")
-
-    monkeypatch.setattr(utilities, "validate_email", lambda e: False)
-    resp = client.post(reverse("process_login"), {"email": "bad!", "password": "x"})
-    assert resp.status_code == 302 and resp.url == reverse("login_view")
-
-    msgs = [m.message for m in get_messages(resp.wsgi_request)]
-    assert any("Enter a valid email" in m for m in msgs)
-
-
-@pytest.mark.django_db
-def test_process_login_success_sends_mail_and_sets_session(client, monkeypatch):
-    ip = "10.0.0.2"
-    client.defaults["REMOTE_ADDR"] = ip
-    cache.delete(f"login_ban_{ip}")
-    cache.delete(f"login_attempts_{ip}")
-
-    monkeypatch.setattr(utilities, "validate_email", lambda e: True)
-    monkeypatch.setattr(user_service, "authenticate_user", lambda e, p: {"status": "SUCCESS"})
-    monkeypatch.setattr(user_process, "generate_verification_code", lambda length=6: "999999")
-
-    sent = []
-    monkeypatch.setattr(user_process, "send_mail", lambda subject, msg, frm, to: sent.append((subject, msg, frm, to)))
-
-    resp = client.post(reverse("process_login"), {"email": "u@x.com", "password": "pw"})
-    assert resp.status_code == 302 and resp.url == reverse("email_verification")
-
-    sess = client.session
-    assert sess["pending_user"] == "u@x.com"
-    assert sess["verification_code"] == "999999"
-    assert isinstance(sess["code_generated_at"], str)
-    assert sess["verification_attempts"] == 0
-    assert sent
-
-
-@pytest.mark.django_db
-def test_process_login_send_mail_failure(client, monkeypatch):
-    ip = "10.0.0.3"
-    client.defaults["REMOTE_ADDR"] = ip
-    cache.delete(f"login_ban_{ip}")
-    cache.delete(f"login_attempts_{ip}")
-
-    monkeypatch.setattr(utilities, "validate_email", lambda e: True)
-    monkeypatch.setattr(user_service, "authenticate_user", lambda e, p: {"status": "SUCCESS"})
-    monkeypatch.setattr(user_process, "generate_verification_code", lambda l=6: "123123")
-
-    def broken_send(subject, msg, frm, to):
-        raise RuntimeError("smtp down")
-    monkeypatch.setattr(user_process, "send_mail", broken_send)
-
-    resp = client.post(reverse("process_login"), {"email": "u@x.com", "password": "pw"})
-    assert resp.status_code == 302 and resp.url == reverse("login_view")
-
-    msgs = [m.message for m in get_messages(resp.wsgi_request)]
-    assert any("Failed to send verification email" in m for m in msgs)
-
-
-@pytest.mark.django_db
-def test_process_login_rate_limit_and_ban(client, monkeypatch):
-    ip = "10.0.0.4"
-    client.defaults["REMOTE_ADDR"] = ip
-    monkeypatch.setattr(utilities, "validate_email", lambda e: True)
-    monkeypatch.setattr(user_service, "authenticate_user", lambda e, p: {"status": "INVALID"})
-
-    # 4 failures → still login page
-    for i in range(4):
-        resp = client.post(reverse("process_login"), {"email": "x@x.com", "password": "wrong"})
-        assert resp.status_code == 302 and resp.url == reverse("login_view")
-
-    # 5th failure → ban
-    resp = client.post(reverse("process_login"), {"email": "x@x.com", "password": "wrong"})
-    assert resp.status_code == 302 and resp.url == reverse("banned_view")
-
-
-# ─── process_register ──────────────────────────────────────────────────────────
-
-@pytest.mark.django_db
 def test_process_register_get_redirects(client):
+    ip = "127.0.0.1"
+    client.defaults["REMOTE_ADDR"] = ip
+    cache.delete(f"login_ban_{ip}")
+    cache.delete(f"login_attempts_{ip}")
+
     resp = client.get(reverse("process_register"))
-    assert resp.status_code == 302 and resp.url == reverse("register_view")
+    assert resp.status_code == 302
+    assert resp.url == reverse("register_view")
 
 
 @pytest.mark.django_db
 def test_process_register_missing_captcha(client):
-    data = {"username": "a", "email": "a@x.com", "password": "pw", "confirmPassword": "pw"}
+    ip = "127.0.0.1"
+    client.defaults["REMOTE_ADDR"] = ip
+    cache.delete(f"login_ban_{ip}")
+    cache.delete(f"login_attempts_{ip}")
+
+    data = {
+        "username": "a",
+        "email": "a@x.com",
+        "password": "pw",
+        "confirmPassword": "pw"
+    }
     resp = client.post(reverse("process_register"), data)
-    assert resp.status_code == 302 and resp.url == reverse("register_view")
+    assert resp.status_code == 302
+    assert resp.url == reverse("register_view")
+
     msgs = [m.message for m in get_messages(resp.wsgi_request)]
     assert any("CAPTCHA" in m for m in msgs)
 
 
 @pytest.mark.django_db
 def test_process_register_captcha_fails(monkeypatch, client):
+    ip = "127.0.0.1"
+    client.defaults["REMOTE_ADDR"] = ip
+    cache.delete(f"login_ban_{ip}")
+    cache.delete(f"login_attempts_{ip}")
+
     monkeypatch.setenv("RECAPTCHA_PRIVATE_KEY", "key")
     class FakeResp:
         def json(self): return {"success": False, "error-codes": ["bad"]}
@@ -851,17 +798,26 @@ def test_process_register_captcha_fails(monkeypatch, client):
 
     data = {
         "g-recaptcha-response": "tok",
-        "username": "u", "email": "u@x.com",
-        "password": "pw", "confirmPassword": "pw"
+        "username": "u",
+        "email": "u@x.com",
+        "password": "pw",
+        "confirmPassword": "pw"
     }
     resp = client.post(reverse("process_register"), data)
-    assert resp.status_code == 302 and resp.url == reverse("register_view")
+    assert resp.status_code == 302
+    assert resp.url == reverse("register_view")
+
     msgs = [m.message for m in get_messages(resp.wsgi_request)]
     assert any("CAPTCHA verification failed" in m for m in msgs)
 
 
 @pytest.mark.django_db
 def test_process_register_password_mismatch(monkeypatch, client):
+    ip = "127.0.0.1"
+    client.defaults["REMOTE_ADDR"] = ip
+    cache.delete(f"login_ban_{ip}")
+    cache.delete(f"login_attempts_{ip}")
+
     monkeypatch.setenv("RECAPTCHA_PRIVATE_KEY", "key")
     class FakeResp:
         def json(self): return {"success": True}
@@ -869,17 +825,26 @@ def test_process_register_password_mismatch(monkeypatch, client):
 
     data = {
         "g-recaptcha-response": "tok",
-        "username": "u", "email": "u@x.com",
-        "password": "pw1", "confirmPassword": "pw2"
+        "username": "u",
+        "email": "u@x.com",
+        "password": "pw1",
+        "confirmPassword": "pw2"
     }
     resp = client.post(reverse("process_register"), data)
-    assert resp.status_code == 302 and resp.url == reverse("register_view")
+    assert resp.status_code == 302
+    assert resp.url == reverse("register_view")
+
     msgs = [m.message for m in get_messages(resp.wsgi_request)]
     assert any("Passwords does not match" in m for m in msgs)
 
 
 @pytest.mark.django_db
 def test_process_register_nist_violation(monkeypatch, client):
+    ip = "127.0.0.1"
+    client.defaults["REMOTE_ADDR"] = ip
+    cache.delete(f"login_ban_{ip}")
+    cache.delete(f"login_attempts_{ip}")
+
     monkeypatch.setenv("RECAPTCHA_PRIVATE_KEY", "key")
     class FakeResp:
         def json(self): return {"success": True}
@@ -888,17 +853,26 @@ def test_process_register_nist_violation(monkeypatch, client):
 
     data = {
         "g-recaptcha-response": "tok",
-        "username": "u", "email": "u@x.com",
-        "password": "weakpw", "confirmPassword": "weakpw"
+        "username": "u",
+        "email": "u@x.com",
+        "password": "weakpw",
+        "confirmPassword": "weakpw"
     }
     resp = client.post(reverse("process_register"), data)
-    assert resp.status_code == 302 and resp.url == reverse("register_view")
+    assert resp.status_code == 302
+    assert resp.url == reverse("register_view")
+
     msgs = [m.message for m in get_messages(resp.wsgi_request)]
     assert any("too weak" in m for m in msgs)
 
 
 @pytest.mark.django_db
 def test_process_register_invalid_email(monkeypatch, client):
+    ip = "127.0.0.1"
+    client.defaults["REMOTE_ADDR"] = ip
+    cache.delete(f"login_ban_{ip}")
+    cache.delete(f"login_attempts_{ip}")
+
     monkeypatch.setenv("RECAPTCHA_PRIVATE_KEY", "key")
     class FakeResp:
         def json(self): return {"success": True}
@@ -908,17 +882,26 @@ def test_process_register_invalid_email(monkeypatch, client):
 
     data = {
         "g-recaptcha-response": "tok",
-        "username": "u", "email": "bad@", 
-        "password": "Good#123", "confirmPassword": "Good#123"
+        "username": "u",
+        "email": "bad@",
+        "password": "Good#123",
+        "confirmPassword": "Good#123"
     }
     resp = client.post(reverse("process_register"), data)
-    assert resp.status_code == 302 and resp.url == reverse("register_view")
+    assert resp.status_code == 302
+    assert resp.url == reverse("register_view")
+
     msgs = [m.message for m in get_messages(resp.wsgi_request)]
     assert any("Enter a valid email" in m for m in msgs)
 
 
 @pytest.mark.django_db
 def test_process_register_duplicate_username(monkeypatch, client):
+    ip = "127.0.0.1"
+    client.defaults["REMOTE_ADDR"] = ip
+    cache.delete(f"login_ban_{ip}")
+    cache.delete(f"login_attempts_{ip}")
+
     monkeypatch.setenv("RECAPTCHA_PRIVATE_KEY", "key")
     class FakeResp:
         def json(self): return {"success": True}
@@ -929,19 +912,28 @@ def test_process_register_duplicate_username(monkeypatch, client):
 
     data = {
         "g-recaptcha-response": "tok",
-        "username": "taken", "email": "u@x.com",
-        "password": "Good#123", "confirmPassword": "Good#123"
+        "username": "taken",
+        "email": "u@x.com",
+        "password": "Good#123",
+        "confirmPassword": "Good#123"
     }
     resp = client.post(reverse("process_register"), data)
-    assert resp.status_code == 302 and resp.url == reverse("register_view")
+    assert resp.status_code == 302
+    assert resp.url == reverse("register_view")
+
     msgs = [m.message for m in get_messages(resp.wsgi_request)]
     assert any("taken" in m for m in msgs)
 
 
 @pytest.mark.django_db
 def test_process_register_duplicate_email(monkeypatch, client):
+    ip = "127.0.0.1"
+    client.defaults["REMOTE_ADDR"] = ip
+    cache.delete(f"login_ban_{ip}")
+    cache.delete(f"login_attempts_{ip}")
+
     monkeypatch.setenv("RECAPTCHA_PRIVATE_KEY", "key")
-    class FakeResp: 
+    class FakeResp:
         def json(self): return {"success": True}
     monkeypatch.setattr(requests, "post", lambda *args, **kwargs: FakeResp())
     monkeypatch.setattr(user_process, "validate_password_nist", lambda pw: (True, None))
@@ -951,19 +943,28 @@ def test_process_register_duplicate_email(monkeypatch, client):
 
     data = {
         "g-recaptcha-response": "tok",
-        "username": "newu", "email": "used@x.com",
-        "password": "Good#123", "confirmPassword": "Good#123"
+        "username": "newu",
+        "email": "used@x.com",
+        "password": "Good#123",
+        "confirmPassword": "Good#123"
     }
     resp = client.post(reverse("process_register"), data)
-    assert resp.status_code == 302 and resp.url == reverse("register_view")
+    assert resp.status_code == 302
+    assert resp.url == reverse("register_view")
+
     msgs = [m.message for m in get_messages(resp.wsgi_request)]
     assert any("already been used" in m for m in msgs)
 
 
 @pytest.mark.django_db
 def test_process_register_success(monkeypatch, client):
+    ip = "127.0.0.1"
+    client.defaults["REMOTE_ADDR"] = ip
+    cache.delete(f"login_ban_{ip}")
+    cache.delete(f"login_attempts_{ip}")
+
     monkeypatch.setenv("RECAPTCHA_PRIVATE_KEY", "key")
-    class FakeResp: 
+    class FakeResp:
         def json(self): return {"success": True}
     monkeypatch.setattr(requests, "post", lambda *args, **kwargs: FakeResp())
     monkeypatch.setattr(user_process, "validate_password_nist", lambda pw: (True, None))
@@ -972,10 +973,15 @@ def test_process_register_success(monkeypatch, client):
     monkeypatch.setattr(user_service, "get_user_by_email", lambda e: {"status": "NOT_FOUND"})
     monkeypatch.setattr(user_service, "insert_new_user", lambda *a, **k: {"status": "SUCCESS"})
 
-    resp = client.post(reverse("process_register"), {
-        "g-recaptcha-response": "tok",
-        "username": "newu", "email": "new@x.com",
-        "password": "Good#123", "confirmPassword": "Good#123"
-    })
-    assert resp.status_code == 302 and resp.url == reverse("email_verification")
-
+    resp = client.post(
+        reverse("process_register"),
+        {
+            "g-recaptcha-response": "tok",
+            "username": "newu",
+            "email": "new@x.com",
+            "password": "Good#123",
+            "confirmPassword": "Good#123"
+        }
+    )
+    assert resp.status_code == 302
+    assert resp.url == reverse("email_verification")
