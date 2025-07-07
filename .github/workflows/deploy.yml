@@ -12,6 +12,10 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
     steps:
+    - name: Debug trigger
+      run: |
+        echo "Triggered by successful workflow_run: ${{ github.event.workflow_run.conclusion }}"
+
     - name: Checkout code
       uses: actions/checkout@v4
 
