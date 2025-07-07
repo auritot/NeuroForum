@@ -671,6 +671,9 @@ async def test_chat_unread_notification_handler():
     connected, _ = await comm.connect()
     assert connected
 
+    # Consume the initial history frame
+    await comm.receive_json_from()
+
     channel_layer = get_channel_layer()
     await channel_layer.group_send(
         "notify_n1",
@@ -681,7 +684,6 @@ async def test_chat_unread_notification_handler():
     assert note == {"type": "notify", "from": "n2"}
 
     await comm.disconnect()
-
 
 @pytest.mark.asyncio
 @pytest.mark.django_db(transaction=True)
@@ -694,6 +696,9 @@ async def test_chat_message_event_handler_direct():
     comm.scope["user"] = u1
     connected, _ = await comm.connect()
     assert connected
+
+    # Consume the initial history frame
+    await comm.receive_json_from()
 
     channel_layer = get_channel_layer()
     await channel_layer.group_send(
