@@ -15,11 +15,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up logs directory for Fail2Ban monitoring
-      run: |
-          mkdir -p logs
-          touch logs/login_failures.log
-
     - name: Deploy to EC2
       uses: appleboy/ssh-action@v0.1.7
       with:
