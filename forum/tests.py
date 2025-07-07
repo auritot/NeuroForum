@@ -1,5 +1,7 @@
 import pytest
-
+import json
+import asyncio
+from datetime import timedelta
 from django.test.runner import DiscoverRunner
 from django.test import TestCase, Client
 from django.utils import timezone
@@ -548,3 +550,150 @@ def test_reset_password_mismatch_shows_context_error(client):
     # Assert: view re-renders with context["error"]
     assert response.status_code == 200
     assert hasattr(response, 'context') and response.context.get("error") == "Passwords do not match."
+
+
+# ─────── Tests for post_service.py ───────
+
+@pytest.mark.django_db
+def test_get_post_by_id_success():
+    # Create a user & a post, then fetch by ID
+    ures = user_service.insert_new_user("psuc", "psuc@e.com", "pw", "user")
+    uid = user_service.get_user_by_email("psuc@e.com")["data"]["UserID"]
+    ires = post_service.insert_new_post("Hello", "World", True, uid)
+    pid = ires["data"]["post_id"]
+
+    gres = post_service.get_post_by_id(pid)
+    assert gres["status"] == "SUCCESS"
+    post = gres["data"]["post"]
+    assert post["PostID"] == pid
+    assert post["Title"] == "Hello"
+    assert post["CommentCount"] == 0
+
+@pytest.mark.django_db
+def test_get_posts_for_page_with_user_filter():
+    # Two users each make one post; filter on one user
+    u1 = user_service.insert_new_user("f1", "f1@e.com", "pw", "user")
+    u2 = user_service.insert_new_user("f2", "f2@e.com", "pw", "user")
+    id1 = user_service.get_user_by_email("f1@e.com")["data"]["UserID"]
+    id2 = user_service.get_user_by_email("f2@e.com")["data"]["UserID"]
+    post_service.insert_new_post("A", "B", True, id1)
+    post_service.insert_new_post("C", "D", True, id2)
+
+    res1 = post_service.get_posts_for_page(0, 10, userID=id1)
+    assert len(res1["data"]["posts"]) == 1
+    assert res1["data"]["posts"][0]["UserID_id"] == id1
+
+    res2 = post_service.get_posts_for_page(0, 10, userID=id2)
+    assert len(res2["data"]["posts"]) == 1
+    assert res2["data"]["posts"][0]["UserID_id"] == id2
+
+@pytest.mark.django_db
+def test_delete_post_as_admin_flag_changes_log(monkeypatch):
+    # Just hit the isAdmin=True branch
+    ures = user_service.insert_new_user("adm", "adm@e.com", "pw", "user")
+    uid = user_service.get_user_by_email("adm@e.com")["data"]["UserID"]
+    ires = post_service.insert_new_post("X", "Y", False, uid)
+    pid = ires["data"]["post_id"]
+
+    called = {}
+    def fake_log(msg, u, **kw):
+        called['msg'] = msg
+    monkeypatch.setattr("forum.services.db_services.log_service.log_action", fake_log)
+
+    dres = post_service.delete_post_by_id(pid, uid, isAdmin=True)
+    assert dres["status"] == "SUCCESS"
+    assert "Admin deleted Post" in called['msg']
+
+@pytest.mark.django_db
+def test_search_posts_sort_order_oldest_and_newest():
+    ures = user_service.insert_new_user("so", "so@e.com", "pw", "user")
+    uid = user_service.get_user_by_email("so@e.com")["data"]["UserID"]
+    post_service.insert_new_post("First", "foo", True, uid)
+    post_service.insert_new_post("Second", "foo", True, uid)
+
+    newest = post_service.search_posts_by_keyword("foo", start_index=0, per_page=10, sort_order="newest")
+    oldest = post_service.search_posts_by_keyword("foo", start_index=0, per_page=10, sort_order="oldest")
+
+    assert newest["data"]["posts"][0]["Title"] == "Second"
+    assert oldest["data"]["posts"][0]["Title"] == "First"
+
+
+# ─────── Async tests for consumers.py ───────
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_history_flag_on_fresh_session():
+    # No prior messages → you should get one {"history": True} frame
+    u1 = UserAccount.objects.create(Username="h1", Email="h1@e.com",
+                                    Password=make_password("pw"), Role="user")
+    u2 = UserAccount.objects.create(Username="h2", Email="h2@e.com",
+                                    Password=make_password("pw"), Role="user")
+    await ChatRoom.get_or_create_private("h1", "h2")
+
+    comm = WebsocketCommunicator(application, "/ws/chat/h2/")
+    comm.scope["user"] = u1
+    ok, _ = await comm.connect()
+    assert ok
+
+    init = await comm.receive_json_from()
+    assert init.get("history") is True
+
+    await comm.disconnect()
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_chat_unread_notification_handler():
+    # Connect and then push a notify event into their personal group
+    u1 = UserAccount.objects.create(Username="n1", Email="n1@e.com",
+                                    Password=make_password("pw"), Role="user")
+    u2 = UserAccount.objects.create(Username="n2", Email="n2@e.com",
+                                    Password=make_password("pw"), Role="user")
+    await ChatRoom.get_or_create_private("n1", "n2")
+
+    comm = WebsocketCommunicator(application, "/ws/chat/n2/")
+    comm.scope["user"] = u1
+    await comm.connect()
+
+    # push a ping for n1
+    await comm.channel_layer.group_send(
+        "notify_n1",
+        {"type": "chat.unread_notification", "from_user": "n2"}
+    )
+
+    note = await comm.receive_json_from()
+    assert note == {"type": "notify", "from": "n2"}
+
+    await comm.disconnect()
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_chat_message_event_handler_direct():
+    # Bypass receive(), directly fire the chat.message handler
+    u1 = UserAccount.objects.create(Username="e1", Email="e1@e.com",
+                                    Password=make_password("pw"), Role="user")
+    u2 = UserAccount.objects.create(Username="e2", Email="e2@e.com",
+                                    Password=make_password("pw"), Role="user")
+    room = await ChatRoom.get_or_create_private("e1", "e2")
+    # connect e1
+    comm = WebsocketCommunicator(application, "/ws/chat/e2/")
+    comm.scope["user"] = u1
+    await comm.connect()
+    # now send into room group
+    await comm.channel_layer.group_send(
+        room.name,
+        {
+            "type": "chat.message",
+            "message": "direct!",
+            "sender": "e1",
+            "timestamp": "NOW",
+            "history": False
+        }
+    )
+    out = await comm.receive_json_from()
+    assert out == {
+        "message": "direct!",
+        "sender": "e1",
+        "timestamp": "NOW",
+        "history": False
+    }
+    await comm.disconnect()

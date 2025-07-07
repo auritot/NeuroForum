@@ -40,7 +40,7 @@
         <div class="card shadow-sm mb-4">
           <div class="card-body">
             <h4 class="card-title mb-4">Edit User Profile</h4>
-            <form method="POST" action={% url 'process_update_profile' %}>
+            <form method="POST" action="{% url 'process_update_profile' %}">
               {% csrf_token %}
               <div class="mb-3">
                 <label for="username" class="form-label">Username</label>
@@ -61,7 +61,7 @@
         <div class="card shadow-sm mb-4">
           <div class="card-body">
             <h4 class="card-title mb-4">Change Password</h4>
-            <form method="POST" action={% url 'process_change_password' %}>
+            <form method="POST" action="{% url 'process_change_password' %}">
               {% csrf_token %}
               <div class="mb-3">
                 <label for="password" class="form-label">Old Password</label>

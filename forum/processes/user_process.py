@@ -264,63 +264,90 @@ def process_update_profile(request, context=None):
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def process_change_password(request, context=None):
-
     if context is None:
         context = {}
-    
-    session_response = session_service.check_session(request)
 
-    if session_response["status"] == "SUCCESS":
-        context["user_info"] = session_response["data"]
-    else:
+    sess = session_service.check_session(request)
+    if sess.get("status") != "SUCCESS":
+        log_service.log_action(
+            "Change password failed: session expired",
+            None,
+            isError=True
+        )
         messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
 
-    oldPassword = utilities.sanitize_input(request.POST.get("oldPassword"))
-    newPassword = utilities.sanitize_input(request.POST.get("newPassword"))
-    newConfirmPassword = utilities.sanitize_input(request.POST.get("newConfirmPassword"))
+    user_id = sess["data"]["UserID"]
+    context["user_info"] = sess["data"]
 
-    if newConfirmPassword != newPassword:
-        log_service.log_action(f"Failed to update user profile: New password did not match", context["user_info"]["UserID"], isError=True)
-        messages.error(request, "Passwords does not match.")
+    old_password     = request.POST.get("oldPassword", "")
+    new_password     = request.POST.get("newPassword", "")
+    confirm_password = request.POST.get("newConfirmPassword", "")
+
+    if new_password != confirm_password:
+        log_service.log_action(
+            "Change password failed: new password and confirmation do not match",
+            user_id,
+            isError=True
+        )
+        messages.error(request, "New passwords do not match.")
         return redirect("user_profile_view")
 
-    is_valid, error = validate_password_nist(newPassword)
-    if not is_valid:
-        log_service.log_action(f"Failed to update user profile: {error}", context["user_info"]["UserID"], isError=True)
-        messages.error(request, error)
+    valid, error_msg = validate_password_nist(new_password)
+    if not valid:
+        log_service.log_action(
+            f"Change password failed: invalid new password: {error_msg}",
+            user_id,
+            isError=True
+        )
+        messages.error(request, error_msg)
         return redirect("user_profile_view")
 
-    user_response = user_service.get_user_by_id(context["user_info"]["UserID"])
-    if user_response["status"] == "SUCCESS":
-        context["user_data"] = user_response["data"]
-    else:
+    user_resp = user_service.get_user_by_id(user_id)
+    if user_resp.get("status") != "SUCCESS":
+        log_service.log_action(
+            "Change password failed: user not found",
+            user_id,
+            isError=True
+        )
         messages.error(request, USER_NOT_FOUND_MSG)
         return redirect("user_profile_view")
 
-    result = user_service.authenticate_user(
-        context["user_data"]["Email"], oldPassword)
+    email = user_resp["data"].get("Email", "")
+
+    auth = user_service.authenticate_user(email, old_password)
+    status = auth.get("status")
+    if status == "INVALID":
+        log_service.log_action(
+            "Change password failed: incorrect old password",
+            user_id,
+            isError=True
+        )
+        messages.error(request, "The old password you entered is incorrect.")
+        return redirect("user_profile_view")
+    if status != "SUCCESS":
+        log_service.log_action(
+            f"Change password failed: authenticate_user error: {auth!r}",
+            user_id,
+            isError=True
+        )
+        messages.error(request, ERR_MSG)
+        return redirect("user_profile_view")
     
-    if result["status"] == "INVALID":
-        log_service.log_action(f"Failed to update user profile: Incorrect old password entered", context["user_info"]["UserID"], isError=True)
-        messages.error(request, ERR_MSG)
-        return redirect("user_profile_view")
-    elif result["status"] == "NOT_FOUND":
-        log_service.log_action(f"Failed to update user profile: User not found", context["user_info"]["UserID"], isError=True)
-        messages.error(request, USER_NOT_FOUND_MSG)
-        return redirect("user_profile_view")
-    elif result["status"] == "ERROR":
-        messages.error(request, ERR_MSG)
-        return redirect("user_profile_view")
-
-
-    response = user_service.update_user_password(
-        context["user_info"]["UserID"], newPassword)
-
-    if response["status"] == "SUCCESS":
-        messages.success(request, "Password has been changed")
-        return redirect("user_profile_view")
-    else: 
+    upd = user_service.update_user_password(user_id, new_password)
+    if upd.get("status") == "SUCCESS":
+        log_service.log_action(
+            "Password changed successfully",
+            user_id,
+            isError=False
+        )
+        messages.success(request, "Password has been changed.")
+    else:
+        log_service.log_action(
+            f"Change password failed: update_user_password error: {upd!r}",
+            user_id,
+            isError=True
+        )
         messages.error(request, ERR_MSG)
 
     return redirect("user_profile_view")
