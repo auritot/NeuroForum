@@ -623,62 +623,77 @@ def test_search_posts_sort_order_oldest_and_newest():
 @pytest.mark.asyncio
 @pytest.mark.django_db(transaction=True)
 async def test_history_flag_on_fresh_session():
-    # No prior messages → you should get one {"history": True} frame
-    u1 = UserAccount.objects.create(Username="h1", Email="h1@e.com",
-                                    Password=make_password("pw"), Role="user")
-    u2 = UserAccount.objects.create(Username="h2", Email="h2@e.com",
-                                    Password=make_password("pw"), Role="user")
-    await ChatRoom.get_or_create_private("h1", "h2")
+    # create two users via sync-to-async bridge
+    u1 = await database_sync_to_async(UserAccount.objects.create)(
+        Username="h1", Email="h1@e.com",
+        Password=make_password("pw"), Role="user"
+    )
+    u2 = await database_sync_to_async(UserAccount.objects.create)(
+        Username="h2", Email="h2@e.com",
+        Password=make_password("pw"), Role="user"
+    )
+    # ensure the private chat room exists
+    await database_sync_to_async(ChatRoom.get_or_create_private)("h1", "h2")
 
+    # connect as u1 to u2's endpoint
     comm = WebsocketCommunicator(application, "/ws/chat/h2/")
     comm.scope["user"] = u1
     ok, _ = await comm.connect()
     assert ok
 
+    # first message should be the history‐flag frame
     init = await comm.receive_json_from()
     assert init.get("history") is True
 
     await comm.disconnect()
 
+
 @pytest.mark.asyncio
 @pytest.mark.django_db(transaction=True)
 async def test_chat_unread_notification_handler():
-    # Connect and then push a notify event into their personal group
-    u1 = UserAccount.objects.create(Username="n1", Email="n1@e.com",
-                                    Password=make_password("pw"), Role="user")
-    u2 = UserAccount.objects.create(Username="n2", Email="n2@e.com",
-                                    Password=make_password("pw"), Role="user")
-    await ChatRoom.get_or_create_private("n1", "n2")
+    u1 = await database_sync_to_async(UserAccount.objects.create)(
+        Username="n1", Email="n1@e.com",
+        Password=make_password("pw"), Role="user"
+    )
+    u2 = await database_sync_to_async(UserAccount.objects.create)(
+        Username="n2", Email="n2@e.com",
+        Password=make_password("pw"), Role="user"
+    )
+    await database_sync_to_async(ChatRoom.get_or_create_private)("n1", "n2")
 
     comm = WebsocketCommunicator(application, "/ws/chat/n2/")
     comm.scope["user"] = u1
     await comm.connect()
 
-    # push a ping for n1
+    # push an unread-notification event into n1's notify group
     await comm.channel_layer.group_send(
         "notify_n1",
         {"type": "chat.unread_notification", "from_user": "n2"}
     )
-
     note = await comm.receive_json_from()
     assert note == {"type": "notify", "from": "n2"}
 
     await comm.disconnect()
 
+
 @pytest.mark.asyncio
 @pytest.mark.django_db(transaction=True)
 async def test_chat_message_event_handler_direct():
-    # Bypass receive(), directly fire the chat.message handler
-    u1 = UserAccount.objects.create(Username="e1", Email="e1@e.com",
-                                    Password=make_password("pw"), Role="user")
-    u2 = UserAccount.objects.create(Username="e2", Email="e2@e.com",
-                                    Password=make_password("pw"), Role="user")
-    room = await ChatRoom.get_or_create_private("e1", "e2")
-    # connect e1
-    comm = WebsocketCommunicator(application, "/ws/chat/e2/")
+    u1 = await database_sync_to_async(UserAccount.objects.create)(
+        Username="e1", Email="e1@e.com",
+        Password=make_password("pw"), Role="user"
+    )
+    u2 = await database_sync_to_async(UserAccount.objects.create)(
+        Username="e2", Email="e2@e.com",
+        Password=make_password("pw"), Role="user"
+    )
+    room = await database_sync_to_async(ChatRoom.get_or_create_private)("e1", "e2")
+
+    comm = WebsocketCommunicator(application, f"/ws/chat/{u2.Username}/")
     comm.scope["user"] = u1
     await comm.connect()
-    # now send into room group
+
+    # directly invoke the chat.message handler on the group
     await comm.channel_layer.group_send(
         room.name,
         {
@@ -696,4 +711,5 @@ async def test_chat_message_event_handler_direct():
         "timestamp": "NOW",
         "history": False
     }
+
     await comm.disconnect()
