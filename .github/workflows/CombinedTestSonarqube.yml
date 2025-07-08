@@ -1,4 +1,4 @@
-name: CI Test + Sonarqube Analysis
+name: CI Test and Sonarqube Analysis
 
 on:
   push:

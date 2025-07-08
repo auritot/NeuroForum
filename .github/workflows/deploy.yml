@@ -2,19 +2,14 @@ name: Deploy to EC2
 
 on:
   workflow_run:
-    workflows: ["CI Test + Sonarqube Analysis"]
+    workflows: ["CI Test and Sonarqube Analysis"]
     types:
       - completed
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Debug trigger
-      run: |
-        echo "Triggered by successful workflow_run: ${{ github.event.workflow_run.conclusion }}"
-
     - name: Checkout code
       uses: actions/checkout@v4
 
