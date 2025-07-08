@@ -23,7 +23,7 @@
             <input
             type="text"
             class="form-control"
-            name="search_q"
+            name="q"
             value="{{ search_query|default:'' }}"
             placeholder="Search posts..."
             />
@@ -34,7 +34,7 @@
         <!-- #MARK: Filter bar -->
         <form class="mb-4" method="get" action="{% url 'search_posts' %}">
           <!-- Preserve search term -->
-          <input type="hidden" name="search_q" value="{{ search_query|default:'' }}">
+          <input type="hidden" name="q" value="{{ search_query|default:'' }}">
           
           <div class="row g-2 align-items-center">
             <div class="col-sm-4">

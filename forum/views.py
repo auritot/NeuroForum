@@ -901,7 +901,7 @@ def search_posts_view(request):
         "next_page": pagination_data["next_page"]
     })
     
-    return render(request, "html/search.html", context)
+    return render(request, "html/index.html", context)
 
 # MARK: Banned View
 # Safe: Only GET is allowed for rendering banned notice.
