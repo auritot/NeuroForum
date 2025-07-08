@@ -50,7 +50,7 @@ urlpatterns = [
          post_process.process_delete_post, name="process_delete_post"),
     path("post/update/<int:post_id>",
          post_process.process_update_post, name="process_update_post"),
-    path("search/", views.search_posts_view, name="search_posts"),
+    path("", views.search_posts_view, name="search_posts"),
     # Comment Related
     path("comment/create/<int:post_id>",
          comment_process.process_create_comment, name="process_create_comment"),

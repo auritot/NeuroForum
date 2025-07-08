@@ -23,7 +23,7 @@
             <input
             type="text"
             class="form-control"
-            name="q"
+            name="search_q"
             value="{{ search_query|default:'' }}"
             placeholder="Search posts..."
             />
@@ -38,7 +38,7 @@
           
           <div class="row g-2 align-items-center">
             <div class="col-sm-4">
-              <select class="form-select" name="search_sort">
+              <select class="form-select" name="sort">
                 <option value="" selected disabled>Date</option>
                 <option value="newest" {% if request.GET.search_sort == "newest" %}selected{% endif %}>Newest First</option>
                 <option value="oldest" {% if request.GET.search_sort == "oldest" %}selected{% endif %}>Oldest First</option>
