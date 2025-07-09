@@ -1,9 +1,9 @@
 import logging  # Add this import at the top of the file
 import traceback
 from django.db import connection, transaction
-from django.contrib.auth.hashers import check_password, make_password
 from .. import utilities
 from . import log_service
+from forum.crypto_utils import custom_hash_password, custom_check_password
 
 user_col = ["UserID", "Username", "Email",
             "Password", "Role"]
@@ -28,7 +28,7 @@ def authenticate_user(email, password):
 
             user_data = dict(zip(user_col, result))
 
-            if not check_password(password, user_data["Password"]):
+            if not custom_check_password(password, user_data["Password"]) :
                 return utilities.response("INVALID", "User login was unsuccessfully")
 
         return utilities.response("SUCCESS", "User login was successfully", user_data)
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 def insert_new_user(username, email, password, role):
-    hash_password = make_password(password)
+    hash_password = custom_hash_password(password)
 
     try:
         with transaction.atomic():
@@ -165,7 +165,7 @@ def update_user_profile(user_id, username, email):
 
 
 def update_user_password(user_id, password):
-    hash_password = make_password(password)
+    hash_password = custom_hash_password(password)
 
     try:
         with transaction.atomic():
