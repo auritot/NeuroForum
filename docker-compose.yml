@@ -51,6 +51,17 @@ services:
       DEBUG: "False"
       LOGIN_FAILURE_LOG: /app/logs/login_failures.log
 
+  db_sonar:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - sonarqube_pgdata:/var/lib/postgresql/data
+
+
   sonarqube:
     image: sonarqube:community
     container_name: sonarqube
@@ -64,7 +75,7 @@ services:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
       - SONAR_WEB_CONTEXT=/sonarqube
     depends_on:
-      - db
+      - db_sonar
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
