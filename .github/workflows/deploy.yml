@@ -46,6 +46,11 @@ jobs:
           echo "EMAIL_PORT=${{ secrets.EMAIL_PORT }}" >> .env
           echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}" >> .env
           echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}" >> .env
+          echo "SONARQUBE_HOST_URL=${{ secrets.SONAR_HOST_URL }}" >> .env
+          echo "SONARQUBE_JDBC_URL=${{ secrets.SONARQUBE_JDBC_URL }}" >> .env
+          echo "SONARQUBE_JDBC_USERNAME=${{ secrets.SONARQUBE_JDBC_USERNAME }}" >> .env
+          echo "SONARQUBE_JDBC_PASSWORD=${{ secrets.SONARQUBE_JDBC_PASSWORD }}" >> .env
+
           echo "CI=false" >> .env
 
           echo "🧹 Cleaning up NeuroForum-related containers and images only..."

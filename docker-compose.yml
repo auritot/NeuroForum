@@ -52,17 +52,22 @@ services:
       LOGIN_FAILURE_LOG: /app/logs/login_failures.log
 
   sonarqube:
-      image: sonarqube:community
-      container_name: sonarqube
-      restart: unless-stopped
-      ports:
-        - "9000:9000"
-      environment:
-        - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
-        - SONAR_WEB_CONTEXT=/sonarqube
-      volumes:
-        - sonarqube_data:/opt/sonarqube/data
-        - sonarqube_extensions:/opt/sonarqube/extensions
+    image: sonarqube:community
+    container_name: sonarqube
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_JDBC_URL=${SONARQUBE_JDBC_URL}
+      - SONAR_JDBC_USERNAME=${SONARQUBE_JDBC_USERNAME}
+      - SONAR_JDBC_PASSWORD=${SONARQUBE_JDBC_PASSWORD}
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      - SONAR_WEB_CONTEXT=/sonarqube
+    depends_on:
+      - db
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
 
 volumes:
   db_data:
