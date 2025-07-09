@@ -10,9 +10,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const sidebarFindBtnMain = document.getElementById('sidebarFindBtnMain');
     const chatSidebarIframe = document.getElementById('sidebarUsernameIframe');
     const sidebarFindBtnIframe = document.getElementById('sidebarFindBtnIframe');
+    const search = document.getElementsByClassName('searchinput');
     const editInputs = document.querySelectorAll('.edit-comment-form textarea');
 
-    const allFields = [titleInput, descInput, commentInput, chatInput, chatSidebarMain, sidebarFindBtnMain, chatSidebarIframe, sidebarFindBtnIframe, ...editInputs].filter(Boolean);
+    const allFields = [titleInput, search, descInput, commentInput, chatInput, chatSidebarMain, sidebarFindBtnMain, chatSidebarIframe, sidebarFindBtnIframe, ...editInputs].filter(Boolean);
 
     fetch('/api/filtered-words/')
         .then(response => response.json())
