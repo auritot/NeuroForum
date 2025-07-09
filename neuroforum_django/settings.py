@@ -18,10 +18,6 @@ import os
 from sshtunnel import SSHTunnelForwarder
 import sys
 
-# Set log path (use /tmp for GitHub Actions CI)
-default_log_path = "/tmp/login_failures.log" if os.getenv("CI") == "true" else "/app/logs/login_failures.log"
-log_path = os.getenv("LOGIN_FAILURE_LOG", default_log_path)
-
 # Ensure the log file and parent directory exist
 try:
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
@@ -290,6 +286,5 @@ LOGGING = {
 }
 
 if 'test' in sys.argv:
-    TEST_OUTPUT_DIR = os.getenv('TEST_OUTPUT_DIR', 'reports/test-reports')
     CACHES['default']['BACKEND'] = 'django_redis.cache.RedisCache'
     CACHES['default']['LOCATION'] = 'redis://127.0.0.1:6379/1'
