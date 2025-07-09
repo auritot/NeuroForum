@@ -60,8 +60,28 @@ print(Fernet.generate_key().decode())
 PYCODE
 )
 
+# ReCAPTCHA Keys (https://developers.google.com/recaptcha/)
+RECAPTCHA_PUBLIC_KEY='<Generated Public Key>'
+RECAPTCHA_PRIVATE_KEY='<Generated Private Key>'
+
 # (Optional) email in console
 EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_USE_TLS=True
+EMAIL_PORT=587
+EMAIL_HOST_USER=<Sender Gmail account>
+EMAIL_HOST_PASSWORD=<Gmail app-specific password>
+
+# (Optional) sonarcube configuration
+SONARQUBE_HOST_URL=<URL to sonarqube interface>
+SONARQUBE_JDBC_URL=jdbc:postgresql://db_sonar:5432/sonarqube
+SONARQUBE_JDBC_USERNAME=<sonarcube username>
+SONARQUBE_JDBC_PASSWORD=<sonarcube password>
+POSTGRES_USER=<sonarcube postgre username>
+POSTGRES_PASSWORD=<sonarcube postgre password>
+POSTGRES_DB=<sonarcube postgre database name>
+IS_DOCKER=true
+CI=false
 EOF
 ```
 ### Start Redis
@@ -110,8 +130,28 @@ print(Fernet.generate_key().decode())
 PYCODE
 )
 
+# ReCAPTCHA Keys (https://developers.google.com/recaptcha/)
+RECAPTCHA_PUBLIC_KEY='<Generated Public Key>'
+RECAPTCHA_PRIVATE_KEY='<Generated Private Key>'
+
 # (Optional) email in console
 EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_USE_TLS=True
+EMAIL_PORT=587
+EMAIL_HOST_USER=<Sender Gmail account>
+EMAIL_HOST_PASSWORD=<Gmail app-specific password>
+
+# (Optional) sonarcube configuration
+SONARQUBE_HOST_URL=<URL to sonarqube interface>
+SONARQUBE_JDBC_URL=jdbc:postgresql://db_sonar:5432/sonarqube
+SONARQUBE_JDBC_USERNAME=<sonarcube username>
+SONARQUBE_JDBC_PASSWORD=<sonarcube password>
+POSTGRES_USER=<sonarcube postgre username>
+POSTGRES_PASSWORD=<sonarcube postgre password>
+POSTGRES_DB=<sonarcube postgre database name>
+IS_DOCKER=true
+CI=false
 "@ | Out-File -Encoding utf8 .env
 ```
 ### Run migrations & create superuser
