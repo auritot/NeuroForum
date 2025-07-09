@@ -1,5 +1,5 @@
 import requests
-from ..services import session_service, utilities
+from ..services import session_utils, utilities
 from ..services.db_services import user_service, log_service
 from forum.pwd_utils import validate_password_nist
 from django.shortcuts import render, redirect
@@ -210,7 +210,7 @@ def process_update_profile(request, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -251,7 +251,7 @@ def process_update_profile(request, context=None):
         context["user_info"]["UserID"], username, email)
 
     if response["status"] == "SUCCESS":
-        session_service.update_session(request, username)
+        session_utils.update_session(request, username)
         messages.success(request, "User Profile has been updated")
         return redirect("user_profile_view")
     else:
@@ -267,7 +267,7 @@ def process_change_password(request, context=None):
     if context is None:
         context = {}
 
-    sess = session_service.check_session(request)
+    sess = session_utils.check_session(request)
     if sess.get("status") != "SUCCESS":
         log_service.log_action(
             "Change password failed: session expired",
@@ -354,7 +354,7 @@ def process_change_password(request, context=None):
 
 # MARK: Process Update User Role
 def process_update_user_role(request, user_id):
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
         messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")
@@ -382,7 +382,7 @@ def process_update_user_role(request, user_id):
 
 # MARK: Process Delete User
 def process_delete_user(request, user_id):
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
         messages.error(request, SESSION_EXPIRED_MSG)
         return redirect("login_view")

@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.urls import reverse
 from urllib.parse import urlencode
 
-from ..services import session_service, utilities
+from ..services import session_utils, utilities
 from ..services.db_services import ContentFiltering_service, log_service
 
 # Constants for validation

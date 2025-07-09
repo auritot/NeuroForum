@@ -1,4 +1,4 @@
-from ..services import session_service
+from ..services import session_utils
 from ..services.db_services import post_service, log_service
 from django.shortcuts import redirect
 from django.contrib import messages
@@ -16,7 +16,7 @@ def process_create_post(request, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -52,7 +52,7 @@ def process_delete_post(request, post_id, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
@@ -92,7 +92,7 @@ def process_update_post(request, post_id, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]

@@ -22,7 +22,7 @@ from .models import UserAccount, Post, Comment, Filtering, Logs, ChatRoom, ChatS
 from forum.consumers import PrivateChatConsumer
 from forum.processes import user_process
 from forum.services.db_services import user_service, post_service
-from forum.services import session_service, utilities
+from forum.services import session_utils, utilities
 
 from channels.db import database_sync_to_async
 from channels.testing import WebsocketCommunicator

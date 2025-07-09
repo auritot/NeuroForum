@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.urls import reverse  # Added for reversing URLs
 from urllib.parse import urlencode  # Added for encoding query parameters
 from django.views.decorators.http import require_POST
-from .services import session_service, utilities
+from .services import session_utils, utilities
 from .services.db_services import user_service, post_service, comment_service, log_service
 from django.contrib.messages import get_messages
 from django.utils import timezone
@@ -69,7 +69,7 @@ def index(request, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
 
@@ -135,7 +135,7 @@ def logout_view(request, context=None):
 
     if request.method == 'POST':
         logout(request)
-        session_service.clear_session(request)
+        session_utils.clear_session(request)
 
         messages.success(request, "You have been successfully logged out.")
         return redirect('index')
@@ -248,7 +248,7 @@ def email_verification(request):
         performed_by = user_data["UserID"]
 
         if request.session.get("pending_user"):
-            session_response = session_service.setup_session(
+            session_response = session_utils.setup_session(
                 request, user_data)
             if session_response["status"] != "SUCCESS":
                 msg = f"Verification succeeded for '{email}', but failed to log in."
@@ -298,7 +298,7 @@ def post_form_view(request, context=None, post_id=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
@@ -329,7 +329,7 @@ def post_view(request, post_id, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
 
@@ -364,7 +364,7 @@ def user_profile_view(request, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
@@ -389,7 +389,7 @@ def user_manage_post_view(request, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
@@ -428,7 +428,7 @@ def admin_manage_post_view(request, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
@@ -470,7 +470,7 @@ def user_manage_comment_view(request, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
@@ -509,7 +509,7 @@ def admin_manage_comment_view(request, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
@@ -548,7 +548,7 @@ def admin_logs_view(request, context=None):
     if context is None:
         context = {}
 
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
     else:
@@ -671,7 +671,7 @@ def reset_password_view(request):
 @csrf_protect
 @xframe_options_exempt
 def chat_view(request, other_user):
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
         if request.GET.get("frame") == "1":
             return render(request, "html/chat_not_logged_in.html", status=401)
@@ -706,7 +706,7 @@ def chat_view(request, other_user):
 @csrf_protect
 @xframe_options_exempt
 def chat_landing_or_redirect_view(request):
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
         return redirect(LOGIN_PATH)
 
@@ -728,7 +728,7 @@ def chat_landing_or_redirect_view(request):
 @csrf_protect
 @xframe_options_exempt
 def chat_home_view(request):
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
         return redirect(LOGIN_PATH)
 
@@ -747,7 +747,7 @@ def chat_home_view(request):
 @csrf_protect
 @xframe_options_exempt
 def start_chat_view(request):
-    session = session_service.check_session(request)
+    session = session_utils.check_session(request)
     if session["status"] != "SUCCESS":
         return redirect(LOGIN_PATH)
 
@@ -775,7 +775,7 @@ def start_chat_view(request):
 @csrf_protect
 def manage_filtered_words_view(request):
     # session and authorization
-    session_resp = session_service.check_session(request)
+    session_resp = session_utils.check_session(request)
     if session_resp.get('status') != 'SUCCESS':
         messages.error(request, 'You must be logged in to access this page.')
         return redirect('login_view')
@@ -817,7 +817,7 @@ def manage_filtered_words_view(request):
 # Safe: Only GET is used to load admin portal view with no unsafe actions.
 @require_GET
 def admin_portal(request):
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
         return redirect(LOGIN_PATH)
 
@@ -831,7 +831,7 @@ def admin_portal(request):
 # MARK: Change User Role Process
 @require_POST
 def change_user_role(request, user_id):
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
         return redirect(LOGIN_PATH)
 
@@ -844,7 +844,7 @@ def change_user_role(request, user_id):
 
 @require_POST
 def delete_user(request, user_id):
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
         return redirect(LOGIN_PATH)
 
@@ -859,7 +859,7 @@ def delete_user(request, user_id):
 @require_GET
 def search_posts_view(request):
     context = {}
-    session_response = session_service.check_session(request)
+    session_response = session_utils.check_session(request)
     
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
