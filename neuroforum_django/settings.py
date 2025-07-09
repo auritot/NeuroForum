@@ -271,9 +271,26 @@ CACHES = {
 #     CACHES['default']['LOCATION'] = f'redis://{test_redis_host}:6379/1'
 
 # Use in-memory cache when running tests (pytest or manage.py test)
-if 'test' in sys.argv:
+# if 'test' in sys.argv:
+#     CACHES = {
+#         'default': {
+#             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#         }
+#     }
+
+
+running_pytest = any("pytest" in arg for arg in sys.argv)
+if os.getenv("CI", "").lower() == "true" or running_pytest:
+    # Django cache → locmem
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         }
+    }
+
+    # Channels → in-memory channel layer
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
     }
