@@ -135,6 +135,13 @@ class ChatSession(models.Model):
             )
         return f"{self.room.name} (Open since {self.started_at.strftime('%H:%M %d/%m/%Y')})"
 
+class CustomSession(models.Model):
+    session_id = models.CharField(max_length=64, primary_key=True)
+    session_data = models.BinaryField()
+    session_expiry = models.DateTimeField()
+
+    class Meta:
+        db_table = "custom_sessions"
 
 class ChatMessage(models.Model):
     """
