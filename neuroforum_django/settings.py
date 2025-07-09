@@ -262,6 +262,11 @@ CACHES = {
 }
 
 if 'test' in sys.argv:
-    test_redis_host = "127.0.0.1" if IS_LOCAL else "redis"
+    if IS_GITHUB_CI:
+        test_redis_host = "redis"
+    else:
+        test_redis_host = "127.0.0.1" if IS_LOCAL else "redis"
+
     CACHES['default']['BACKEND'] = 'django_redis.cache.RedisCache'
-    CACHES['default']['LOCATION'] = 'redis://127.0.0.1:6379/1'
+    CACHES['default']['LOCATION'] = f'redis://{test_redis_host}:6379/1'
+
