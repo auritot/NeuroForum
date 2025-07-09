@@ -18,6 +18,13 @@ import os
 from sshtunnel import SSHTunnelForwarder
 import sys
 
+IS_GITHUB_CI = os.getenv("CI", "").lower() == "true"
+IS_DOCKER = os.getenv("IS_DOCKER", "false").lower() == "true"
+
+IS_LOCAL = not IS_DOCKER and not IS_GITHUB_CI
+REDIS_HOST = "127.0.0.1" if IS_LOCAL else "redis"
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(dotenv_path=BASE_DIR / '.env')
@@ -98,7 +105,6 @@ INSTALLED_APPS = [
 
 ASGI_APPLICATION = 'neuroforum_django.asgi.application'
 
-REDIS_HOST = "127.0.0.1" if os.getenv("CI") == "true" else "redis"
 
 CHANNEL_LAYERS = {
     "default": {
@@ -141,10 +147,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'neuroforum_django.wsgi.application'
 
 # Create the SSH tunnel
-IS_GITHUB_CI = os.getenv("CI") == "true"
-IS_DOCKER = os.getenv("IS_DOCKER", "false").lower() == "true"
-
-REDIS_HOST = "127.0.0.1" if not IS_DOCKER and not IS_GITHUB_CI else "redis"
 
 if DEBUG and not IS_GITHUB_CI and not IS_DOCKER:
 
@@ -183,7 +185,7 @@ if os.getenv("CI") == "true":
         "MIRROR": None,
         "DEPENDENCIES": [],
         "SERIALIZE": False,
-        "CREATE_DB": False,  # <-- optional, some Django versions honor this
+        "CREATE_DB": False, 
     }
 
 # Email configuration
