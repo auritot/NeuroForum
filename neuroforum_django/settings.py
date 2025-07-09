@@ -22,8 +22,11 @@ IS_GITHUB_CI = os.getenv("CI", "").lower() == "true"
 IS_DOCKER = os.getenv("IS_DOCKER", "false").lower() == "true"
 
 IS_LOCAL = not IS_DOCKER and not IS_GITHUB_CI
-REDIS_HOST = "127.0.0.1" if IS_LOCAL else "redis"
 
+if IS_GITHUB_CI:
+    REDIS_HOST = "redis"
+else:
+    REDIS_HOST = "127.0.0.1" if IS_LOCAL else "redis"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
