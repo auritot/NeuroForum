@@ -126,12 +126,3 @@ jobs:
 
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v2
-      with:
-          projectBaseDir: .
-          args: >
-            -Dsonar.projectKey=neuroforum
-            -Dsonar.sources=.
-            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }}
-            -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }}
-      env:
-        SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}      
