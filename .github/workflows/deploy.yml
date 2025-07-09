@@ -55,6 +55,7 @@ jobs:
           echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
           echo "IS_DOCKER=true" >> .env
           echo "CI=false" >> .env
+          echo "REDIS_HOST=redis" >> .env
 
           echo "🧹 Cleaning up NeuroForum-related containers and images only..."
           docker-compose down --remove-orphans
