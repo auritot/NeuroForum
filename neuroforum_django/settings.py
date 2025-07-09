@@ -59,11 +59,18 @@ CSRF_TRUSTED_ORIGINS = [
     "https://neuroforum.ddns.net"
 ]
 
-SESSION_COOKIE_SECURE = True
+if not DEBUG:
+    SESSION_COOKIE_SECURE   = True
+    CSRF_COOKIE_SECURE      = True
+    SESSION_COOKIE_DOMAIN   = "neuroforum.ddns.net"
+else:
+    # local dev: allow cookies on localhost over HTTP
+    SESSION_COOKIE_SECURE   = False
+    CSRF_COOKIE_SECURE      = False
+    SESSION_COOKIE_DOMAIN   = None
+
 SESSION_COOKIE_HTTPONLY = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-SESSION_COOKIE_DOMAIN = "neuroforum.ddns.net"
-CSRF_COOKIE_SECURE = True
 
 SECURE_HSTS_SECONDS = 31536000         # Enforce HTTPS with HSTS
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
@@ -260,24 +267,6 @@ CACHES = {
         }
     }
 }
-
-# if 'test' in sys.argv:
-#     if IS_GITHUB_CI:
-#         test_redis_host = "redis"
-#     else:
-#         test_redis_host = "127.0.0.1" if IS_LOCAL else "redis"
-
-#     CACHES['default']['BACKEND'] = 'django_redis.cache.RedisCache'
-#     CACHES['default']['LOCATION'] = f'redis://{test_redis_host}:6379/1'
-
-# Use in-memory cache when running tests (pytest or manage.py test)
-# if 'test' in sys.argv:
-#     CACHES = {
-#         'default': {
-#             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-#         }
-#     }
-
 
 running_pytest = any("pytest" in arg for arg in sys.argv)
 if os.getenv("CI", "").lower() == "true" or running_pytest:
