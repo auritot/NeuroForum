@@ -18,14 +18,6 @@ import os
 from sshtunnel import SSHTunnelForwarder
 import sys
 
-# # Ensure the log file and parent directory exist
-# try:
-#     os.makedirs(os.path.dirname(log_path), exist_ok=True)
-#     if not os.path.exists(log_path):
-#         open(log_path, "a").close()
-# except Exception as e:
-#     print(f"Logging path setup failed: {e}")
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(dotenv_path=BASE_DIR / '.env')
@@ -90,14 +82,6 @@ def create_ssh_tunnel():
     return tunnel
 
 
-# if DEBUG:
-#     tunnel = create_ssh_tunnel()
-#     db_host = tunnel.local_bind_host
-#     db_port = tunnel.local_bind_port
-# else:
-#     db_host = os.getenv('DB_HOST')
-#     db_port = os.getenv('DB_PORT', '3306')
-
 # Application definition
 INSTALLED_APPS = [
     'forum',
@@ -158,15 +142,21 @@ WSGI_APPLICATION = 'neuroforum_django.wsgi.application'
 
 # Create the SSH tunnel
 IS_GITHUB_CI = os.getenv("CI") == "true"
+IS_DOCKER = os.getenv("IS_DOCKER", "false").lower() == "true"
 
-if DEBUG and not IS_GITHUB_CI:
+REDIS_HOST = "127.0.0.1" if not IS_DOCKER and not IS_GITHUB_CI else "redis"
+
+if DEBUG and not IS_GITHUB_CI and not IS_DOCKER:
+
     tunnel = create_ssh_tunnel()
     db_host = tunnel.local_bind_host
     db_port = tunnel.local_bind_port
+    print(f"[Local Dev] SSH tunnel active at {db_host}:{db_port}")
 else:
-    db_host = os.getenv('DB_HOST')
-    db_port = os.getenv('DB_PORT', '3306')
 
+    db_host = os.getenv("DB_HOST", "db")
+    db_port = os.getenv("DB_PORT", "3306")
+    print(f"[Docker/CI] Using DB_HOST={db_host}:{db_port}")
 
 DATABASES = {
     'default': {
@@ -265,25 +255,6 @@ CACHES = {
         }
     }
 }
-
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": False,
-#     "handlers": {
-#         "login_file": {
-#             "level": "WARNING",
-#             "class": "logging.FileHandler",
-#             "filename": log_path,
-#         },
-#     },
-#     "loggers": {
-#         "login_failures": {
-#             "handlers": ["login_file"],
-#             "level": "WARNING",
-#             "propagate": False,
-#         },
-#     },
-# }
 
 if 'test' in sys.argv:
     CACHES['default']['BACKEND'] = 'django_redis.cache.RedisCache'
