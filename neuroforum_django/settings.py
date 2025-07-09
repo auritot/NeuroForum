@@ -11,12 +11,12 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
 
 from pathlib import Path
 from dotenv import load_dotenv
-import os
 from sshtunnel import SSHTunnelForwarder
-import sys
+
 
 IS_GITHUB_CI = os.getenv("CI", "").lower() == "true"
 IS_DOCKER = os.getenv("IS_DOCKER", "false").lower() == "true"
@@ -261,12 +261,19 @@ CACHES = {
     }
 }
 
-if 'test' in sys.argv:
-    if IS_GITHUB_CI:
-        test_redis_host = "redis"
-    else:
-        test_redis_host = "127.0.0.1" if IS_LOCAL else "redis"
+# if 'test' in sys.argv:
+#     if IS_GITHUB_CI:
+#         test_redis_host = "redis"
+#     else:
+#         test_redis_host = "127.0.0.1" if IS_LOCAL else "redis"
 
-    CACHES['default']['BACKEND'] = 'django_redis.cache.RedisCache'
-    CACHES['default']['LOCATION'] = f'redis://{test_redis_host}:6379/1'
+#     CACHES['default']['BACKEND'] = 'django_redis.cache.RedisCache'
+#     CACHES['default']['LOCATION'] = f'redis://{test_redis_host}:6379/1'
 
+# Use in-memory cache when running tests (pytest or manage.py test)
+if any(arg.startswith('pytest') or arg == 'test' for arg in sys.argv):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
