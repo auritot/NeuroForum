@@ -14,7 +14,7 @@ NeuroForum is a collaborative web platform built with Django that enables users 
 
 ### Clone the repo
 ```
-git clone https://github.com/auritot/NeuroForum.git </br>
+git clone https://github.com/auritot/NeuroForum.git
 cd NeuroForum
 ```
 ### Create a virtual environment
@@ -22,33 +22,104 @@ cd NeuroForum
 python -m venv venv
 source venv/bin/activate 
 ```
-### Install dependencies
+## Linux / WSL
+### Install system dependencies
+```
+sudo apt update
+sudo apt install -y \
+  python3-dev \
+  default-libmysqlclient-dev \
+  build-essential \
+  pkg-config \
+  redis-server
+```
+### Install Python packages
 ```
 pip install -r requirements.txt
 ```
-### Set up environment variables
-
-Create a .env file in the root directory
-
+### Create your .env file
 ```
+cat > .env <<EOF
 DJANGO_SECRET_KEY=your-secret-key
 DEBUG=True
+
+# Database
 MYSQL_DATABASE=neuroforum_db
 MYSQL_USER=neuroforum_user
-MYSQL_PASSWORD=yourpassword
+MYSQL_PASSWORD=your-db-password
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
-```
 
-### Run database migrations
+# Redis
+REDIS_HOST=127.0.0.1
+
+# Encryption
+FERNET_KEY=$(python3 - <<PYCODE
+from cryptography.fernet import Fernet
+print(Fernet.generate_key().decode())
+PYCODE
+)
+
+# (Optional) email in console
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+EOF
+```
+### Start Redis
+```
+sudo service redis-server start
+```
+### Run migrations & create superuser
 ```
 python manage.py migrate
-```
-### Create a superuser
-```
 python manage.py createsuperuser
 ```
-### Run the server
+### Run Server
+```
+python manage.py runserver
+```
+## Windows
+### Use docker desktop
+```
+docker run -d --name redis -p 6379:6379 redis:7
+```
+### Go into virtualenv & install pkgs
+```
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+### Create your .env file
+```
+@"
+DJANGO_SECRET_KEY=your-secret-key
+DEBUG=True
+
+# Database
+MYSQL_DATABASE=neuroforum_db
+MYSQL_USER=neuroforum_user
+MYSQL_PASSWORD=your-db-password
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+
+# Redis
+REDIS_HOST=127.0.0.1
+
+# Encryption
+FERNET_KEY=$(python - <<PYCODE
+from cryptography.fernet import Fernet
+print(Fernet.generate_key().decode())
+PYCODE
+)
+
+# (Optional) email in console
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+"@ | Out-File -Encoding utf8 .env
+```
+### Run migrations & create superuser
+```
+python manage.py migrate
+python manage.py createsuperuser
+```
+### Run Server
 ```
 python manage.py runserver
 ```
