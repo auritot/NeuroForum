@@ -124,9 +124,10 @@ CHANNEL_LAYERS = {
 }
 
 MIDDLEWARE = [
-    'forum.middleware.IPBanMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'forum.middleware.IPBanMiddleware',    
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "forum.services.custom_session_middleware.CustomSessionMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
