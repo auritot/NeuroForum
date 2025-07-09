@@ -84,6 +84,7 @@ volumes:
   db_data:
   sonarqube_data:
   sonarqube_extensions:
+  sonarqube_pgdata:
 
 
 
