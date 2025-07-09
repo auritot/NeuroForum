@@ -271,7 +271,7 @@ CACHES = {
 #     CACHES['default']['LOCATION'] = f'redis://{test_redis_host}:6379/1'
 
 # Use in-memory cache when running tests (pytest or manage.py test)
-if any(arg.startswith('pytest') or arg == 'test' for arg in sys.argv):
+if 'test' in sys.argv:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
