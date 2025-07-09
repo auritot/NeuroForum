@@ -18,13 +18,13 @@ import os
 from sshtunnel import SSHTunnelForwarder
 import sys
 
-# Ensure the log file and parent directory exist
-try:
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-    if not os.path.exists(log_path):
-        open(log_path, "a").close()
-except Exception as e:
-    print(f"Logging path setup failed: {e}")
+# # Ensure the log file and parent directory exist
+# try:
+#     os.makedirs(os.path.dirname(log_path), exist_ok=True)
+#     if not os.path.exists(log_path):
+#         open(log_path, "a").close()
+# except Exception as e:
+#     print(f"Logging path setup failed: {e}")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -266,24 +266,24 @@ CACHES = {
     }
 }
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "login_file": {
-            "level": "WARNING",
-            "class": "logging.FileHandler",
-            "filename": log_path,
-        },
-    },
-    "loggers": {
-        "login_failures": {
-            "handlers": ["login_file"],
-            "level": "WARNING",
-            "propagate": False,
-        },
-    },
-}
+# LOGGING = {
+#     "version": 1,
+#     "disable_existing_loggers": False,
+#     "handlers": {
+#         "login_file": {
+#             "level": "WARNING",
+#             "class": "logging.FileHandler",
+#             "filename": log_path,
+#         },
+#     },
+#     "loggers": {
+#         "login_failures": {
+#             "handlers": ["login_file"],
+#             "level": "WARNING",
+#             "propagate": False,
+#         },
+#     },
+# }
 
 if 'test' in sys.argv:
     CACHES['default']['BACKEND'] = 'django_redis.cache.RedisCache'
