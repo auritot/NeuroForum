@@ -272,9 +272,15 @@ def test_login_fails_and_bans():
 
 @pytest.fixture(autouse=True)
 def clear_login_cache():
-    # ensure no leftover bans or attempts
-    cache.delete_pattern("login_attempts_*")
-    cache.delete_pattern("login_ban_*")
+    """
+    Ensure no leftover login‐attempt or login‐ban keys.
+    On RedisCache we can delete by pattern; on LocMemCache we just clear everything.
+    """
+    if hasattr(cache, "delete_pattern"):
+        cache.delete_pattern("login_attempts_*")
+        cache.delete_pattern("login_ban_*")
+    else:
+        cache.clear()
 
 
 def login_as(client, email, password):
