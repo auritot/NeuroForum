@@ -101,13 +101,13 @@ def process_update_comment(request, post_id, comment_id, context=None):
         messages.error(request, ERROR_MSG)
         return redirect('index')
     
-    comment_url = f"post_view/{context["comment"]["PostID_id"]}?page={context["comment"]["PageNumberInPost"]}#comment-{context["comment"]["CommentPosition"]}"
+    comment_url = f"/post/{context["comment"]["PostID_id"]}?page={context["comment"]["PageNumberInPost"]}#comment-{context["comment"]["CommentPosition"]}"
 
     editCommentText = request.POST.get("editCommentText")
     if not editCommentText: 
         log_service.log_action(f"Failed to update Comment in Post {post_id}: User left comment text empty", context["user_info"]["UserID"], isError=True)
         messages.error(request, "Comment cannot be empty!")
-        redirect(comment_url)
+        return redirect(comment_url)
 
     if context["comment"]["UserID_id"] == context["user_info"]["UserID"]:
         response = comment_service.update_comment_by_id(editCommentText, comment_id, post_id, context["user_info"]["UserID"])
@@ -118,7 +118,7 @@ def process_update_comment(request, post_id, comment_id, context=None):
 
     if response["status"] == "SUCCESS":
         messages.success(request, response["message"])
-        redirect(comment_url)
+        return redirect(comment_url)
     else:
         messages.error(request, ERROR_MSG)
         return redirect('post_view', post_id=post_id)
