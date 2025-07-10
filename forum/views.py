@@ -330,7 +330,7 @@ def post_form_view(request, context=None, post_id=None):
 # Safe: Only POST is used to retrieve filtered words securely; no unsafe operations are performed.
 
 
-@require_http_methods(["POST"])
+@require_GET
 def filtered_words_api(request):
     # Delegate to process layer
     response = content_filtering_process.process_get_all_filtered_words_api(
