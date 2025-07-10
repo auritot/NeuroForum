@@ -21,17 +21,20 @@ ERR_MSG = "A problem has occurred. Please try again."
 SESSION_EXPIRED_MSG = "Session Expired! Please login again."
 USER_NOT_FOUND_MSG = "User not found"
 
+
 def generate_verification_code(length=6):
     return ''.join(secrets.choice(string.digits) for _ in range(length))
 
 # MARK: Process Login
 # Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
+
+
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def process_login(request):
     if request.method != 'POST':
         return redirect('login_view')
-    
+
     ip_address = get_client_ip(request)
     ban_key = f"login_ban_{ip_address}"
     attempts_key = f"login_attempts_{ip_address}"
@@ -59,10 +62,12 @@ def process_login(request):
         cache.delete(ban_key)
 
         verification_code = generate_verification_code()
-        request.session['pending_user'] = email
-        request.session['verification_code'] = verification_code
-        request.session['code_generated_at'] = timezone.now().isoformat()
-        request.session['verification_attempts'] = 0
+        request.custom_session["pending_user"] = email
+        request.custom_session["verification_code"] = verification_code
+        request.custom_session["code_generated_at"] = timezone.now(
+        ).isoformat()
+        request.custom_session["verification_attempts"] = 0
+        request.custom_session.save()
 
         subject = "Your verification code"
         message = f"Your verification code is: {verification_code}"
@@ -76,7 +81,7 @@ def process_login(request):
             return redirect("login_view")
 
         return redirect("email_verification")
-    
+
     attempts = cache.get(attempts_key, 0) + 1
     cache.set(attempts_key, attempts, timeout=600)
     print(f"❌ Login failed — attempts for {ip_address}: {attempts}")
@@ -181,10 +186,12 @@ def process_register(request):
         username, email, password, "member")
 
     if response["status"] == "SUCCESS":
-        request.session["pending_user"] = email
-        request.session["verification_code"] = otp_code
-        request.session["code_generated_at"] = timezone.now().isoformat()
-        request.session["verification_attempts"] = 0
+        request.custom_session["pending_user"] = email
+        request.custom_session["verification_code"] = otp_code
+        request.custom_session["code_generated_at"] = timezone.now(
+        ).isoformat()
+        request.custom_session["verification_attempts"] = 0
+        request.custom_session.save()
 
         send_mail(
             subject="Your NeuroForum Verification Code",
@@ -225,7 +232,8 @@ def process_update_profile(request, context=None):
     if user_response["status"] == "SUCCESS":
         context["user_data"] = user_response["data"]
     elif user_response["status"] == "NOT_FOUND":
-        log_service.log_action(f"Failed to update user profile: User not found", context["user_info"]["UserID"], isError=True)
+        log_service.log_action(f"Failed to update user profile: User not found",
+                               context["user_info"]["UserID"], isError=True)
         messages.error(request, USER_NOT_FOUND_MSG)
     else:
         messages.error(request, ERR_MSG)
@@ -237,13 +245,15 @@ def process_update_profile(request, context=None):
 
     username_response = user_service.get_user_by_username(username)
     if username_response["status"] == "SUCCESS" and username != context["user_data"]["Username"]:
-        log_service.log_action("Failed to update user profile: Username has already been taken", context["user_info"]["UserID"], isError=True)
+        log_service.log_action("Failed to update user profile: Username has already been taken",
+                               context["user_info"]["UserID"], isError=True)
         messages.error(request, "Username has already been taken.")
         return redirect("user_profile_view")
 
     email_response = user_service.get_user_by_email(email)
     if email_response["status"] == "SUCCESS" and email != context["user_data"]["Email"]:
-        log_service.log_action("Failed to update user profile: Email has already been taken", context["user_info"]["UserID"], isError=True)
+        log_service.log_action("Failed to update user profile: Email has already been taken",
+                               context["user_info"]["UserID"], isError=True)
         messages.error(request, "Email has already been used.")
         return redirect("user_profile_view")
 
@@ -261,6 +271,8 @@ def process_update_profile(request, context=None):
 
 # MARK: Process Change Password
 # Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
+
+
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def process_change_password(request, context=None):
@@ -280,8 +292,8 @@ def process_change_password(request, context=None):
     user_id = sess["data"]["UserID"]
     context["user_info"] = sess["data"]
 
-    old_password     = request.POST.get("oldPassword", "")
-    new_password     = request.POST.get("newPassword", "")
+    old_password = request.POST.get("oldPassword", "")
+    new_password = request.POST.get("newPassword", "")
     confirm_password = request.POST.get("newConfirmPassword", "")
 
     if new_password != confirm_password:
@@ -333,7 +345,7 @@ def process_change_password(request, context=None):
         )
         messages.error(request, ERR_MSG)
         return redirect("user_profile_view")
-    
+
     upd = user_service.update_user_password(user_id, new_password)
     if upd.get("status") == "SUCCESS":
         log_service.log_action(
@@ -353,6 +365,8 @@ def process_change_password(request, context=None):
     return redirect("user_profile_view")
 
 # MARK: Process Update User Role
+
+
 def process_update_user_role(request, user_id):
     session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
@@ -364,7 +378,8 @@ def process_update_user_role(request, user_id):
 
     user_response = user_service.get_user_by_id(user_id)
     if user_response["status"] == "NOT_FOUND":
-        log_service.log_action(f"Failed to update user profile: User not found", performed_by, isError=True)
+        log_service.log_action(
+            f"Failed to update user profile: User not found", performed_by, isError=True)
         messages.error(request, USER_NOT_FOUND_MSG)
         return redirect("admin_portal")
     elif user_response["status"] == "ERROR":
@@ -381,6 +396,8 @@ def process_update_user_role(request, user_id):
     return redirect("admin_portal")
 
 # MARK: Process Delete User
+
+
 def process_delete_user(request, user_id):
     session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
@@ -391,13 +408,15 @@ def process_delete_user(request, user_id):
 
     # Prevent self-deletion
     if str(performed_by) == str(user_id):
-        log_service.log_action(f"Failed to update user profile: User tried to delete their own account", performed_by, isError=True)
+        log_service.log_action(
+            f"Failed to update user profile: User tried to delete their own account", performed_by, isError=True)
         messages.error(request, "You cannot delete yourself.")
         return redirect("admin_portal")
 
     user_response = user_service.get_user_by_id(user_id)
     if user_response["status"] == "NOT_FOUND":
-        log_service.log_action(f"Failed to update user profile: User not found", performed_by, isError=True)
+        log_service.log_action(
+            f"Failed to update user profile: User not found", performed_by, isError=True)
         messages.error(request, USER_NOT_FOUND_MSG)
         return redirect("admin_portal")
     elif user_response["status"] == "ERROR":

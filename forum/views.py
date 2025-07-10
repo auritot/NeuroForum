@@ -207,14 +207,11 @@ def email_verification(request):
                     msg, performed_by, isSystem=False, isError=True)
 
                 for key in ['verification_code', 'code_generated_at', 'verification_attempts']:
-                    if key in request.custom_session:
-                        del request.custom_session[key]
-
+                    request.custom_session.pop(key, None)
                 request.custom_session.save()
 
-                if request.custom_session.get('reset_email'):
+                if request.custom_session.get("reset_email"):
                     return redirect("forgot_password_view")
-
                 return redirect("login_view")
 
         except Exception as e:
@@ -299,8 +296,7 @@ def email_verification(request):
 
         if request.custom_session.get("pending_user"):
             for key in ['pending_user', 'verification_code', 'code_generated_at', 'verification_attempts']:
-                if key in request.custom_session:
-                    del request.custom_session[key]
+                request.custom_session.pop(key, None)
             request.custom_session.save()
 
         return redirect(redirect_target)
@@ -629,9 +625,9 @@ def forgot_password_view(request):
             return render(request, "html/forgot_password_view.html", context)
 
         otp = user_process.generate_verification_code()
-        request.session["reset_email"] = email
-        request.session["verification_code"] = otp  # Correct key
-        request.session["code_generated_at"] = timezone.now(
+        request.custom_session["reset_email"] = email
+        request.custom_session["verification_code"] = otp  # Correct key
+        request.custom_session["code_generated_at"] = timezone.now(
         ).isoformat()  # Correct key
 
         send_mail(
@@ -654,7 +650,7 @@ def forgot_password_view(request):
 @csrf_protect
 def reset_password_view(request):
 
-    user_email = request.session.get("reset_email")
+    user_email = request.custom_session.get("reset_email")
 
     if request.method == "POST":
         try:
@@ -680,7 +676,7 @@ def reset_password_view(request):
 
             # Clean up session
             for key in ['reset_email', 'verification_code', 'code_generated_at', 'verified_for_reset']:
-                request.session.pop(key, None)
+                request.custom_session.pop(key, None)
 
             messages.success(
                 request, "Password has been reset successfully. You may now log in.")
