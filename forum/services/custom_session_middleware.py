@@ -2,6 +2,7 @@ from django.utils.deprecation import MiddlewareMixin
 from django.conf import settings
 from .db_services.custom_session_service import CustomSessionService
 from .custom_session import CustomSession
+from asgiref.sync import sync_to_async
 
 class CustomSessionMiddleware(MiddlewareMixin):
     def __init__(self, get_response):
@@ -13,7 +14,8 @@ class CustomSessionMiddleware(MiddlewareMixin):
 
         if session_id:
             print("Current cookie for session_id:", session_id)
-            data = self.session_service.load(session_id)
+            # data = self.session_service.load(session_id)
+            data = await sync_to_async(self.session_service.load)(session_id)
             if data:
                 request.custom_session = CustomSession(
                     service=self.session_service,
@@ -38,7 +40,8 @@ class CustomSessionMiddleware(MiddlewareMixin):
                 request.custom_session.session_id = self.session_service.generate_session_id()
                 request.custom_session.modified = True
 
-            request.custom_session.save()
+            # request.custom_session.save()
+            await sync_to_async(request.custom_session.save)()
 
             print("Saving cookie for session_id:", request.custom_session.session_id)
 
