@@ -894,54 +894,49 @@ def delete_user(request, user_id):
 
 @require_GET
 def search_posts_view(request):
-
-        # Rate limiting
-    ip_address = request.META.get('REMOTE_ADDR')
+    # Rate limiting
+    ip_address = request.META.get('REMOTE_ADDR', '0.0.0.0')
     cache_key = f'search_rate_limit_{ip_address}'
     search_count = cache.get(cache_key, 0)
     
-    if search_count >= 50:  
-        return JsonResponse({'error': 'Rate-limited'}, status=429)
+    # Initialize context with rate limit info
+    context = {
+        'rate_limited': search_count >= 50,
+        'timeout_seconds': 60,
+        'search_query': request.GET.get('q', '')[:100]
+    }
+    
+    if search_count >= 50:
+        if (session := session_utils.check_session(request))["status"] == "SUCCESS":
+            context["user_info"] = session["data"]
+        return render(request, "html/search.html", context)
+    
+    cache.set(cache_key, search_count + 1, 60)
 
-    cache.set(cache_key, search_count + 1, 60)  # 1 minute expiry
-    context = {}
-    session_response = session_utils.check_session(request)
+    # Add session/user info to existing context (don't overwrite it!)
+    if (session := session_utils.check_session(request))["status"] == "SUCCESS":
+        context["user_info"] = session["data"]
 
-    if session_response["status"] == "SUCCESS":
-        context["user_info"] = session_response["data"]
+    # Process search query
+    search_query = re.sub(r'[^\w .,!?()@%\-_]', '', request.GET.get("q", ""))[:100].strip()
+    sort_order = request.GET.get("sort", "newest")
+    current_page = max(1, int(request.GET.get("page", 1)))
 
-    # Get search query and sort parameters
-    search_query = request.GET.get("q", "")
-    search_query = re.sub(r'[^\w .,!?()@%\-_]', '', search_query)
-    search_query = search_query.strip()[:100]  # Limit length
-    sort_order = request.GET.get("sort", "newest")  # Default to newest first
-
-    # Configure pagination
-    per_page = 10
-    current_page = int(request.GET.get("page", 1))
-
-    # Get total count for pagination
-    count_response = post_service.get_search_post_count(
-        keyword=search_query
-    )
-    total_count = count_response["data"]["count"] if count_response["status"] == "SUCCESS" else 0
-
-    pagination_data = utilities.get_pagination_data(
-        current_page, per_page, total_count
-    )
-
-    # Call service with search + sorting
-    response = post_service.search_posts_by_keyword(
+    # Get results
+    count_response = post_service.get_search_post_count(keyword=search_query)
+    total_count = count_response.get("data", {}).get("count", 0) if count_response["status"] == "SUCCESS" else 0
+    
+    pagination_data = utilities.get_pagination_data(current_page, 10, total_count)
+    search_results = post_service.search_posts_by_keyword(
         keyword=search_query,
         start_index=pagination_data["start_index"],
-        per_page=per_page,
+        per_page=10,
         sort_order=sort_order
     )
 
     context.update({
-        "posts": response["data"]["posts"] if response["status"] == "SUCCESS" else [],
+        "posts": search_results.get("data", {}).get("posts", []),
         "search_query": search_query,
-        "request": request,
         "page_range": pagination_data["page_range"],
         "current_page": current_page,
         "total_pages": pagination_data["total_pages"],

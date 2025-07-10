@@ -21,10 +21,55 @@
         <!-- #MARK: Search bar -->
         <form class="mb-3" method="get" action="{% url 'search_posts' %}">
           <div class="input-group">
-            <input type="text" id="searchinput" class="form-control" name="q" placeholder="Search posts..." />
-            <button class="btn btn-primary" type="submit">Search</button>
+            <input type="text" 
+                  id="searchinput"  
+                  class="form-control" 
+                  name="q" 
+                  placeholder="Search posts..."
+                  {% if rate_limited %}readonly{% endif %}>
+            
+            <button class="btn btn-primary" 
+                    type="submit"
+                    {% if rate_limited %}disabled{% endif %}>
+                Search
+            </button>
           </div>
         </form>
+
+        {% if rate_limited %}
+          <div class="alert alert-warning alert-dismissible fade show mt-2">
+              Search temporarily disabled (too many requests). 
+              <span id="countdown">{{ timeout_seconds }}</span> seconds remaining.
+          </div>
+
+          <script>
+          // Countdown with syntax fixes
+          if (document.getElementById('countdown')) {
+              let seconds = parseInt("{{ timeout_seconds|escapejs }}");
+              const countdown = setInterval(() => {
+                  seconds--;
+                  const countdownEl = document.getElementById('countdown');
+                  if (countdownEl) countdownEl.textContent = seconds;
+                  
+                  if (seconds === 0) {
+                      clearInterval(countdown);
+                      const alert = document.querySelector('.alert');
+                      if (alert) {
+                          alert.classList.replace('alert-warning', 'alert-success');
+                          alert.innerHTML = `
+                              <i class="bi bi-check-circle me-2"></i>
+                              Search re-enabled!
+                          `;
+                          setTimeout(() => alert.remove(), 3000);
+                          
+                          document.querySelectorAll('input[name="q"], button[type="submit"]')
+                              .forEach(el => el.disabled = false);
+                      }
+                  }
+              }, 1000);
+          }
+          </script>
+        {% endif %}
 
         <!-- #MARK: Filter bar -->
         <form class="mb-4" method="get" action="{% url 'search_posts' %}">
