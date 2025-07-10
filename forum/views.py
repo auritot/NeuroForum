@@ -41,6 +41,7 @@ SESSION_EXPIRED_MSG = "Session Expired! Please login again."
 INVALID_ACCESS_MSG = "Invalid Access!"
 LOGIN_PATH = "/login"
 
+
 def validate_filter_content(content):
     """
     Validate filter content against our rules.
@@ -126,6 +127,8 @@ def login_view(request, context=None):
     return render(request, LOGIN_HTML)
 
 # Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
+
+
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def logout_view(request, context=None):
@@ -171,13 +174,14 @@ def register_view(request, context=None):
 def email_verification(request):
     if request.method == "POST":
         code = request.POST.get("code", "").strip()
-        session_code = request.session.get("verification_code")
-        attempts = request.session.get("verification_attempts", 0)
-        code_generated_at_str = request.session.get("code_generated_at")
+        session_code = request.custom_session.get("verification_code")
+        attempts = request.custom_session.get("verification_attempts", 0)
+        code_generated_at_str = request.custom_session.get("code_generated_at")
 
         performed_by = 1
-        email = request.session.get(
-            "pending_user") or request.session.get("reset_email")
+        email = request.custom_session.get(
+            "pending_user") or request.custom_session.get("reset_email")
+
         if email:
             response = user_service.get_user_by_email(email)
             if response["status"] == "SUCCESS":
@@ -195,15 +199,22 @@ def email_verification(request):
                 code_generated_at_str)
             if timezone.is_naive(code_generated_at):
                 code_generated_at = timezone.make_aware(code_generated_at)
+
             if timezone.now() > code_generated_at + timedelta(minutes=5):
                 msg = "Your verification code has expired. Please request a new one."
                 messages.error(request, msg)
                 log_service.log_action(
                     msg, performed_by, isSystem=False, isError=True)
+
                 for key in ['verification_code', 'code_generated_at', 'verification_attempts']:
-                    request.session.pop(key, None)
-                if 'reset_email' in request.session:
+                    if key in request.custom_session:
+                        del request.custom_session[key]
+
+                request.custom_session.save()
+
+                if request.custom_session.get('reset_email'):
                     return redirect("forgot_password_view")
+
                 return redirect("login_view")
 
         except Exception as e:
@@ -216,17 +227,21 @@ def email_verification(request):
 
         if code != session_code:
             attempts += 1
-            request.session["verification_attempts"] = attempts
+            request.custom_session["verification_attempts"] = attempts
+            request.custom_session.save()
+
             msg = f"Incorrect code. Attempt {attempts}/3."
             messages.error(request, msg)
             log_service.log_action(
                 msg, performed_by, isSystem=False, isError=True)
+
             if attempts >= 3:
                 final_msg = "Too many failed attempts. Please try again later."
                 messages.error(request, final_msg)
                 log_service.log_action(
                     final_msg, performed_by, isSystem=False, isError=True)
                 return redirect("login_view")
+
             return redirect("email_verification")
 
         if not email:
@@ -247,9 +262,8 @@ def email_verification(request):
         user_data = response["data"]
         performed_by = user_data["UserID"]
 
-        if request.session.get("pending_user"):
-            session_response = session_utils.setup_session(
-                request, user_data)
+        if request.custom_session.get("pending_user"):
+            session_response = session_utils.setup_session(request, user_data)
             if session_response["status"] != "SUCCESS":
                 msg = f"Verification succeeded for '{email}', but failed to log in."
                 messages.error(
@@ -257,6 +271,7 @@ def email_verification(request):
                 log_service.log_action(
                     msg, performed_by, isSystem=True, isError=True)
                 return redirect("login_view")
+
             msg = f"Email verification for '{email}' succeeded, user logged in."
             messages.success(
                 request, "Your account has been verified and you're now logged in.")
@@ -264,8 +279,10 @@ def email_verification(request):
                 msg, performed_by, isSystem=False, isError=False)
             redirect_target = "index"
 
-        elif request.session.get("reset_email"):
-            request.session["verified_for_reset"] = True
+        elif request.custom_session.get("reset_email"):
+            request.custom_session["verified_for_reset"] = True
+            request.custom_session.save()
+
             msg = f"Verification for '{email}' succeeded, proceeding to password reset."
             messages.success(
                 request, "Verification successful. Please reset your password.")
@@ -280,9 +297,11 @@ def email_verification(request):
                 msg, performed_by, isSystem=True, isError=True)
             return redirect("login_view")
 
-        if request.session.get("pending_user"):
+        if request.custom_session.get("pending_user"):
             for key in ['pending_user', 'verification_code', 'code_generated_at', 'verification_attempts']:
-                request.session.pop(key, None)
+                if key in request.custom_session:
+                    del request.custom_session[key]
+            request.custom_session.save()
 
         return redirect(redirect_target)
 
@@ -313,10 +332,13 @@ def post_form_view(request, context=None, post_id=None):
     return render(request, "html/post_form_view.html", context)
 
 # Safe: Only POST is used to retrieve filtered words securely; no unsafe operations are performed.
+
+
 @require_http_methods(["POST"])
 def filtered_words_api(request):
     # Delegate to process layer
-    response = content_filtering_process.process_get_all_filtered_words_api(request)
+    response = content_filtering_process.process_get_all_filtered_words_api(
+        request)
     return JsonResponse(response)
 
 
@@ -463,6 +485,8 @@ def admin_manage_post_view(request, context=None):
 
 # MARK: User Manage Comment View
 # Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
+
+
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def user_manage_comment_view(request, context=None):
@@ -541,6 +565,8 @@ def admin_manage_comment_view(request, context=None):
 
 # MARK: Admin View log
 # Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
+
+
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def admin_logs_view(request, context=None):
@@ -587,6 +613,8 @@ def admin_logs_view(request, context=None):
 
 # MARK: Forgot Password View
 # Safe: GET is used for initial render; POST is CSRF-protected and handles form submission only.
+
+
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def forgot_password_view(request):
@@ -702,6 +730,8 @@ def chat_view(request, other_user):
     })
 
 # Safe: Only GET used to load chat landing or redirect based on session.
+
+
 @require_GET
 @csrf_protect
 @xframe_options_exempt
@@ -724,6 +754,8 @@ def chat_landing_or_redirect_view(request):
     return render(request, CHAT_LANDING_HTML, {"user_info": user_info})
 
 # Safe: Only GET used to load chat landing or redirect based on session.
+
+
 @require_GET
 @csrf_protect
 @xframe_options_exempt
@@ -743,6 +775,8 @@ def chat_home_view(request):
     return render(request, 'chat_landing.html', {'error': 'No chats yet.'})
 
 # Safe: Only GET used to load chat landing or redirect based on session.
+
+
 @require_GET
 @csrf_protect
 @xframe_options_exempt
@@ -810,11 +844,14 @@ def manage_filtered_words_view(request):
         context.update(content_filtering_process.process_get_edit_word(edit))
 
     # get list for display
-    context.update(content_filtering_process.process_get_filtered_words_for_display(context))
+    context.update(
+        content_filtering_process.process_get_filtered_words_for_display(context))
     return render(request, 'html/filtered_words_manage.html', context)
 
 # MARK: Admin User Portal
 # Safe: Only GET is used to load admin portal view with no unsafe actions.
+
+
 @require_GET
 def admin_portal(request):
     session_response = session_utils.check_session(request)
@@ -829,6 +866,8 @@ def admin_portal(request):
     return render(request, "html/admin_portal.html", {"users": users, "user_info": user_info})
 
 # MARK: Change User Role Process
+
+
 @require_POST
 def change_user_role(request, user_id):
     session_response = session_utils.check_session(request)
@@ -838,7 +877,7 @@ def change_user_role(request, user_id):
     user_info = session_response["data"]
     if user_info["Role"].lower() != "admin":
         return redirect("/")
-    
+
     return user_process.process_update_user_role(request, user_id)
 
 
@@ -856,11 +895,13 @@ def delete_user(request, user_id):
 
 # MARK: Search Posts View
 # Safe: Only GET is used to query and display posts; no mutations are done.
+
+
 @require_GET
 def search_posts_view(request):
     context = {}
     session_response = session_utils.check_session(request)
-    
+
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
 
@@ -871,13 +912,13 @@ def search_posts_view(request):
     # Configure pagination
     per_page = 10
     current_page = int(request.GET.get("page", 1))
-    
+
     # Get total count for pagination
     count_response = post_service.get_search_post_count(
         keyword=search_query
     )
     total_count = count_response["data"]["count"] if count_response["status"] == "SUCCESS" else 0
-    
+
     pagination_data = utilities.get_pagination_data(
         current_page, per_page, total_count
     )
@@ -900,11 +941,13 @@ def search_posts_view(request):
         "previous_page": pagination_data["previous_page"],
         "next_page": pagination_data["next_page"]
     })
-    
+
     return render(request, "html/index.html", context)
 
 # MARK: Banned View
 # Safe: Only GET is allowed for rendering banned notice.
+
+
 @require_GET
 def banned_view(request):
     return render(request, "html/banned.html", status=403)
