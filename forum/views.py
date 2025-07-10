@@ -731,7 +731,7 @@ def chat_view(request, other_user):
 @require_GET
 @csrf_protect
 @xframe_options_exempt
-def chat_landing_view(request):
+def chat_landing_or_redirect_view(request):
     session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
         return redirect(LOGIN_PATH)
