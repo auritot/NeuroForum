@@ -68,22 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (data.type === "thread_list") {
-      const container = document.getElementById("chat-threads");
-      container.innerHTML = "";  // clear “No chats yet”
-
-      data.threads.forEach(t => {
-        const a = document.createElement("a");
-        a.href = "#";
-        a.classList.add("chat-thread-link");
-        a.dataset.user = t.other_user.toLowerCase();
-        a.textContent = t.other_user;
-        a.addEventListener("click", () => openChat(t.other_user));
-        container.appendChild(a);
-      });
-      return;
-    }
-
     // On the very first incoming frame, remove the “Loading…” placeholder
     if (!sawPlaceholder) {
       const ph = document.querySelector("#chat-placeholder");

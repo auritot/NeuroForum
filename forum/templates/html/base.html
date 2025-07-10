@@ -178,7 +178,7 @@
                     </form>
                     <h6 class="mt-3">Existing Chats</h6>
                     <hr class="my-2" />
-                    <ul class="list-unstyled" id="overlay-existing-chats">
+                    <ul class="list-unstyled" id="chat-partner-list">
                          {% for partner in chat_partners %}
                          <li>
                               <a href="#" class="chat-thread-link" data-user="{{ partner|lower }}">
@@ -191,7 +191,7 @@
                                    </button> -->
                          </li>
                          {% empty %}
-                         <li class="text-white-50"><em>No chats yet</em></li>
+                         <li class="text-white-50">No chats yet</li>
                          {% endfor %}
                     </ul>
 

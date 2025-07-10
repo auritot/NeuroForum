@@ -24,7 +24,6 @@ from django.views.decorators.http import require_GET
 from django.core.cache import cache
 from forum.services.db_services.user_service import authenticate_user
 from forum.ip_utils import get_client_ip
-from django.contrib.auth.decorators import login_required
 
 import subprocess
 import re
@@ -726,17 +725,6 @@ def chat_view(request, other_user):
         # "unread_count": unread_count,
     })
 
-
-@login_required
-def chat_threads_api(request):
-    # your helper to grab partner-usernames
-    partners = ChatRoom.get_recent_partners_for_user(
-        request.custom_session["Username"]
-    )
-    # make it a simple list of strings
-    return JsonResponse({"threads": partners})
-
-
 # Safe: Only GET used to load chat landing or redirect based on session.
 
 
@@ -751,13 +739,15 @@ def chat_landing_or_redirect_view(request):
     user_info = session_response["data"]
     username = user_info["Username"]
 
-    # pull *all* your existing chat partners
+    # Query for chat partners
     partners = ChatRoom.get_recent_partners_for_user(username)
 
-    return render(request, CHAT_LANDING_HTML, {
-        "user_info":     user_info,
-        "chat_partners": partners,
-    })
+    if partners:
+        if request.GET.get("frame") == "1":
+            return redirect(f"/chat/{partners[0]}/?frame=1")
+        return redirect(f"/chat/{partners[0]}")
+
+    return render(request, CHAT_LANDING_HTML, {"user_info": user_info})
 
 # Safe: Only GET used to load chat landing or redirect based on session.
 
@@ -905,26 +895,14 @@ def delete_user(request, user_id):
 
 @require_GET
 def search_posts_view(request):
-
-    # Rate limiting
-    ip_address = request.META.get('REMOTE_ADDR')
-    cache_key = f'search_rate_limit_{ip_address}'
-    search_count = cache.get(cache_key, 0)
-    
-    if search_count >= 50:  
-        return JsonResponse({'error': 'Rate-limited'}, status=429)
-
-    cache.set(cache_key, search_count + 1, 60)  # 1 minute expiry
-
     context = {}
     session_response = session_utils.check_session(request)
 
     if session_response["status"] == "SUCCESS":
         context["user_info"] = session_response["data"]
 
+    # Get search query and sort parameters
     search_query = request.GET.get("q", "")
-    search_query = re.sub(r'[^\w .,!?()@%\-_]', '', search_query)
-    search_query = search_query.strip()[:100]  # Limit length
     sort_order = request.GET.get("sort", "newest")  # Default to newest first
 
     # Configure pagination

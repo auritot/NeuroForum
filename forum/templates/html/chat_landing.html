@@ -9,40 +9,6 @@
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
 </head>
 <body class="chat-landing">
-
-    <div class="chat-sidebar p-3">
-        <h6 class="mb-2">Existing Chats</h6>
-        <div id="chat-threads">
-            {% if chat_partners %}
-                {% for partner in chat_partners %}
-                <a
-                    href="#"
-                    class="chat-thread-link"
-                    data-user="{{ partner|lower }}"
-                >{{ partner|title }}</a>
-                {% endfor %}
-            {% else %}
-                <em>No chats yet</em>
-            {% endif %}
-        </div>
-        <hr class="my-2">
-        <h6 class="mb-2">Start New Chat</h6>
-        <form method="get" action="{% url 'start_chat' %}">
-        <input
-            id="sidebarUsernameIframe"
-            type="text"
-            name="username"
-            placeholder="Enter username"
-            required
-            class="form-control mb-2"
-        >
-        <button id="sidebarFindBtnIframe" type="submit"
-                class="btn btn-find w-100">
-            Find!
-        </button>
-        </form>
-    </div>
-
     <!-- <img src="{% static 'images/chat-landing.png' %}" alt="Start chatting"> -->
     <div class="chat-landing-message text-center text-light px-4">
         <h4 class="mb-3">Welcome to Chat</h4>
@@ -63,6 +29,5 @@
         {% endif %}
     </div>
 <script src="{% static 'js/chat_init.js' %}"></script>
-<script src="{% static 'js/chat_view.js' %}"></script>
 </body>
 </html>
