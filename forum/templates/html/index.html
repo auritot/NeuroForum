@@ -35,8 +35,8 @@
             <div class="col-sm-4">
               <select class="form-select" name="sort">
                 <option value="" selected disabled>Date</option>
-                <option value="newest" {% if request.GET.sort=="newest" %}selected{% endif %}>Newest First</option>
-                <option value="oldest" {% if request.GET.sort=="oldest" %}selected{% endif %}>Oldest First</option>
+                <option value="newest" {% if request.GET.sort  ==  "newest" %}selected{% endif %}>Newest First</option>
+                <option value="oldest"  {% if request.GET.sort  ==  "oldest"  %}selected{% endif %}>Oldest First</option>
               </select>
             </div>
             <div class="col-sm-4 d-grid">
