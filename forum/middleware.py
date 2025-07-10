@@ -6,18 +6,18 @@ from django.core.cache import cache
 from django.shortcuts import redirect
 from django.utils.deprecation import MiddlewareMixin
 from forum.ip_utils import get_client_ip
+from forum.models import UserAccount
+from forum.services.db_services.custom_session_service import CustomSessionService
+from asgiref.sync import sync_to_async
 
 @database_sync_to_async
 def fetch_user_from_session(session_key):
-    from forum.models import UserAccount
-
     if not session_key:
         return None
 
     try:
         session = SessionStore(session_key=session_key)
         username = session.get("Username", "").strip()
-        print("🧠 Resolving user:", username)
 
         if not username:
             return None
@@ -26,34 +26,49 @@ def fetch_user_from_session(session_key):
         try:
             return UserAccount.objects.get(Username__iexact=username)
         except UserAccount.DoesNotExist:
-            print("❌ User not found in DB:", username)
+
             return None
 
     except Exception as e:
-        print("❌ Session loading error:", e)
         return None
 
 class SessionAuthMiddleware(BaseMiddleware):
+    """
+    Channels middleware that first tries your custom_sessionid cookie,
+    then falls back to Django's standard sessionid.
+    """
     async def __call__(self, scope, receive, send):
+        # 1) parse cookies
         headers = dict(scope.get("headers", []))
         cookies = {}
         if b"cookie" in headers:
-            raw_cookies = headers[b"cookie"].decode()
-            for part in raw_cookies.split(";"):
+            for part in headers[b"cookie"].decode().split(";"):
                 if "=" in part:
-                    key, val = part.strip().split("=", 1)
-                    cookies[key] = val
+                    k, v = part.strip().split("=", 1)
+                    cookies[k] = v
 
-        session_key = cookies.get("sessionid")
-        user = await fetch_user_from_session(session_key)
+        user = None
 
-        if user:
-            print(f"✅ Real user resolved from session: {user.Username}")
-            scope["user"] = user
-        else:
-            print("❌ Anonymous user assigned (invalid session or no Username)")
-            scope["user"] = AnonymousUser()
+        # 2) try your custom session
+        custom_key = cookies.get("custom_sessionid")
+        if custom_key:
+            service = CustomSessionService()
+            data = await sync_to_async(service.load)(custom_key)
+            username = (data or {}).get("Username", "").strip()
+            if username:
+                try:
+                    user = await database_sync_to_async(
+                        UserAccount.objects.get
+                    )(Username__iexact=username)
+                except UserAccount.DoesNotExist:
+                    user = None
 
+        # 3) fallback to Django session if still none
+        if user is None:
+            django_key = cookies.get("sessionid")
+            user = await fetch_user_from_session(django_key)
+
+        scope["user"] = user or AnonymousUser()
         return await super().__call__(scope, receive, send)
 
 class IPBanMiddleware(MiddlewareMixin):
