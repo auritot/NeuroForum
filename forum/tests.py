@@ -284,27 +284,37 @@ def clear_login_cache():
 
 
 def login_as(client, email, password):
-    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    # make sure IP and UA match what session_utils.check_session will look for
+    client.defaults['REMOTE_ADDR']    = '127.0.1.1'
     client.defaults['HTTP_USER_AGENT'] = 'pytest'
 
-    # 1) Hit your login endpoint (no follow so we see the raw redirect + Set-Cookie)
+    # 1) Hit your login endpoint so Django logs the user in and sets the session cookie
     resp = client.post(
         reverse("process_login"),
         {"email": email, "password": password},
     )
-    # Accept either 200 (JSON success) or 302 (redirect-on-success to email_verification)
-    assert resp.status_code in (200, 302), (
-        f"Unexpected status code {resp.status_code} on login"
-    )
+    assert resp.status_code in (200, 302), f"Unexpected status code {resp.status_code} on login"
 
-    # 2) Pull the session cookie your view just set, and put it in the test‐client’s jar
-    name = settings.SESSION_COOKIE_NAME  # e.g. "sessionid" or "session_id"
-    if name in resp.cookies:
-        client.cookies[name] = resp.cookies[name].value
+    # 2) Copy the session cookie back into the client
+    session_cookie = settings.SESSION_COOKIE_NAME
+    if session_cookie in resp.cookies:
+        client.cookies[session_cookie] = resp.cookies[session_cookie].value
     else:
-        raise AssertionError(f"No `{name}` cookie in login response")
+        raise AssertionError(f"No `{session_cookie}` cookie found in login response")
+
+    # 3) Forge all of the session fields that session_utils.check_session() expects
+    user = UserAccount.objects.get(Email=email)
+    session = client.session
+    session["Verified"]   = True
+    session["UserID"]     = user.UserID
+    session["Role"]       = user.Role
+    session["Username"]   = user.Username
+    session["IP"]         = client.defaults['REMOTE_ADDR']
+    session["UserAgent"]  = client.defaults['HTTP_USER_AGENT']
+    session.save()
 
     return resp
+
 
 
 @pytest.mark.django_db
