@@ -32,9 +32,15 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
-                                    <a href="{% url 'process_delete_comment' post_id=comment.PostID_id comment_id=comment.CommentID %}"
-                                        class="dropdown-item text-danger">Delete
-                                    </a>
+                                    <form method="post"
+                                        action="{% url 'process_delete_comment' post_id=comment.PostID_id comment_id=comment.CommentID %}"
+                                        style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger"
+                                            style="border:none; background:none;">
+                                            Delete
+                                        </button>
+                                    </form>
                                 </li>
                             </ul>
                         </div>

@@ -63,8 +63,15 @@
                                         class="dropdown-item edit-comment-btn">Edit</a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item text-danger" href="{% url 'process_delete_comment' post_id=comment.PostID_id comment_id=comment.CommentID %}">Delete
-                                    </a>
+                                    <form method="post"
+                                        action="{% url 'process_delete_comment' post_id=comment.PostID_id comment_id=comment.CommentID %}"
+                                        style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger"
+                                            style="border:none; background:none;">
+                                            Delete
+                                        </button>
+                                    </form>
                                 </li>
                             </ul>
                         </div>

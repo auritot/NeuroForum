@@ -4,17 +4,17 @@
 {% block title %}NeuroForum Post{% endblock %}
 
 {% block extra_css %}
-    <style>
-        .is-invalid {
-            border-color: red !important;
-            box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
-        }
-    </style>
+<style>
+    .is-invalid {
+        border-color: red !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/comments.js' %}"></script>
-    <script src="{% static 'js/ContentFiltering.js' %}"></script>
+<script src="{% static 'js/comments.js' %}"></script>
+<script src="{% static 'js/ContentFiltering.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -109,9 +109,15 @@
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a href="#" class="dropdown-item edit-comment-btn">Edit</a></li>
                         <li>
-                            <a class="dropdown-item text-danger"
-                                href="{% url 'process_delete_comment' post_id=post.PostID comment_id=comment.CommentID %}">Delete
-                            </a>
+                            <form method="post"
+                                action="{% url 'process_delete_comment' post_id=comment.PostID_id comment_id=comment.CommentID %}"
+                                style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger"
+                                    style="border:none; background:none;">
+                                    Delete
+                                </button>
+                            </form>
                         </li>
                     </ul>
                 </div>

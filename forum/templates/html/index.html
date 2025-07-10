@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/ContentFiltering.js' %}"></script>
+<script src="{% static 'js/ContentFiltering.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -26,17 +26,17 @@
           </div>
         </form>
 
-       <!-- #MARK: Filter bar -->
+        <!-- #MARK: Filter bar -->
         <form class="mb-4" method="get" action="{% url 'search_posts' %}">
           <!-- Preserve search term -->
           <input type="hidden" name="q" value="{{ search_query|default:'' }}">
-          
+
           <div class="row g-2 align-items-center">
             <div class="col-sm-4">
               <select class="form-select" name="sort">
                 <option value="" selected disabled>Date</option>
-                <option value="newest" {% if request.GET.sort == "newest" %}selected{% endif %}>Newest First</option>
-                <option value="oldest" {% if request.GET.sort == "oldest" %}selected{% endif %}>Oldest First</option>
+                <option value="newest" {% if request.GET.sort=="newest" %}selected{% endif %}>Newest First</option>
+                <option value="oldest" {% if request.GET.sort=="oldest" %}selected{% endif %}>Oldest First</option>
               </select>
             </div>
             <div class="col-sm-4 d-grid">
@@ -68,9 +68,14 @@
               </button>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="{% url 'edit_post_view' post_id=post.PostID %}">Edit</a></li>
-                <li><a class="dropdown-item text-danger"
-                    href="{% url 'process_delete_post' post_id=post.PostID %}">Delete
-                  </a>
+                <li>
+                  <form method="post" action="{% url 'process_delete_post' post_id=post.PostID %}"
+                    style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item text-danger" style="border:none; background:none;">
+                      Delete
+                    </button>
+                  </form>
                 </li>
               </ul>
             </div>
