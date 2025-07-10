@@ -31,6 +31,28 @@ from channels.routing import URLRouter
 
 from neuroforum_django.asgi import application
 
+# ─── Test‐only override of session_utils.check_session ───
+_original_check_session = session_utils.check_session
+def _fake_check_session(request):
+    s = request.session
+    # mirror exactly what the real check_session does, but against test’s session
+    if (
+        "UserID"   in s and
+        "Role"     in s and
+        s.get("IP")        == request.META.get("REMOTE_ADDR") and
+        s.get("UserAgent") == request.META.get("HTTP_USER_AGENT")
+    ):
+        return {"status":"SUCCESS","message":"Session is active","data":{
+            "UserID":   s["UserID"],
+            "Role":     s["Role"],
+            "Username": s["Username"],
+        }}
+    # fallback to original (so other behavior stays the same)
+    return _original_check_session(request)
+
+session_utils.check_session = _fake_check_session
+# ─────────────────────────────────────────────────────────────
+
 class PostModelTest(TestCase):
     def setUp(self):
         self.user = UserAccount.objects.create(
