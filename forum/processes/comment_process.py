@@ -107,7 +107,8 @@ def process_update_comment(request, post_id, comment_id, context=None):
     if not editCommentText: 
         log_service.log_action(f"Failed to update Comment in Post {post_id}: User left comment text empty", context["user_info"]["UserID"], isError=True)
         messages.error(request, "Comment cannot be empty!")
-        return redirect(comment_url)
+        # return redirect(comment_url)
+        return
 
     if context["comment"]["UserID_id"] == context["user_info"]["UserID"]:
         response = comment_service.update_comment_by_id(editCommentText, comment_id, post_id, context["user_info"]["UserID"])
