@@ -22,7 +22,7 @@ from forum.consumers import PrivateChatConsumer
 from forum.processes import user_process
 from forum.services.db_services import user_service, post_service
 from forum.services import session_utils, utilities
-from crypto_utils import custom_hash_password
+from forum.crypto_utils import custom_hash_password
 
 from channels.db import database_sync_to_async
 from channels.testing import WebsocketCommunicator
