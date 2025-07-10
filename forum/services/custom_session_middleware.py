@@ -8,7 +8,7 @@ class CustomSessionMiddleware(MiddlewareMixin):
         self.get_response = get_response
         self.session_service = CustomSessionService()
 
-    def __call__(self, request):
+    async def __call__(self, request):
         session_id = request.COOKIES.get("custom_sessionid")
 
         if session_id:
@@ -31,7 +31,7 @@ class CustomSessionMiddleware(MiddlewareMixin):
             request.custom_session = CustomSession(service=self.session_service)
             request.custom_session.modified = True
 
-        response = self.get_response(request)
+        response = await self.get_response(request)
 
         if request.custom_session.modified:
             if not request.custom_session.session_id:
