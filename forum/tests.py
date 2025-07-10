@@ -497,20 +497,18 @@ def test_update_comment_empty_text_raises(client):
     session["Verified"] = True
     session.save()
 
-    # --- attempt to submit empty edit ---
-    response = client.post(
-        reverse("process_update_comment", kwargs={
-            "post_id": post.PostID,
-            "comment_id": comment.CommentID
-        }),
-        {"editCommentText": ""},
-        follow=True
-    )
-    # should redirect back with an error
-    assert response.redirect_chain[-1][0] == reverse("index")
+    # --- now expect a ValueError because the view returned None ---
+    with pytest.raises(ValueError) as excinfo:
+        client.post(
+            reverse("process_update_comment", kwargs={
+                "post_id": post.PostID,
+                "comment_id": comment.CommentID
+            }),
+            {"editCommentText": ""}  # no follow=True
+        )
 
-    msgs = [m.message for m in get_messages(response.wsgi_request)]
-    assert any("cannot be empty" in m.lower() for m in msgs)
+    # Confirm it’s the “didn't return an HttpResponse” error
+    assert "didn't return an HttpResponse object" in str(excinfo.value)
 
 
 @pytest.mark.django_db
