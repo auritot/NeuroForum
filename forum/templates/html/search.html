@@ -41,7 +41,7 @@
         {% if rate_limited %}
           <div class="alert alert-warning alert-dismissible fade show mt-2">
               Search temporarily disabled (too many requests). 
-              <span id="countdown">{{ timeout_seconds }}</span> seconds remaining.
+              Try again after<span id="countdown">{{ timeout_seconds }}</span> seconds.
           </div>
         {% endif %}
 
