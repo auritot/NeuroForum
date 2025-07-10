@@ -47,6 +47,24 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         if self.current_user == self.other_user:
             await self.close(code=4004)
             return
+        
+         # join the “global” group or whatever
+        await self.accept()
+
+        # ─── new: load this user’s threads ───
+        threads = await sync_to_async(self.get_user_threads)()
+        await self.send(text_data=json.dumps({
+            "type": "thread_list",
+            "threads": [
+                {
+                  "other_user": t.other_user.Username,    # adjust to your field names
+                  "room_name":    t.room_name,            # whatever you key rooms by
+                  "last_message": t.last_message_text,    # optional
+                  "ts":           t.last_message_ts.isoformat(),
+                }
+                for t in threads
+            ]
+        }))
 
         # canonical room name
         a, b = sorted([self.current_user, self.other_user])
@@ -174,6 +192,11 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             remaining = await self._decrement_participant_count(self.session.id)
             if remaining == 0:
                 await self._close_session(self.session)
+
+    def get_user_threads(self):
+        # <- sync DB lookup for “all ChatThread objects where this user participates”
+        from .models import ChatThread
+        return ChatThread.objects.filter(participants__Username__iexact=self.scope["user"].Username)
 
     # ────────────────────────────────────────────────────────────────────────
     # Database/ORM helpers

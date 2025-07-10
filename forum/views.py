@@ -731,7 +731,7 @@ def chat_view(request, other_user):
 @require_GET
 @csrf_protect
 @xframe_options_exempt
-def chat_landing_or_redirect_view(request):
+def chat_landing_view(request):
     session_response = session_utils.check_session(request)
     if session_response["status"] != "SUCCESS":
         return redirect(LOGIN_PATH)
@@ -739,15 +739,13 @@ def chat_landing_or_redirect_view(request):
     user_info = session_response["data"]
     username = user_info["Username"]
 
-    # Query for chat partners
+    # pull *all* your existing chat partners
     partners = ChatRoom.get_recent_partners_for_user(username)
 
-    if partners:
-        if request.GET.get("frame") == "1":
-            return redirect(f"/chat/{partners[0]}/?frame=1")
-        return redirect(f"/chat/{partners[0]}")
-
-    return render(request, CHAT_LANDING_HTML, {"user_info": user_info})
+    return render(request, CHAT_LANDING_HTML, {
+        "user_info":     user_info,
+        "chat_partners": partners,
+    })
 
 # Safe: Only GET used to load chat landing or redirect based on session.
 
