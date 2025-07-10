@@ -21,7 +21,7 @@
         <!-- #MARK: Search bar -->
         <form class="mb-3" method="get" action="{% url 'search_posts' %}">
           <div class="input-group">
-            <input type="text" class="form-control searchinput" name="q" placeholder="Search posts..." />
+            <input id="searchinput" class="form-control" name="q" placeholder="Search posts..." />
             <button class="btn btn-primary" type="submit">Search</button>
           </div>
         </form>
