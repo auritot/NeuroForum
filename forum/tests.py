@@ -287,20 +287,22 @@ def login_as(client, email, password):
     client.defaults['REMOTE_ADDR'] = '127.0.1.1'
     client.defaults['HTTP_USER_AGENT'] = 'pytest'
 
-    # 1) Send the login request
+    # 1) Hit your login endpoint (no follow so we see the raw redirect + Set-Cookie)
     resp = client.post(
         reverse("process_login"),
         {"email": email, "password": password},
-        # no follow here— we only want the raw JSON + Set-Cookie header
     )
-    assert resp.status_code == 200
+    # Accept either 200 (JSON success) or 302 (redirect-on-success to email_verification)
+    assert resp.status_code in (200, 302), (
+        f"Unexpected status code {resp.status_code} on login"
+    )
 
-    # 2) Capture the session cookie that your login view just set
-    session_cookie_name = settings.SESSION_COOKIE_NAME  # often "sessionid" or "session_id"
-    if session_cookie_name in resp.cookies:
-        client.cookies[session_cookie_name] = resp.cookies[session_cookie_name].value
+    # 2) Pull the session cookie your view just set, and put it in the test‐client’s jar
+    name = settings.SESSION_COOKIE_NAME  # e.g. "sessionid" or "session_id"
+    if name in resp.cookies:
+        client.cookies[name] = resp.cookies[name].value
     else:
-        raise AssertionError(f"No `{session_cookie_name}` cookie set on login response")
+        raise AssertionError(f"No `{name}` cookie in login response")
 
     return resp
 
