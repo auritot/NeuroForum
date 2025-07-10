@@ -286,11 +286,23 @@ def clear_login_cache():
 def login_as(client, email, password):
     client.defaults['REMOTE_ADDR'] = '127.0.1.1'
     client.defaults['HTTP_USER_AGENT'] = 'pytest'
-    return client.post(
+
+    # 1) Send the login request
+    resp = client.post(
         reverse("process_login"),
         {"email": email, "password": password},
-        follow=True
+        # no follow here— we only want the raw JSON + Set-Cookie header
     )
+    assert resp.status_code == 200
+
+    # 2) Capture the session cookie that your login view just set
+    session_cookie_name = settings.SESSION_COOKIE_NAME  # often "sessionid" or "session_id"
+    if session_cookie_name in resp.cookies:
+        client.cookies[session_cookie_name] = resp.cookies[session_cookie_name].value
+    else:
+        raise AssertionError(f"No `{session_cookie_name}` cookie set on login response")
+
+    return resp
 
 
 @pytest.mark.django_db
@@ -474,14 +486,9 @@ def test_delete_comment_unauthorized(client):
     post = Post.objects.create(Title="Test", PostContent="...", UserID=user1)
     comment = Comment.objects.create(CommentContents="Hello", UserID=user1, PostID=post)
 
-    # Session is set to user2 (unauthorized)
-    session = client.session
-    session["UserID"] = user2.UserID
-    session["Username"] = user2.Username
-    session["Role"] = user2.Role
-    session["IP"] = client.defaults['REMOTE_ADDR']
-    session["UserAgent"] = client.defaults['HTTP_USER_AGENT']
-    session.save()
+    # Log in as the wrong user
+    resp = login_as(client, user2.Email, "abc123")
+    assert resp.status_code == 200
 
     # Act
     response = client.post(
