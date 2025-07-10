@@ -30,6 +30,7 @@ urlpatterns = [
     path("chat/start/", views.start_chat_view, name="start_chat"),
     path("chat/landing/", views.chat_landing_or_redirect_view, name="chat_landing"),
     path("chat/<str:other_user>/", views.chat_view, name="chat_view"),
+    path("api/chat/threads/", views.chat_threads_api, name="chat_threads_api"),
     path("forgot-password/", views.forgot_password_view, name="forgot_password_view"),
     path("reset_password/", views.reset_password_view, name="reset_password_view"),
     path("process_change_password", user_process.process_change_password, name="process_change_password"),

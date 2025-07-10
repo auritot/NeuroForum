@@ -24,6 +24,7 @@ from django.views.decorators.http import require_GET
 from django.core.cache import cache
 from forum.services.db_services.user_service import authenticate_user
 from forum.ip_utils import get_client_ip
+from django.contrib.auth.decorators import login_required
 
 import subprocess
 import re
@@ -724,6 +725,17 @@ def chat_view(request, other_user):
         "other_user": other_user,
         # "unread_count": unread_count,
     })
+
+
+@login_required
+def chat_threads_api(request):
+    # your helper to grab partner-usernames
+    partners = ChatRoom.get_recent_partners_for_user(
+        request.custom_session["Username"]
+    )
+    # make it a simple list of strings
+    return JsonResponse({"threads": partners})
+
 
 # Safe: Only GET used to load chat landing or redirect based on session.
 
