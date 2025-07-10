@@ -22,8 +22,9 @@
         <form class="mb-3" method="get" action="{% url 'search_posts' %}">
         <div class="input-group">
             <input
+            id="searchinput"
             type="text"
-            class="form-control searchinput"
+            class="form-control"
             name="search_q"
             value="{{ search_query|default:'' }}"
             placeholder="Search posts..."
