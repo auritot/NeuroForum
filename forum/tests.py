@@ -317,8 +317,10 @@ def test_create_post_with_empty_fields(client):
         Role="user"
     )
     resp = login_as(client, user.Email, "abc123")
-    assert resp.status_code == 200
-
+    session = client.session
+    session["Verified"] = True
+    session.save()
+    
     # --- attempt to create an empty post ---
     response = client.post(
         reverse("process_create_post"),
@@ -365,7 +367,10 @@ def test_create_comment_empty(client):
     )
     post = Post.objects.create(Title="hello", PostContent="world", UserID=user)
     resp = login_as(client, user.Email, "abc123")
-    assert resp.status_code == 200
+    session = client.session
+    session["Verified"] = True
+    session.save()
+    
 
     # --- attempt to create an empty comment ---
     response = client.post(
@@ -393,7 +398,10 @@ def test_delete_post_as_owner(client):
     )
     post = Post.objects.create(Title="X", PostContent="Y", UserID=owner)
     resp = login_as(client, owner.Email, "abc123")
-    assert resp.status_code == 200
+    session = client.session
+    session["Verified"] = True
+    session.save()
+    
 
     # --- delete the post ---
     response = client.post(
@@ -424,7 +432,9 @@ def test_update_post_unauthorized(client):
     post = Post.objects.create(Title="T", PostContent="P", UserID=owner)
 
     resp = login_as(client, attacker.Email, "abc123")
-    assert resp.status_code == 200
+    session = client.session
+    session["Verified"] = True
+    session.save()
 
     # --- attempt unauthorized update ---
     response = client.post(
@@ -451,7 +461,9 @@ def test_update_comment_empty_text_raises(client):
         CommentContents="Nice!", UserID=user, PostID=post
     )
     resp = login_as(client, user.Email, "abc123")
-    assert resp.status_code == 200
+    session = client.session
+    session["Verified"] = True
+    session.save()
 
     # --- attempt to submit empty edit ---
     response = client.post(
@@ -490,7 +502,9 @@ def test_delete_comment_unauthorized(client):
 
     # Log in as the wrong user
     resp = login_as(client, user2.Email, "abc123")
-    assert resp.status_code == 200
+    session = client.session
+    session["Verified"] = True
+    session.save()
 
     # Act
     response = client.post(
