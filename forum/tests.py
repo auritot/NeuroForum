@@ -16,13 +16,13 @@ from django.test import override_settings
 from django.contrib.auth import get_user_model
 from django.db import connection
 from django.contrib.messages import get_messages
+from django.contrib.auth.hashers import make_password
 
 from .models import UserAccount, Post, Comment, Filtering, Logs, ChatRoom, ChatSession, ChatMessage
 from forum.consumers import PrivateChatConsumer
 from forum.processes import user_process
 from forum.services.db_services import user_service, post_service
 from forum.services import session_utils, utilities
-from forum.crypto_utils import custom_hash_password
 
 from channels.db import database_sync_to_async
 from channels.testing import WebsocketCommunicator
@@ -36,7 +36,7 @@ class PostModelTest(TestCase):
         self.user = UserAccount.objects.create(
             Username="testuser",
             Email="testuser@example.com",
-            Password=custom_hash_password("abc123"),
+            Password=make_password("abc123"),
             Role="user"
         )
         self.post = Post.objects.create(
@@ -56,7 +56,7 @@ class PostModelTest(TestCase):
 
 class UserAccountModelTest(TestCase):
     def test_user_creation_and_auth(self):
-        user = UserAccount.objects.create(Username="alice", Email="alice@example.com", Password=custom_hash_password("abc123"), Role="user")
+        user = UserAccount.objects.create(Username="alice", Email="alice@example.com", Password=make_password("abc123"), Role="user")
         self.assertEqual(str(user), "alice")
         self.assertTrue(user.is_authenticated)
 
@@ -90,7 +90,7 @@ class LoginViewTest(TestCase):
 
 class CommentModelTest(TestCase):
     def setUp(self):
-        self.user = UserAccount.objects.create(Username="bob", Email="bob@example.com", Password=custom_hash_password("abc123"), Role="user")
+        self.user = UserAccount.objects.create(Username="bob", Email="bob@example.com", Password=make_password("abc123"), Role="user")
         self.post = Post.objects.create(Title="Sample", PostContent="Post", UserID=self.user)
 
     def test_comment_creation(self):
@@ -106,7 +106,7 @@ class FilteringModelTest(TestCase):
 
 class LogsModelTest(TestCase):
     def test_log_entry(self):
-        user = UserAccount.objects.create(Username="admin", Email="admin@site.com", Password=custom_hash_password("abc123"), Role="admin")
+        user = UserAccount.objects.create(Username="admin", Email="admin@site.com", Password=make_password("abc123"), Role="admin")
         log = Logs.objects.create(LogContent="Login detected", Category="auth", UserID=user)
         self.assertIn("Login detected", str(log))
 
@@ -123,7 +123,7 @@ class ChatRoomTest(TestCase):
 
 class ChatSessionMessageTest(TestCase):
     def setUp(self):
-        self.user = UserAccount.objects.create(Username="sender", Email="s@e.com", Password=custom_hash_password("abc123"), Role="user")
+        self.user = UserAccount.objects.create(Username="sender", Email="s@e.com", Password=make_password("abc123"), Role="user")
         self.room = ChatRoom.objects.create(name="roomx")
         self.session = ChatSession.objects.create(room=self.room)
 
@@ -140,7 +140,7 @@ class ChatSessionMessageTest(TestCase):
 class ViewTestBasic(TestCase):
     def setUp(self):
         self.client = Client()
-        self.user = UserAccount.objects.create(Username="guest", Email="g@x.com", Password=custom_hash_password("abc123"), Role="user")
+        self.user = UserAccount.objects.create(Username="guest", Email="g@x.com", Password=make_password("abc123"), Role="user")
 
     def test_index_loads(self):
         response = self.client.get(reverse("index"))
@@ -170,10 +170,10 @@ class ViewTestBasic(TestCase):
 async def test_chat_connects_successfully():
     # Create users and room
     user1 = await database_sync_to_async(UserAccount.objects.create)(
-        Username="alice", Email="alice@example.com", Password=custom_hash_password("abc123"), Role="user"
+        Username="alice", Email="alice@example.com", Password=make_password("abc123"), Role="user"
     )
     user2 = await database_sync_to_async(UserAccount.objects.create)(
-        Username="bob", Email="bob@example.com", Password=custom_hash_password("abc123"), Role="user"
+        Username="bob", Email="bob@example.com", Password=make_password("abc123"), Role="user"
     )
     await database_sync_to_async(ChatRoom.get_or_create_private)("alice", "bob")
 
@@ -191,7 +191,7 @@ async def test_chat_connects_successfully():
 @pytest.mark.django_db(transaction=True)
 async def test_chat_rejects_self_connection():
     user = await database_sync_to_async(UserAccount.objects.create)(
-        Username="selfuser", Email="self@user.com", Password=custom_hash_password("abc123"), Role="user"
+        Username="selfuser", Email="self@user.com", Password=make_password("abc123"), Role="user"
     )
 
     communicator = WebsocketCommunicator(
@@ -220,7 +220,7 @@ async def test_chat_rejects_unauthenticated():
 
 @pytest.mark.django_db
 def test_authenticate_user_success():
-    user = UserAccount.objects.create(Username="tester", Email="t@x.com", Password=custom_hash_password("abc123"), Role="user")
+    user = UserAccount.objects.create(Username="tester", Email="t@x.com", Password=make_password("abc123"), Role="user")
     result = user_service.authenticate_user("t@x.com", "wrong_password")  # Will fail hash, still covers path
     assert result["status"] in ["INVALID", "SUCCESS"]
 
@@ -262,7 +262,7 @@ def test_insert_and_fetch_post():
 
 @pytest.mark.django_db
 def test_login_fails_and_bans():
-    user = UserAccount.objects.create(Username="zz", Email="zz@x.com", Password=custom_hash_password("abc123"), Role="user")
+    user = UserAccount.objects.create(Username="zz", Email="zz@x.com", Password=make_password("abc123"), Role="user")
     client = Client()
     for _ in range(6):
         client.post(reverse("process_login"), {"email": "zz@x.com", "password": "wrong"})
@@ -293,7 +293,7 @@ def test_create_post_with_empty_fields(client):
     user = UserAccount.objects.create(
         Username="tester",
         Email="tester@e.com",
-        Password=custom_hash_password("abc123"),  # ← use custom hash
+        Password=make_password("abc123"),  # ← use custom hash
         Role="user"
     )
     resp = login_as(client, user.Email, "abc123")
@@ -340,7 +340,7 @@ def test_create_comment_empty(client):
     user = UserAccount.objects.create(
         Username="mark",
         Email="mark@e.com",
-        Password=custom_hash_password("abc123"),
+        Password=make_password("abc123"),
         Role="user"
     )
     post = Post.objects.create(Title="hello", PostContent="world", UserID=user)
@@ -368,7 +368,7 @@ def test_delete_post_as_owner(client):
     owner = UserAccount.objects.create(
         Username="owner",
         Email="o@x.com",
-        Password=custom_hash_password("abc123"),
+        Password=make_password("abc123"),
         Role="user"
     )
     post = Post.objects.create(Title="X", PostContent="Y", UserID=owner)
@@ -392,13 +392,13 @@ def test_update_post_unauthorized(client):
     owner = UserAccount.objects.create(
         Username="own",
         Email="own@x.com",
-        Password=custom_hash_password("abc123"),
+        Password=make_password("abc123"),
         Role="user"
     )
     attacker = UserAccount.objects.create(
         Username="att",
         Email="att@x.com",
-        Password=custom_hash_password("abc123"),
+        Password=make_password("abc123"),
         Role="user"
     )
     post = Post.objects.create(Title="T", PostContent="P", UserID=owner)
@@ -423,7 +423,7 @@ def test_update_comment_empty_text_raises(client):
     user = UserAccount.objects.create(
         Username="cx",
         Email="cx@x.com",
-        Password=custom_hash_password("abc123"),
+        Password=make_password("abc123"),
         Role="user"
     )
     post = Post.objects.create(Title="Z", PostContent="Z", UserID=user)
@@ -451,27 +451,33 @@ def test_update_comment_empty_text_raises(client):
 
 @pytest.mark.django_db
 def test_delete_comment_unauthorized(client):
-    # --- setup two users, post & comment, then login as the wrong user ---
+    # Arrange
+    client.defaults['REMOTE_ADDR'] = '127.0.1.1'
+    client.defaults['HTTP_USER_AGENT'] = 'pytest'
+    cache.delete("login_attempts_127.0.1.1")
+    cache.delete("login_ban_127.0.1.1")
+
     user1 = UserAccount.objects.create(
-        Username="auth",
-        Email="a@x.com",
-        Password=custom_hash_password("abc123"),
-        Role="user"
+        Username="auth", Email="a@x.com",
+        Password=make_password("abc123"), Role="user"
     )
     user2 = UserAccount.objects.create(
-        Username="unauth",
-        Email="b@x.com",
-        Password=custom_hash_password("abc123"),
-        Role="user"
+        Username="unauth", Email="b@x.com",
+        Password=make_password("abc123"), Role="user"
     )
     post = Post.objects.create(Title="Test", PostContent="...", UserID=user1)
-    comment = Comment.objects.create(
-        CommentContents="Hello", UserID=user1, PostID=post
-    )
-    resp = login_as(client, user2.Email, "abc123")
-    assert resp.status_code == 200
+    comment = Comment.objects.create(CommentContents="Hello", UserID=user1, PostID=post)
 
-    # --- unauthorized delete ---
+    # Session is set to user2 (unauthorized)
+    session = client.session
+    session["UserID"] = user2.UserID
+    session["Username"] = user2.Username
+    session["Role"] = user2.Role
+    session["IP"] = client.defaults['REMOTE_ADDR']
+    session["UserAgent"] = client.defaults['HTTP_USER_AGENT']
+    session.save()
+
+    # Act
     response = client.post(
         reverse("process_delete_comment", kwargs={
             "post_id": post.PostID,
@@ -479,10 +485,11 @@ def test_delete_comment_unauthorized(client):
         }),
         follow=True
     )
-    assert response.redirect_chain[-1][0] == reverse("index")
 
-    msgs = [m.message for m in get_messages(response.wsgi_request)]
-    assert any("unauthorized" in m.lower() for m in msgs)
+    # Assert: unauthorized delete goes back to index with an error flash
+    assert response.redirect_chain[-1][0] == reverse("index")
+    msgs = [m.message.lower() for m in get_messages(response.wsgi_request)]
+    assert any("unauthorized to delete this comment" in m for m in msgs)
 
 @pytest.mark.django_db
 def test_session_expired_redirects(client):
@@ -508,7 +515,7 @@ def test_reset_password_mismatch_shows_context_error(client):
 
     user = UserAccount.objects.create(
         Username="x", Email="reset@x.com",
-        Password=custom_hash_password("abc123"), Role="user"
+        Password=make_password("abc123"), Role="user"
     )
 
     session = client.session
@@ -605,7 +612,7 @@ def create_user(username, email):
     return UserAccount.objects.create(
         Username=username,
         Email=email,
-        Password=custom_hash_password("pw"),
+        Password=make_password("pw"),
         Role="user"
     )
 
