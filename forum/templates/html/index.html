@@ -10,6 +10,7 @@
 
 {% block extra_js %}
 <script src="{% static 'js/ContentFiltering.js' %}"></script>
+<script src="{% static 'js/ratelimit.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -41,11 +42,6 @@
               Search temporarily disabled (too many requests). 
               <span id="countdown">{{ timeout_seconds }}</span> seconds remaining.
           </div>
-
-          {% block extra_js %}
-          <script src="{% static 'js/ratelimit.js' %}"></script>
-          {% endblock %}
-
         {% endif %}
 
         <!-- #MARK: Filter bar -->
