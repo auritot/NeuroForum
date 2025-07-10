@@ -31,6 +31,11 @@ from channels.routing import URLRouter
 
 from neuroforum_django.asgi import application
 
+settings.MIDDLEWARE = [
+    mw for mw in settings.MIDDLEWARE
+    if 'custom_session_middleware' not in mw
+]
+
 # ─── Test‐only override of session_utils.check_session ───
 _original_check_session = session_utils.check_session
 def _fake_check_session(request):
