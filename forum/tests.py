@@ -16,6 +16,7 @@ from django.test import override_settings
 from django.contrib.auth import get_user_model
 from django.db import connection
 from django.contrib.messages import get_messages
+from django.utils.deprecation import MiddlewareMixin
 
 from .models import UserAccount, Post, Comment, Filtering, Logs, ChatRoom, ChatSession, ChatMessage
 from forum.consumers import PrivateChatConsumer
@@ -31,10 +32,27 @@ from channels.routing import URLRouter
 
 from neuroforum_django.asgi import application
 
-settings.MIDDLEWARE = [
-    mw for mw in settings.MIDDLEWARE
-    if 'custom_session_middleware' not in mw
-]
+
+# toss out the real async custom‐session middleware
+base = [mw for mw in settings.MIDDLEWARE 
+        if 'custom_session_middleware' not in mw]
+
+# define dummy so every request gets .custom_session
+class DummySessionMiddleware(MiddlewareMixin):
+    def process_request(self, request):
+        request.custom_session = request.session
+
+# inject it right after Django’s SessionMiddleware
+try:
+    idx = base.index('django.contrib.sessions.middleware.SessionMiddleware')
+except ValueError:
+    idx = 0  # fallback to front if you’re on an unusual setup
+
+settings.MIDDLEWARE = (
+    base[:idx+1] +
+    ['forum.tests.DummySessionMiddleware'] +
+    base[idx+1:]
+)
 
 # ─── Test‐only override of session_utils.check_session ───
 _original_check_session = session_utils.check_session
